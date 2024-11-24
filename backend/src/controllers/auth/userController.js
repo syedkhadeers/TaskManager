@@ -7,44 +7,52 @@ import Token from "../../models/auth/Token.js";
 import crypto from "node:crypto";
 import hashToken from "../../helpers/hashToken.js";
 import sendEmail from "../../helpers/sendEmail.js";
+import { uploadImage, updateImage } from "../../helpers/imageUpload.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
-  //validate
   if (!name || !email || !password) {
-    res.status(400).json({ message: "Please enter all the fields" });
+    return res.status(400).json({ message: "Please enter all the fields" });
   }
 
-  //check password length
   if (password.length < 6) {
-    res.status(400).json({ message: "Password must be up to 6 characters" });
+    return res
+      .status(400)
+      .json({ message: "Password must be up to 6 characters" });
   }
 
-  //check if user exists
   const userExists = await User.findOne({ email });
 
   if (userExists) {
-    res.status(400).json({ message: "User already exists" });
+    return res.status(400).json({ message: "User already exists" });
   }
 
-  //encrypt password
+  let photoUrl = "https://avatars.githubusercontent.com/u/19819005?v=4";
+  let photoPublicId = "";
 
-  //create user
+  if (req.file) {
+    const uploadResult = await uploadImage(req.file, "user_photos");
+    photoUrl = uploadResult.url;
+    photoPublicId = uploadResult.publicId;
+  }
+
   const user = await User.create({
     name,
     email,
     password,
+    photo: {
+      url: photoUrl,
+      publicId: photoPublicId,
+    },
   });
-
-  //generate token with user id and jwt
+  
 
   const token = generateToken(user._id);
 
-  // send back the user and token to the client
   res.cookie("token", token, {
     path: "/",
-    maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    maxAge: 1000 * 60 * 60 * 24 * 30,
     httpOnly: true,
     secure: true,
     sameSite: "none",
@@ -58,7 +66,7 @@ export const registerUser = asyncHandler(async (req, res) => {
       name,
       email,
       role,
-      photo,
+      photo: photo.url,
       bio,
       isVerified,
       token,
@@ -148,11 +156,22 @@ export const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
-    const { name, photo, bio } = req.body;
+    const { name, bio } = req.body;
 
-    user.name = req.body.name || user.name;
-    user.photo = req.body.photo || user.photo;
-    user.bio = req.body.bio || user.bio;
+    user.name = name || user.name;
+    user.bio = bio || user.bio;
+
+    if (req.file) {
+      const updateResult = await updateImage(
+        req.file,
+        user.photo.publicId,
+        "user_photos"
+      );
+      user.photo = {
+        url: updateResult.url,
+        publicId: updateResult.publicId,
+      };
+    }
 
     const updated = await user.save();
 
@@ -161,12 +180,11 @@ export const updateUser = asyncHandler(async (req, res) => {
       name: updated.name,
       email: updated.email,
       role: updated.role,
-      photo: updated.photo,
+      photo: updated.photo.url,
       bio: updated.bio,
       isVerified: updated.isVerified,
     });
   } else {
-    // 404 Not Found
     res.status(404).json({ message: "User not found" });
   }
 });
@@ -322,19 +340,14 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   try {
     await sendEmail(subject, send_to, sent_from, reply_to, template, name, url);
-    res
-      .status(200)
-      .json({ message: "Password reset link sent to your email" });
+    res.status(200).json({ message: "Password reset link sent to your email" });
   } catch (error) {
     console.log(`Error sending email: ${error}`);
-    res
-      .status(500)
-      .json({ message: "Password reset link could not be sent" });
+    res.status(500).json({ message: "Password reset link could not be sent" });
   }
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
-
   const { resetPasswordToken } = req?.params;
 
   const { password } = req.body;
@@ -368,9 +381,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Password reset successfully" });
 });
 
-
 export const changePassword = asyncHandler(async (req, res) => {
-
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -392,7 +403,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Current password is incorrect" });
   }
 
-  if(isMatch){
+  if (isMatch) {
     user.password = newPassword;
     await user.save();
     res.status(200).json({ message: "Password changed successfully" });

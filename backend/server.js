@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import fs from "node:fs";
-import connectDB from "./src/db/connect.js";
+import connectDB from "./src/config/connect.js";
 import cookieParser from "cookie-parser";
 import errorHandler from "./src/helpers/errorHandler.js";
 

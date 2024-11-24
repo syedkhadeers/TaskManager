@@ -21,14 +21,15 @@ import {
   deleteUser,
   getAllUsers,
 } from "../controllers/auth/adminController.js";
+import {uploadUserPhoto} from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
-router.post("/register", registerUser);
+router.post("/register", uploadUserPhoto.single("photo"), registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.get("/user", protect, getUser);
-router.patch("/user", protect, updateUser);
+router.patch("/user", protect, uploadUserPhoto.single("photo"), updateUser);
 
 // Admin routes
 router.delete("/admin/users/:id", protect, adminMiddleware, deleteUser);
