@@ -8,29 +8,29 @@ import { createRoom, deleteRoom, getRoom, getRooms, updateRoom } from "../contro
 
 const router = express.Router();
 
-router.post("/create", protect, createExtraService);
-router.get("/", protect, getExtraServices);
-router.get("/:id", protect, getExtraService);
-router.patch("/:id", protect, updateExtraService);
-router.delete("/:id", protect, deleteExtraService);
+router.post("/extraservice/create", protect, createExtraService);
+router.get("/extraservices", protect, getExtraServices);
+router.get("/extraservice/:id", protect, getExtraService);
+router.patch("/extraservice/:id", protect, updateExtraService);
+router.delete("/extraservice/:id", protect, deleteExtraService);
 
-router.post("/create", protect, createTimeSlot);
-router.get("/", protect, getTimeSlots);
-router.get("/:id", protect, getTimeSlot);
-router.patch("/:id", protect, updateTimeSlot);
-router.delete("/:id", protect, deleteTimeSlot);
+router.post("/timeslot/create", protect, createTimeSlot);
+router.get("/timeslots", protect, getTimeSlots);
+router.get("/timeslot/:id", protect, getTimeSlot);
+router.patch("/timeslot/:id", protect, updateTimeSlot);
+router.delete("/timeslot/:id", protect, deleteTimeSlot);
 
-router.post("/create", protect, createRoomType);
-router.get("/", protect, getRoomTypes);
-router.get("/:id", protect, getRoomType);
-router.patch("/:id", protect, updateRoomType);
-router.delete("/:id", protect, deleteRoomType);
+router.post("/roomtype/create", protect, createRoomType);
+router.get("/roomtypes", protect, getRoomTypes);
+router.get("/roomtype/:id", protect, getRoomType);
+router.patch("/roomtype/:id", protect, updateRoomType);
+router.delete("/roomtype/:id", protect, deleteRoomType);
 
-router.post("/create", protect, uploadRoomImages.array("images", 10), createRoom);
-router.get("/", protect, getRooms);
-router.get("/:id", protect, getRoom);
-router.patch("/:id", protect, uploadRoomImages.array("images", 10), updateRoom);
-router.delete("/:id", protect, deleteRoom);
+router.post("/room/create", protect, uploadRoomImages.array("images", 10), createRoom);
+router.get("/rooms", protect, getRooms);
+router.get("/room/:id", protect, getRoom);
+router.patch("/room/:id", protect, uploadRoomImages.array("images", 10), updateRoom);
+router.delete("/room/:id", protect, deleteRoom);
 
 
 

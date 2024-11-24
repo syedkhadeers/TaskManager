@@ -22,7 +22,6 @@ const extraServiceSchema = new mongoose.Schema(
     },
     serviceType: {
       type: String,
-      required: [true, "Service type is required"],
       trim: true,
     },
     additionalInfo: {

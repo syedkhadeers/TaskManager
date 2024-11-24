@@ -6,12 +6,12 @@ export const createRoomType = asyncHandler(async (req, res) => {
     const { name, description, basePrice, maxOccupancy, timeSlotPricing } =
       req.body;
 
-    if (!name || !description || !basePrice || !maxOccupancy) {
+    if (!name || !description || !basePrice ) {
       return res
         .status(400)
         .json({
           message:
-            "Name, description, base price, and max occupancy are required",
+            "Name, description, and base price are required",
         });
     }
 

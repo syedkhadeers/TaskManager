@@ -9,7 +9,6 @@ const roomTypeSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
     },
     basePrice: {
       type: Number,
@@ -17,7 +16,7 @@ const roomTypeSchema = new mongoose.Schema(
     },
     maxOccupancy: {
       type: Number,
-      required: true,
+      min: [1, "Minimum occupancy is 1"],
     },
     timeSlotPricing: [
       {

@@ -3,16 +3,16 @@ import ExtraServiceModel from "../../models/rooms/ExtraServiceModel.js";
 
 export const createExtraService = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price } = req.body;
+    const { serviceName, description, price } = req.body;
 
-    if (!name || !description || !price) {
+    if (!serviceName || !description || !price) {
       return res
         .status(400)
-        .json({ message: "Name, description, and price are required" });
+        .json({ message: "serviceName, description, and price are required" });
     }
 
     const extraService = new ExtraServiceModel({
-      name,
+      serviceName,
       description,
       price,
     });
@@ -65,7 +65,7 @@ export const getExtraService = asyncHandler(async (req, res) => {
 export const updateExtraService = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, isActive } = req.body;
+    const { serviceName, description, price, isActive } = req.body;
 
     const extraService = await ExtraServiceModel.findById(id);
 
@@ -73,7 +73,7 @@ export const updateExtraService = asyncHandler(async (req, res) => {
       return res.status(404).json({ message: "Extra service not found" });
     }
 
-    extraService.name = name || extraService.name;
+    extraService.serviceName = serviceName || extraService.serviceName;
     extraService.description = description || extraService.description;
     extraService.price = price || extraService.price;
     extraService.isActive =

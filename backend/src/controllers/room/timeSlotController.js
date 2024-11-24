@@ -57,10 +57,6 @@ export const updateTimeSlot = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name, checkInTime, checkOutTime, priceMultiplier } = req.body;
 
-    if (!name || !checkInTime || !checkOutTime || !priceMultiplier) {
-      return res.status(400).json({ message: "Name, check-in time, check-out time, and price multiplier are required" });
-    }
-
     const timeSlot = await TimeSlotModel.findById(id);
 
     if (!timeSlot) {
@@ -90,7 +86,7 @@ export const deleteTimeSlot = asyncHandler(async (req, res) => {
       return res.status(404).json({ message: "Time slot not found" });
     }
 
-    await timeSlot.remove();
+    await TimeSlotModel.findByIdAndDelete(id);
 
     res.status(200).json({ message: "Time slot deleted successfully" });
   } catch (error) {

@@ -17,7 +17,6 @@ const timeSlotSchema = new mongoose.Schema(
     },
     priceMultiplier: {
       type: Number,
-      required: true,
       default: 1,
     },
     isActive: {
