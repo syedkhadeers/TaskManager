@@ -15,13 +15,11 @@ export const createRoom = asyncHandler(async (req, res) => {
       petsAllowed,
     } = req.body;
 
-    if (!roomNumber || !roomType || !floor || !allowedPeople) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Room number, room type, floor, and allowed people are required",
-        });
+    if (!roomNumber || !roomType || !floor ) {
+      return res.status(400).json({
+        message:
+          "Room number, room type,and floor are required",
+      });
     }
 
     let images = [];

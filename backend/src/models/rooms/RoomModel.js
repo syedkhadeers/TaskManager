@@ -37,7 +37,6 @@ const roomSchema = new mongoose.Schema(
     },
     allowedPeople: {
       type: Number,
-      required: true,
     },
     amenities: [
       {
