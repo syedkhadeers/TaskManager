@@ -9,6 +9,13 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import PrivateRoute from "./components/common/PrivateRoute";
+import { Toaster } from "react-hot-toast";
+import UsersPage from "./pages/UsersPage";
+import "primereact/resources/themes/saga-blue/theme.css"; // Choose a theme
+import "primereact/resources/primereact.min.css";
+import "primeicons/primeicons.css";
+
+
 
 const App = () => {
   return (
@@ -21,11 +28,38 @@ const App = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route
-                path="/dashboard"
-                element={<PrivateRoute element={<DashboardPage />} />}
-              />
+              <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
+              <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
             </Routes>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                success: {
+                  style: {
+                    background: "green",
+                    color: "white",
+                    fontWeight: "bold",
+                    timeout: 3000, // 3 seconds
+                  },
+                },
+                error: {
+                  style: {
+                    background: "red",
+                    color: "white",
+                    fontWeight: "bold",
+                    timeout: 3000, // 3 seconds
+                  },
+                },
+                warn: {
+                  style: {
+                    background: "orange",
+                    color: "white",
+                    fontWeight: "bold",
+                    timeout: 3000, // 3 seconds
+                  },
+                },
+              }}
+            />
           </Router>
         </ThemeProvider>
       </AuthProvider>

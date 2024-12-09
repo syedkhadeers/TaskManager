@@ -1,10 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaRocket, FaChartLine, FaUsers, FaLightbulb } from "react-icons/fa";
 import ThemeToggle from "../components/common/ThemeToggle"; // Import the new component
 import InitialNavbar from "../components/common/InitialNavbar"; 
+import { useAuth } from "../hooks/useAuth"; // Custom hook to get auth state
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const LandingPage = () => {
+
+   const { isAuthenticated } = useAuth();
+   const navigate = useNavigate();
+
+   useEffect(() => {
+     if (isAuthenticated) {
+       toast.success("You have already logged in");
+       navigate("/dashboard");
+     }
+   }, [isAuthenticated, navigate]);
+
   return (
     <div className="w-full min-h-screen bg-background-light dark:bg-background-dark">
       {/* Navbar */}

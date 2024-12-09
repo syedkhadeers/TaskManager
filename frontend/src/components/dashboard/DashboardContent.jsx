@@ -1,22 +1,30 @@
 import React from "react";
+import { FaUsers, FaUserFriends, FaBuilding, FaWarehouse } from "react-icons/fa";
 
 const DashboardContent = () => {
+  const cardData = [
+    { title: "Customers", icon: <FaUsers />, color: "bg-blue-500" },
+    { title: "Suppliers", icon: <FaUserFriends />, color: "bg-green-500" },
+    { title: "Rooms", icon: <FaBuilding />, color: "bg-red-500" },
+    { title: "Inventory", icon: <FaWarehouse />, color: "bg-yellow-500" },
+    { title: "Sales", icon: <FaUsers />, color: "bg-purple-500" },
+    { title: "Reports", icon: <FaUserFriends />, color: "bg-pink-500" },
+  ];
+
   return (
-    <div className="flex-1 px-2 sm:px-0">
-      <div className="flex justify-between items-center">
-        <h3 className="text-3xl font-extralight text-white/50">Groups</h3>
-        <div className="inline-flex items-center space-x-2">
-          {/* Add any additional controls here */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {cardData.map((card, index) => (
+        <div
+          key={index}
+          className={`p-4 rounded-lg shadow-md ${card.color} text-white transition-colors duration-300 flex items-center`}
+        >
+          <div className="mr-4 text-2xl">{card.icon}</div>
+          <div>
+            <h2 className="text-lg font-semibold">{card.title}</h2>
+            <p className="text-sm">Some content goes here.</p>
+          </div>
         </div>
-      </div>
-      <div className="mb-10 sm:mb-0 mt-10 grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {/* Ensure your group cards are responsive */}
-        <div className="bg-gray-700 p-4 rounded-lg">Group 1</div>
-        <div className="bg-gray-700 p-4 rounded-lg">Group 2</div>
-        <div className="bg-gray-700 p-4 rounded-lg">Group 3</div>
-        <div className="bg-gray-700 p-4 rounded-lg">Group 4</div>
-        {/* Add more group cards as needed */}
-      </div>
+      ))}
     </div>
   );
 };

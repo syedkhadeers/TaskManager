@@ -11,6 +11,7 @@ import {
   forgotPassword,
   resetPassword,
   changePassword,
+  updateOtherUser,
 } from "../controllers/auth/userController.js";
 import {
   adminMiddleware,
@@ -27,9 +28,10 @@ const router = express.Router();
 
 router.post("/register", uploadUserPhoto.single("photo"), registerUser);
 router.post("/login", loginUser);
-router.post("/logout", logoutUser);
+router.post("/logout", protect, logoutUser);
 router.get("/user", protect, getUser);
 router.patch("/user", protect, uploadUserPhoto.single("photo"), updateUser);
+router.patch("/update-user/:id", protect, uploadUserPhoto.single("photo"), updateOtherUser);
 
 // Admin routes
 router.delete("/admin/users/:id", protect, adminMiddleware, deleteUser);

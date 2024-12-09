@@ -1,121 +1,84 @@
-// src/components/auth/Login.js
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth";
+import toast from "react-hot-toast";
 
 const Login = () => {
+  const { handleLogin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null); // State for error message
-  const [loading, setLoading] = useState(false); // State for loading
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true); // Set loading to true when the request starts
-    setError(null); // Reset error state
+    setLoading(true);
+    setError(null);
 
     try {
-      const response = await loginUser({ email, password });
-      if (response) {
-        navigate("/dashboard"); // Redirect to dashboard on success
-      }
+      await handleLogin({ email, password });
+      toast.success("Login successful!");
+      navigate("/dashboard");
     } catch (error) {
-      setError(error.message); // Set error message from the caught error
+      toast.error(error.message || "Login failed. Please try again.");
     } finally {
-      setLoading(false); // Set loading to false when the request ends
+      setLoading(false);
     }
   };
 
   return (
-    <section className="py-4 md:py-8 bg-background-light dark:bg-background-dark">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-        <div className="w-full bg-white rounded-lg shadow dark:bg-neutral-900 md:mt-0 sm:max-w-md xl:p-0 text-text-light dark:text-text-dark border dark:border-neutral-700">
-          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-            <h2 className="text-md font-bold leading-tight tracking-tight md:text-2xl text-center">
-              Sign In Access
-            </h2>
-            <p className="text-center text-neutral-600 dark:text-neutral-300">
-              You must become a member to Login and access the entire site
-            </p>
-
-            {error && (
-              <div className="text-red-500 text-center">
-                {error} {/* Display error message */}
-              </div>
-            )}
-
-            <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block mb-2 text-sm font-medium text-neutral-900 dark:text-white"
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="login"
-                  id="email"
-                  className="bg-neutral-50 border border-neutral-300 text-neutral-900 sm:text-sm rounded-lg focus:ring-primary-light focus:border-primary-light block w-full p-2.5 dark:bg-neutral-700 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white dark:focus:ring-primary-light dark:focus:border-primary-light"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block mb-2 text-sm font-medium text-neutral-900 dark:text-white"
-                >
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="••••••••"
-                  className="bg-neutral-50 border border-neutral-300 text-neutral-900 sm:text-sm rounded-lg focus:ring-primary-light focus:border-primary-light block w-full p-2.5 dark:bg-neutral-700 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white dark:focus:ring-primary-light dark:focus:border-primary-light"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium text-secondary-dark hover:underline dark:text-secondary-dark"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <button
-                type="submit"
-                className={`text-white bg-primary-dark hover:bg-primary-dark py-1.5 px-4 rounded w-full transition duration-300 ${
-                  loading ? "opacity-50 cursor-not-allowed " : ""
-                }`}
-                disabled={loading} // Disable button while loading
-              >
-                {loading ? "Signing In..." : "SIGN IN"}{" "}
-                {/* Show loading text */}
-              </button>
-
-              <p className="text-sm text-center text-neutral-500 dark:text-neutral-400">
-                Not a member yet?{" "}
-                <Link
-                  to="/register"
-                  className="font-medium text-secondary-dark hover:underline dark:text-secondary-dark"
-                >
-                  Sign up
-                </Link>
-              </p>
-            </form>
-          </div>
+    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg space-y-6">
+      <h2 className="text-2xl font-bold text-center text-gray-800">Sign In</h2>
+      {error && <div className="text-red-500 text-center">{error}</div>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <input
+            type="email"
+            className="w-full p-3 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </div>
+        <div>
+          <input
+            type="password"
+            className="w-full p-3 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex justify-between items-center">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-indigo-600 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
+        <button
+          type="submit"
+          className={`w-full p-3 bg-indigo-600 text-white rounded-md ${
+            loading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={loading}
+        >
+          {loading ? "Loading..." : "Sign In"}
+        </button>
+      </form>
+      <div className="text-center">
+        <p className="text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-indigo-600 hover:underline">
+            Sign Up
+          </Link>
+        </p>
       </div>
-    </section>
+    </div>
   );
 };
 

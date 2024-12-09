@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { forgotPassword } from "../../services/authService.js";
+import { forgotPassword } from "../../services/userService.js";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
