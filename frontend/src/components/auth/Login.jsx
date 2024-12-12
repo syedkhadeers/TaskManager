@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
+import { AiOutlineMail } from "react-icons/ai";
+import { RiLockPasswordLine } from "react-icons/ri";
+import { FiUser } from "react-icons/fi";
 
 const Login = () => {
   const { handleLogin } = useAuth();
@@ -10,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { isDarkMode } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,55 +32,69 @@ const Login = () => {
   };
 
   return (
-    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg space-y-6">
-      <h2 className="text-2xl font-bold text-center text-gray-800">Sign In</h2>
-      {error && <div className="text-red-500 text-center">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <input
-            type="email"
-            className="w-full p-3 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    <div className="flex items-center justify-center ">
+      <div className="max-w-md w-full p-8">
+        <div className="flex justify-center mb-6">
+          <FiUser className="text-9xl text-primary-dark dark:text-primary-light rounded-full p-2 border-2 border-light dark:border-dark" />
         </div>
-        <div>
-          <input
-            type="password"
-            className="w-full p-3 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <div className="flex justify-between items-center">
-          <Link
-            to="/forgot-password"
-            className="text-sm text-indigo-600 hover:underline"
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-200 mb-6">
+          Welcome Back
+        </h2>
+        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type="email"
+              className="w-full p-3 pl-12 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <AiOutlineMail className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="relative">
+            <input
+              type="password"
+              className="w-full p-3 pl-12 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <RiLockPasswordLine className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="flex justify-between items-center text-sm ">
+            <Link
+              to="/forgot-password"
+              className="text-gray-800 dark:text-gray-200 underline underline-offset-8 "
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <button
+            type="submit"
+            className={`${
+              isDarkMode
+                ? "px-3 py-3 w-full text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-800"
+                : "px-3 py-3 w-full text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
+            }`}
+            disabled={loading}
           >
-            Forgot password?
-          </Link>
+            {loading ? "Loading..." : "Sign In"}
+          </button>
+        </form>
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-800 dark:text-gray-200">
+            Don’t have an account?{" "}
+            <Link
+              to="/register"
+              className="text-primary-light dark:text-primary-dark font-bold underline underline-offset-8"
+            >
+              Sign Up
+            </Link>
+          </p>
         </div>
-        <button
-          type="submit"
-          className={`w-full p-3 bg-indigo-600 text-white rounded-md ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Sign In"}
-        </button>
-      </form>
-      <div className="text-center">
-        <p className="text-sm text-gray-600">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-indigo-600 hover:underline">
-            Sign Up
-          </Link>
-        </p>
       </div>
     </div>
   );

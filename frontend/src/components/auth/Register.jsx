@@ -1,7 +1,9 @@
-import React,  { useState } from "react";
+import React, { useState } from "react";
 import { registerUser } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
-import { FiUser, FiMail, FiLock } from "react-icons/fi";
+import { AiOutlineMail } from "react-icons/ai";
+import { RiLockPasswordLine } from "react-icons/ri";
+import { FiUser, FiUserPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
 const Register = () => {
@@ -20,63 +22,73 @@ const Register = () => {
   };
 
   return (
-    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg space-y-6">
-      <h2 className="text-2xl font-bold text-center text-gray-800">Register</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center border-2 p-2 rounded-md focus-within:border-indigo-500">
-          <FiUser className="text-gray-500" />
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-2 outline-none"
-            required
-          />
+    <div className="flex items-center justify-center">
+      <div className="max-w-md w-full p-8">
+        <div className="flex justify-center mb-6">
+          <FiUserPlus className="text-9xl text-primary-dark dark:text-primary-light rounded-full p-2 border-2 border-light dark:border-dark" />
         </div>
-        <div className="flex items-center border-2 p-2 rounded-md focus-within:border-indigo-500">
-          <FiMail className="text-gray-500" />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 outline-none"
-            required
-          />
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-200 mb-6">
+          Create an Account
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type="text"
+              className="w-full p-3 pl-12 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <FiUser className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="relative">
+            <input
+              type="email"
+              className="w-full p-3 pl-12 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <AiOutlineMail className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="relative">
+            <input
+              type="password"
+              className="w-full p-3 pl-12 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <RiLockPasswordLine className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="relative">
+            <input
+              type="file"
+              className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              onChange={(e) => setPhoto(e.target.files[0])}
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-3 py-3 w-full text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
+          >
+            Register
+          </button>
+        </form>
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-800 dark:text-gray-200">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-primary-light dark:text-primary-dark font-bold underline underline-offset-8"
+            >
+              Sign In
+            </Link>
+          </p>
         </div>
-        <div className="flex items-center border-2 p-2 rounded-md focus-within:border-indigo-500">
-          <FiLock className="text-gray-500" />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-2 outline-none"
-            required
-          />
-        </div>
-        <div className="border-2 p-2 rounded-md focus-within:border-indigo-500">
-          <input
-            type="file"
-            onChange={(e) => setPhoto(e.target.files[0])}
-            className="w-full p-2 outline-none"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700 transition"
-        >
-          Register
-        </button>
-      </form>
-      <div className="text-center">
-        <p className="text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link to="/login" className="text-indigo-600 hover:underline">
-            Login
-          </Link>
-        </p>
       </div>
     </div>
   );

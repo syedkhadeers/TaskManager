@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaRocket, FaChartLine, FaUsers, FaLightbulb } from "react-icons/fa";
 import ThemeToggle from "../components/common/ThemeToggle"; // Import the new component
-import InitialNavbar from "../components/common/InitialNavbar"; 
+import Navbar from "../components/layout/Navbar";
 import { useAuth } from "../hooks/useAuth"; // Custom hook to get auth state
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -22,7 +22,7 @@ const LandingPage = () => {
   return (
     <div className="w-full min-h-screen bg-background-light dark:bg-background-dark">
       {/* Navbar */}
-      <InitialNavbar />
+      <Navbar />
 
       {/* Hero Section */}
       <header className="relative w-full min-h-screen flex items-center justify-center pt-16">
@@ -40,6 +40,7 @@ const LandingPage = () => {
                 to="/register"
                 className="px-6 py-3 bg-secondary-light text-white rounded-md hover:bg-secondary-dark transition duration-300 flex items-center"
               >
+                
                 <FaRocket className="mr-2" /> Get Started
               </Link>
               <Link

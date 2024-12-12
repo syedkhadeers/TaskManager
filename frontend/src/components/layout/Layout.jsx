@@ -2,36 +2,61 @@ import React, { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
-import Footer from "./Footer";
-import "primereact/resources/themes/saga-blue/theme.css"; // Choose a theme
-import "primereact/resources/primereact.min.css";
-import "primeicons/primeicons.css";
+import "../../App.css";
 
 const Layout = ({ children }) => {
   const { isDarkMode } = useContext(ThemeContext);
 
   return (
     <div
-      className={`min-h-screen flex flex-col ${
-        isDarkMode ? "dark" : ""
-      } bg-background-light dark:bg-background-dark text-light dark:text-dark transition-all duration-300`}
+      className="flex flex-col h-screen bg-primary-50 p-10"
+      style={{
+        backgroundImage: 'url("/main_bg.jpg")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
-      {/* Navbar at the top */}
-      <Navbar />
-
-      {/* Main content area */}
-      <div className="flex flex-1 mt-20">
-        {/* Sidebar taking 20% of the width */}
-        <div className="w-1/5 md:w-1/6 h-full">
+      <div
+        className="flex justify-between justify-items-center p-4 w-full h-full"
+        style={{
+          background: isDarkMode
+            ? "rgba(103, 94, 94, 0.46)"
+            : "rgba(255, 255, 255, 0.36)",
+          borderRadius: "16px",
+          boxShadow: "0 4px 30px rgba(0, 0, 0, 0.6)",
+          backdropFilter: "blur(9px)",
+          WebkitBackdropFilter: "blur(9px)",
+          border: isDarkMode
+            ? "3px solid rgba(103, 94, 94, 1)"
+            : "3px solid rgba(255, 255, 255, 1)",
+        }}
+      >
+        <aside
+          className={`bg-neutral-100 dark:bg-neutral-800 shadow-lg transition-all duration-300 h-full w-1/6 left-5 overflow-y-auto p-4 rounded-lg border ${
+            isDarkMode ? "border-neutral-800" : "border-neutral-100"
+          }`}
+        >
           <Sidebar />
+        </aside>
+
+        <div className="w-10/12 ml-5 h-full">
+          <header className="w-12/12" style={{height: "8%"}}>
+            <Navbar />
+          </header>
+
+          <main
+            className={`w-12/12 fixed overflow-y-auto p-6 h-full rounded-lg`}
+            style={{
+              width: "81%",
+              height: "89%",
+              scrollbarWidth: "thin",
+            }}
+          >
+            {children}
+          </main>
         </div>
-
-        {/* Main content (children) taking the remaining 80% */}
-        <main className="flex-grow p-6 lg:p-8">{children}</main>
       </div>
-
-      {/* Footer at the bottom */}
-      <Footer />
     </div>
   );
 };

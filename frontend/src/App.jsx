@@ -11,15 +11,14 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import PrivateRoute from "./components/common/PrivateRoute";
 import { Toaster } from "react-hot-toast";
 import UsersPage from "./pages/UsersPage";
-import "primereact/resources/themes/saga-blue/theme.css"; // Choose a theme
-import "primereact/resources/primereact.min.css";
-import "primeicons/primeicons.css";
+import AddUsersPage from "./pages/AddUsersPage";
+
 
 
 
 const App = () => {
   return (
-    <div className="w-full min-h-screen">
+    <div className="w-full min-h-screen ">
       <AuthProvider>
         <ThemeProvider>
           <Router>
@@ -29,6 +28,8 @@ const App = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
+              <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
+              <Route path="/users/add" element={<PrivateRoute element={<AddUsersPage />} />} />
               <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
             </Routes>
             <Toaster
@@ -68,3 +69,6 @@ const App = () => {
 };
 
 export default App;
+
+
+// #850481  #FF005C  

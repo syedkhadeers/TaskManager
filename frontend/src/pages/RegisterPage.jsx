@@ -3,7 +3,8 @@ import Register from "../components/auth/Register";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import InitialNavbar from "../components/common/InitialNavbar";
+import LayoutAuth from "../components/layout/LayoutAuth";
+
 
 const RegisterPage = () => {
   const { isAuthenticated } = useAuth();
@@ -17,12 +18,13 @@ const RegisterPage = () => {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="bg-gradient-to-r from-purple-500 to-blue-500 min-h-screen flex flex-col">
-      <InitialNavbar />
-      <div className="flex items-center justify-center flex-grow py-8 px-6">
-        <Register />
+    <LayoutAuth>
+      <div className="flex items-center justify-center h-full w-full">
+        <div className="w-full max-w-md p-6   ">
+          <Register />
+        </div>
       </div>
-    </div>
+    </LayoutAuth>
   );
 };
 

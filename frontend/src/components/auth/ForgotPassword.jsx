@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { forgotPassword } from "../../services/userService.js";
+import { AiOutlineMail } from "react-icons/ai";
+import { Link } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -11,21 +13,45 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md">
-        <h2 className="text-xl font-bold mb-4">Forgot Password</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 mb-4 w-full"
-          required
-        />
-        <button type="submit" className="bg-blue-500 text-white p-2 w-full">
-          Send Reset Link
-        </button>
-      </form>
+    <div className="flex items-center justify-center">
+      <div className="max-w-md w-full p-8">
+        <div className="flex justify-center mb-6">
+          <AiOutlineMail className="text-9xl text-primary-dark dark:text-primary-light rounded-full p-2 border-2 border-light dark:border-dark" />
+        </div>
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-200 mb-6">
+          Forgot Password
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type="email"
+              className="w-full p-3 pl-12 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-dark dark:focus:ring-primary-light"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <AiOutlineMail className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <button
+            type="submit"
+            className="px-3 py-3 w-full text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
+          >
+            Send Reset Link
+          </button>
+        </form>
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-800 dark:text-gray-200">
+            Remembered your password?{" "}
+            <Link
+              to="/login"
+              className="text-primary-light dark:text-primary-dark font-bold underline underline-offset-8"
+            >
+              Sign In
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

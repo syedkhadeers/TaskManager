@@ -1,63 +1,4 @@
-// import React, { useEffect, useState } from "react";
-// import { DataTable } from "primereact/datatable";
-// import { Column } from "primereact/column";
-// import { api } from "../../utils/api"; // Ensure correct import path
-// import "primereact/resources/themes/saga-blue/theme.css"; // Choose a theme
-// import "primereact/resources/primereact.min.css";
-// import "primeicons/primeicons.css";
-
-// const UsersContent = () => {
-//   const [users, setUsers] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-//   useEffect(() => {
-//     fetchUsers();
-//   }, []);
-
-//   const fetchUsers = async () => {
-//     setLoading(true);
-//     try {
-//       const response = await api.get("/users");
-//       const usersData = response.data.users || response.data || [];
-//       setUsers(usersData);
-//     } catch (err) {
-//       setError("Error fetching users");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   if (loading) return <div>Loading...</div>;
-//   if (error) return <div>{error}</div>;
-
-//   return (
-//     <div>
-//       <h2>User List</h2>
-//       {users.length === 0 ? (
-//         <p>No users found</p>
-//       ) : (
-//         <DataTable value={users} paginator rows={10}>
-//           <Column field="name" header="Name" />
-//           <Column field="email" header="Email" />
-//           <Column field="role" header="Role" />
-//           <Column
-//             field="isVerified"
-//             header="Verified"
-//             body={(rowData) => (rowData.isVerified ? "Yes" : "No")}
-//           />
-//         </DataTable>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default UsersContent;
-
-
-// ================================================
-
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   useTable,
   useGlobalFilter,
@@ -74,7 +15,7 @@ import {
   FaSortDown,
 } from "react-icons/fa";
 import { Listbox, Transition } from "@headlessui/react";
-import axios from "axios";
+import { getUsers } from "../../services/userService";
 
 // Avatar Component
 const Avatar = ({ src, alt = "avatar" }) => (
@@ -180,6 +121,7 @@ const SelectMenu = ({ value, setValue, options, className = "", disabled }) => {
                         selected ? "font-medium" : "font-normal"
                       }`}
                     >
+                      {" "}
                       {option.caption}
                     </span>
                     {selected && (
@@ -198,6 +140,75 @@ const SelectMenu = ({ value, setValue, options, className = "", disabled }) => {
   );
 };
 
+// PaginationNav Component
+const PaginationNav = ({
+  gotoPage,
+  canPreviousPage,
+  canNextPage,
+  pageCount,
+  pageIndex,
+}) => {
+  const renderPageLinks = useCallback(() => {
+    if (pageCount === 0) return null;
+
+    const visiblePageButtonCount = 3;
+    let numberOfButtons = Math.min(pageCount, visiblePageButtonCount);
+    const pageIndices = [pageIndex];
+    numberOfButtons--;
+
+    Array.from({ length: numberOfButtons }).forEach((_item, index) => {
+      const pageBefore = pageIndices[0] - 1;
+      const pageAfter = pageIndices[pageIndices.length - 1] + 1;
+
+      if (
+        pageBefore >= 0 &&
+        (index < numberOfButtons / 2 || pageAfter > pageCount - 1)
+      ) {
+        pageIndices.unshift(pageBefore);
+      } else {
+        pageIndices.push(pageAfter);
+      }
+    });
+
+    return pageIndices.map((page) => (
+      <li key={page}>
+        <button
+          onClick={() => gotoPage(page)}
+          className={`px-3 py-2 rounded-lg ${
+            pageIndex === page ? "bg-red-200" : "bg-white"
+          }`}
+        >
+          {page + 1}
+        </button>
+      </li>
+    ));
+  }, [pageCount, pageIndex, gotoPage]);
+
+  return (
+    <ul className="flex gap-2">
+      <li>
+        <button
+          onClick={() => gotoPage(0)}
+          disabled={!canPreviousPage}
+          className="p-2 disabled:bg-gray-300"
+        >
+          <FaChevronLeft />
+        </button>
+      </li>
+      {renderPageLinks()}
+      <li>
+        <button
+          onClick={() => gotoPage(pageCount - 1)}
+          disabled={!canNextPage}
+          className="p-2 disabled:bg-gray-300"
+        >
+          <FaChevronRight />
+        </button>
+      </li>
+    </ul>
+  );
+};
+
 // TableComponent
 const TableComponent = ({
   getTableProps,
@@ -209,12 +220,15 @@ const TableComponent = ({
   <div className="w-full min-w-[30rem] p-4 bg-white rounded-xl shadow-sm">
     <table {...getTableProps()}>
       <thead>
-        {headerGroups.map((headerGroup) => (
-          <tr {...headerGroup.getHeaderGroupProps()} key={headerGroup.id}>
+        {headerGroups.map((headerGroup, headerGroupIndex) => (
+          <tr
+            key={`header-group-${headerGroupIndex}`}
+            {...headerGroup.getHeaderGroupProps()}
+          >
             {headerGroup.headers.map((column) => (
               <th
+                key={`header-${column.id}`}
                 {...column.getHeaderProps(column.getSortByToggleProps())}
-                key={column.id} // Add a key here
                 className="px-3 text-start text-xs font-light uppercase cursor-pointer"
                 style={{ width: column.width }}
               >
@@ -243,32 +257,32 @@ const TableComponent = ({
         ))}
       </thead>
       <tbody {...getTableBodyProps()}>
-  {rows.map((row) => {
-    prepareRow(row);
-    return (
-      <tr {...row.getRowProps()} key={row.id}> {/* Key added here */}
-        {row.cells.map((cell) => (
-          <td
-            {...cell.getCellProps()}
-            key={cell.column.id} // Key added here
-            className="p-3 text-sm font-normal text-gray-700 first:rounded-l-lg last:rounded-r-lg"
-          >
-            {cell.render("Cell")}
-          </td>
-        ))}
-      </tr>
-    );
-  })}
-</tbody>
-
+        {rows.map((row, rowIndex) => {
+          prepareRow(row);
+          return (
+            <tr key={`row-${rowIndex}`} {...row.getRowProps()}>
+              {row.cells.map((cell) => (
+                <td
+                  key={`cell-${cell.column.id}-${cell.row.index}`}
+                  {...cell.getCellProps()}
+                  className="p-3 text-sm font-normal text-gray-700 first:rounded-l-lg last:rounded-r-lg"
+                >
+                  {cell.render("Cell")}
+                </td>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
     </table>
   </div>
 );
 
-
 // Main Table Component
 const Table = () => {
   const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -296,12 +310,21 @@ const Table = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get("/users");
-      const users = Array.isArray(response.data) ? response.data : [];
+      setIsLoading(true);
+      const response = await getUsers();
+      const users = Array.isArray(response)
+        ? response
+        : Array.isArray(response.users)
+        ? response.users
+        : [];
       setData(users);
+      setError(null);
     } catch (error) {
       console.error("Error fetching users:", error);
+      setError(error.message || "Failed to fetch users");
       setData([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -334,6 +357,14 @@ const Table = () => {
     usePagination
   );
 
+  if (isLoading) {
+    return <div>Loading users...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row justify-between gap-2">
@@ -353,18 +384,31 @@ const Table = () => {
           ]}
         />
       </div>
-      <TableComponent
-        getTableProps={getTableProps}
-        headerGroups={headerGroups}
-        getTableBodyProps={getTableBodyProps}
-        rows={rows}
-        prepareRow={prepareRow}
-      />
+      {data.length > 0 ? (
+        <TableComponent
+          getTableProps={getTableProps}
+          headerGroups={headerGroups}
+          getTableBodyProps={getTableBodyProps}
+          rows={rows}
+          prepareRow={prepareRow}
+        />
+      ) : (
+        <div>No users found</div>
+      )}
+      <div className="flex justify-center">
+        <PaginationNav
+          gotoPage={gotoPage}
+          canPreviousPage={canPreviousPage}
+          canNextPage={canNextPage}
+          pageCount={pageCount}
+          pageIndex={pageIndex}
+        />
+      </div>
     </div>
   );
 };
 
-
+// Main UsersContent Component
 const UsersContent = () => (
   <div className="flex flex-col overflow-auto py-4 sm:py-0">
     <Table />

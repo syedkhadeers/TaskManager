@@ -1,11 +1,30 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import ForgotPassword from "../components/auth/ForgotPassword";
+import LayoutAuth from "../components/layout/LayoutAuth";
 
 const ForgotPasswordPage = () => {
+
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      toast.success("You have already logged in");
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
   return (
-    <div>
-      <ForgotPassword />
-    </div>
+    <LayoutAuth>
+      <div className="flex items-center justify-center h-full w-full">
+        <div className="w-full max-w-md p-6   ">
+          <ForgotPassword />
+        </div>
+      </div>
+    </LayoutAuth>
   );
 };
 
