@@ -6,7 +6,7 @@ import {
   FaCog,
   FaSignOutAlt,
   FaUserPlus,
-  FaRegUser,
+  FaRegUser ,
   FaStore,
   FaChevronDown,
   FaChevronRight,
@@ -21,8 +21,9 @@ const Sidebar = () => {
   const { user, handleLogout } = useAuth();
   const navigate = useNavigate();
 
-  const toggleMenu = (menuName) =>
+  const toggleMenu = (menuName) => {
     setOpenMenus((prev) => ({ ...prev, [menuName]: !prev[menuName] }));
+  };
 
   const onLogout = async () => {
     try {
@@ -59,11 +60,12 @@ const Sidebar = () => {
     </div>
   );
 
-  const Submenu = ({ isOpen, children }) =>
-    isOpen && <div className="ml-6 mt-2 space-y-2">{children}</div>;
+  const Submenu = ({ isOpen, children }) => (
+    isOpen && <div className="ml-6 mt-2 space-y-2">{children}</div>
+  );
 
-  return (    
-    <div className={`flex flex-col h-full `}>
+  return (
+    <div className={`flex flex-col h-full`}>
       {/* Logo Section */}
       <div className="flex items-center justify-center p-5 border-b dark:border-gray-700">
         <Link to="/">
@@ -80,27 +82,25 @@ const Sidebar = () => {
         className="flex-1 p-4 space-y-3 overflow-y-auto"
         style={{
           scrollbarWidth: "thin",
-          scrollbarColor: isDarkMode
-            ? "bg-gradient-dark"
-            : "bg-gradient-light",
+          scrollbarColor: isDarkMode ? "#333 #222" : "#ccc #eee",
         }}
       >
         <style>
           {`
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: ${isDarkMode ? "#333" : "#ccc"};
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: ${isDarkMode ? "#444" : "#ddd"};
-        }
-        ::-webkit-scrollbar-track {
-          background: ${isDarkMode ? "#222" : "#eee"};
-        }
-      `}
+            ::-webkit-scrollbar {
+              width: 8px;
+            }
+            ::-webkit-scrollbar-thumb {
+              background: ${isDarkMode ? "#333" : "#ccc"};
+              border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+              background: ${isDarkMode ? "#444" : "#ddd"};
+            }
+            ::-webkit-scrollbar-track {
+              background: ${isDarkMode ? "#222" : "#eee"};
+            }
+          `}
         </style>
 
         <MenuItem
@@ -118,12 +118,8 @@ const Sidebar = () => {
           onClick={() => toggleMenu("users")}
         />
         <Submenu isOpen={openMenus.users}>
-          <MenuItem
-            icon={<FaUserPlus />}
-            label="Add Users"
-            to="/users/add"
-          />
-          <MenuItem icon={<FaRegUser />} label="All Users" to="/users" />
+          <MenuItem icon={<FaUserPlus />} label="Add Users" to="/users/add" />
+          <MenuItem icon={<FaRegUser  />} label="All Users" to="/users" />
         </Submenu>
 
         {/* Customers Menu */}
@@ -141,7 +137,7 @@ const Sidebar = () => {
             to="/customers/add"
           />
           <MenuItem
-            icon={<FaRegUser />}
+            icon={<FaRegUser  />}
             label="All Customers"
             to="/customers"
           />
@@ -162,20 +158,42 @@ const Sidebar = () => {
             to="/suppliers/add"
           />
           <MenuItem
-            icon={<FaRegUser />}
+            icon={<FaRegUser  />}
             label="All Suppliers"
             to="/suppliers"
+          />
+        </Submenu>
+
+        {/* Form Elements */}
+        <MenuItem
+          icon={<FaStore />}
+          label="Form Elements"
+          hasSubmenu
+          isOpen={openMenus.formelements}
+          onClick={() => toggleMenu("formelements")}
+        />
+        <Submenu isOpen={openMenus.formelements}>
+          <MenuItem
+            icon={<FaUserPlus />}
+            label="Basics"
+            to="/form-elements/basic"
+          />
+          <MenuItem
+            icon={<FaRegUser  />}
+            label="Intermediate"
+            to="/form-elements/intermediate"
+          />
+          <MenuItem
+            icon={<FaRegUser  />}
+            label="Advanced"
+            to="/form-elements/advanced"
           />
         </Submenu>
 
         {/* Settings and Logout */}
         <div className="pt-4 border-t dark:border-gray-700">
           <MenuItem icon={<FaCog />} label="Settings" to="/settings" />
-          <MenuItem
-            icon={<FaSignOutAlt />}
-            label="Logout"
-            onClick={onLogout}
-          />
+          <MenuItem icon={<FaSignOutAlt />} label="Logout" onClick={onLogout} />
         </div>
       </nav>
 

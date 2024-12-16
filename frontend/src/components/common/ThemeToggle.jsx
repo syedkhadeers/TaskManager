@@ -12,8 +12,8 @@ const ThemeToggle = () => {
         onClick={toggleTheme}
         className={`${
           isDarkMode
-            ? "p-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-800"
-            : "p-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
+            ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-500 shadow-custom-dark"
+            : "px-3 py-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100 shadow-custom-light"
         }`}
       >
         {isDarkMode ? (

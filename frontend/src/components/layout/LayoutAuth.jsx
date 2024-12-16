@@ -31,14 +31,13 @@ const LayoutAuth = ({ children }) => {
             : "3px solid rgba(255, 255, 255, 1)",
         }}
       >
-        
         <div className="w-full ml-5">
           <header className="w-12/12">
             <Navbar />
           </header>
 
           <main
-            className={`w-12/12 fixed overflow-y-auto p-6`}
+            className={`w-12/12 w-12/12 relative overflow-y-auto rounded-lg p-6`}
             style={{
               width: "96%",
               height: "85%",
@@ -50,7 +49,6 @@ const LayoutAuth = ({ children }) => {
                 : "bg-gradient-dark",
             }}
           >
-            
             {children}
           </main>
         </div>

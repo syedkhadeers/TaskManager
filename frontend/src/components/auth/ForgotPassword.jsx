@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     <div className="flex items-center justify-center">
       <div className="max-w-md w-full p-8">
         <div className="flex justify-center mb-6">
-          <AiOutlineMail className="text-9xl text-primary-dark dark:text-primary-light rounded-full p-2 border-2 border-light dark:border-dark" />
+          <AiOutlineMail className="text-8xl text-primary-dark dark:text-primary-light rounded-full p-2 border-2 border-light dark:border-dark" />
         </div>
         <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-200 mb-6">
           Forgot Password

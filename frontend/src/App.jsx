@@ -12,6 +12,10 @@ import PrivateRoute from "./components/common/PrivateRoute";
 import { Toaster } from "react-hot-toast";
 import UsersPage from "./pages/UsersPage";
 import AddUsersPage from "./pages/AddUsersPage";
+import FormElements from "./pages/FormElements";
+import FormElementBasic from "./pages/forms/FormElementBasic";
+import FormElementIntermediate from "./pages/forms/FormElementIntermediate";
+import FormElementAdvanced from "./pages/forms/FormElementAdvanced";
 
 
 
@@ -31,6 +35,10 @@ const App = () => {
               <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
               <Route path="/users/add" element={<PrivateRoute element={<AddUsersPage />} />} />
               <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
+              <Route path="/form" element={<PrivateRoute element={<FormElements />} />} />
+              <Route path="/form-elements/basic" element={<PrivateRoute element={<FormElementBasic />} />} />
+              <Route path="/form-elements/intermediate" element={<PrivateRoute element={<FormElementIntermediate />} />} />
+              <Route path="/form-elements/advanced" element={<PrivateRoute element={<FormElementAdvanced />} />} />
             </Routes>
             <Toaster
               position="top-right"

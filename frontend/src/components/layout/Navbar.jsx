@@ -45,8 +45,8 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <form
               onSubmit={handleSearch}
-              className={`flex items-center bg-white dark:bg-gray-800 rounded-md shadow-md border ${
-                isDarkMode ? "border-neutral-800" : "border-neutral-100"
+              className={`flex items-center bg-white dark:bg-gray-700 rounded-md shadow-custom-light dark:shadow-custom-dark border ${
+                isDarkMode ? "border-neutral-500" : "border-neutral-100"
               }`}
             >
               <input
@@ -55,7 +55,7 @@ const Navbar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full py-2 pl-10 text-sm text-gray-700 dark:text-white rounded-l-md ${
-                  isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+                  isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
                 }`}
               />
               <button
@@ -120,7 +120,7 @@ const Navbar = () => {
             <button
               className={`${
                 isDarkMode
-                  ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-800"
+                  ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-500 shadow-custom-dark"
                   : "px-3 py-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
               }`}
               onClick={() => navigate("/settings")}
@@ -130,8 +130,8 @@ const Navbar = () => {
             <button
               className={`${
                 isDarkMode
-                  ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-800"
-                  : "px-3 py-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
+                  ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-500 shadow-custom-dark"
+                  : "px-3 py-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100 shadow-custom-light"
               }`}
               onClick={() => setShowLogoutModal(true)}
             >
