@@ -61,17 +61,18 @@ const CustomCropAspect = () => {
       const ctx = canvas.getContext("2d");
       const img = new Image();
       img.onload = () => {
-        const containerAspectRatio =
-          container.offsetWidth / container.offsetHeight;
-        const imageAspectRatio = img.width / img.height;
-        let newWidth, newHeight;
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        const imgAspectRatio = img.width / img.height;
+        const containerAspectRatio = containerWidth / containerHeight;
 
-        if (imageAspectRatio > containerAspectRatio) {
-          newWidth = container.offsetWidth;
-          newHeight = newWidth / imageAspectRatio;
+        let newWidth, newHeight;
+        if (imgAspectRatio > containerAspectRatio) {
+          newWidth = containerWidth;
+          newHeight = containerWidth / imgAspectRatio;
         } else {
-          newHeight = container.offsetHeight;
-          newWidth = newHeight * imageAspectRatio;
+          newHeight = containerHeight;
+          newWidth = containerHeight * imgAspectRatio;
         }
 
         canvas.width = newWidth;
@@ -268,7 +269,7 @@ const CustomCropAspect = () => {
             className={`py-2 px-4 flex flex-col items-center transition-all duration-300 ${
               activeTab === id
                 ? "border-b-2 border-blue-500 text-blue-500 scale-105"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-t-lg"
+                : "text-gray-500 hover:text-gray-700 hover:bg-white/10 rounded-t-lg"
             }`}
           >
             <Icon className="text-xl mb-1" />
@@ -288,7 +289,7 @@ const CustomCropAspect = () => {
               {["Freeform", "1:1", "4:3", "16:9"].map((aspect) => (
                 <button
                   key={aspect}
-                  className="px-3 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition-colors duration-300"
+                  className="px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-colors duration-300"
                 >
                   {aspect}
                 </button>
@@ -323,8 +324,8 @@ const CustomCropAspect = () => {
                 className={`p-2 border rounded transition-all duration-300 ${
                   selectedFilter === `${filter.toLowerCase()}(100%)` ||
                   (filter === "Original" && !selectedFilter)
-                    ? "border-blue-500 bg-blue-500 bg-opacity-20 scale-105"
-                    : "border-gray-300 hover:bg-white hover:bg-opacity-10"
+                    ? "border-blue-500 bg-blue-500/20 scale-105"
+                    : "border-white/20 hover:bg-white/10"
                 }`}
               >
                 {filter}
@@ -361,7 +362,7 @@ const CustomCropAspect = () => {
                     setValue(Number(e.target.value));
                     applyChanges();
                   }}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
             ))}
@@ -388,13 +389,13 @@ const CustomCropAspect = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      <div className="bg-gradient-to-br from-blue-400 to-indigo-600 p-6 rounded-lg shadow-lg">
+      <div className="bg-gradient-to-br from-blue-400/20 to-purple-500/20 p-6 rounded-lg shadow-lg backdrop-blur-sm">
         <label className="block text-2xl font-bold text-white mb-6">
           Advanced Image Editor
         </label>
         <div
           onClick={() => fileInputRef.current.click()}
-          className="border-2 border-dashed border-white border-opacity-50 p-8 rounded-lg text-center cursor-pointer hover:border-opacity-100 transition-all duration-300 bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg"
+          className="border-2 border-dashed border-white/30 p-8 rounded-lg text-center cursor-pointer hover:border-white/50 transition-all duration-300 bg-white/10 backdrop-filter backdrop-blur-sm"
         >
           <input
             type="file"
@@ -404,21 +405,21 @@ const CustomCropAspect = () => {
             className="hidden"
           />
           <div className="flex flex-col items-center">
-            <div className="bg-white bg-opacity-20 p-6 rounded-full mb-6 transform transition-transform duration-300 hover:scale-110">
+            <div className="bg-white/20 p-6 rounded-full mb-6 transform transition-transform duration-300 hover:scale-110">
               <BiCloudUpload className="text-6xl text-white" />
             </div>
             <p className="text-white font-semibold text-xl mb-2">Drag & Drop</p>
-            <p className="text-gray-100 text-base mb-4">
+            <p className="text-gray-200 text-base mb-4">
               or{" "}
-              <span className="text-white underline cursor-pointer hover:text-gray-200 transition-colors duration-300">
+              <span className="text-blue-300 underline cursor-pointer hover:text-blue-200 transition-colors duration-300">
                 browse
               </span>
             </p>
-            <p className="text-gray-200 text-sm">Supports: JPG, JPEG, PNG</p>
+            <p className="text-gray-300 text-sm">Supports: JPG, JPEG, PNG</p>
           </div>
           <div className="flex items-center justify-between mt-8 px-2">
-            <p className="text-gray-200 text-xs">Max Size: 2MB</p>
-            <p className="text-gray-200 text-xs flex items-center">
+            <p className="text-gray-300 text-xs">Max Size: 2MB</p>
+            <p className="text-gray-300 text-xs flex items-center">
               <GoShieldLock className="mr-1" /> Secured
             </p>
           </div>
@@ -433,7 +434,7 @@ const CustomCropAspect = () => {
             />
             <button
               onClick={() => setEditedImage(null)}
-              className="absolute top-2 right-2 bg-white bg-opacity-20 rounded-full p-2 hover:bg-opacity-30 transition-colors duration-300"
+              className="absolute top-2 right-2 bg-white/20 rounded-full p-2 hover:bg-white/30 transition-colors duration-300"
             >
               <AiOutlineClose className="text-white" />
             </button>
@@ -442,9 +443,9 @@ const CustomCropAspect = () => {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50 p-4">
-          <div className="bg-gradient-to-br from-blue-400 to-indigo-600 rounded-xl shadow-2xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col overflow-hidden backdrop-filter backdrop-blur-lg bg-opacity-80">
-            <div className="flex justify-between items-center p-6 border-b border-white border-opacity-20">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/75 backdrop-blur-sm z-50 p-4">
+          <div className="bg-gradient-to-br from-blue-600/30 to-purple-700/30 rounded-xl shadow-2xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col overflow-hidden backdrop-blur-md">
+            <div className="flex justify-between items-center p-6 border-b border-white/20">
               <h3 className="text-2xl font-bold text-white">Edit Image</h3>
               <button
                 onClick={() => setModalOpen(false)}
@@ -458,21 +459,21 @@ const CustomCropAspect = () => {
               <div className="flex flex-grow overflow-hidden">
                 <div
                   ref={containerRef}
-                  className="w-1/2 p-6 flex items-center justify-center bg-black bg-opacity-30 overflow-auto"
+                  className="w-1/2 p-6 flex items-center justify-center bg-black/20 overflow-auto"
                 >
                   <canvas
                     ref={canvasRef}
-                    className="max-w-full max-h-full rounded-lg"
+                    className="max-w-full max-h-full shadow-lg rounded-lg"
                     onMouseDown={handleCropStart}
                     onMouseMove={handleCropMove}
                     onMouseUp={handleCropEnd}
                     onMouseLeave={handleCropEnd}
                   />
                 </div>
-                <div className="w-1/2 p-6 border-l border-white border-opacity-20 overflow-y-auto flex flex-col bg-black bg-opacity-30">
+                <div className="w-1/2 p-6 border-l border-white/20 overflow-y-auto flex flex-col bg-white/5">
                   <div className="mb-6">
                     {renderEditTabs()}
-                    <div className="mt-4 bg-white bg-opacity-10 p-4 rounded-lg">
+                    <div className="mt-4 bg-white/10 p-4 rounded-lg">
                       {renderTabContent()}
                     </div>
                   </div>
@@ -481,7 +482,7 @@ const CustomCropAspect = () => {
                       Preview
                     </h4>
                     <div
-                      className="border border-white border-opacity-20 rounded-lg overflow-hidden"
+                      className="border border-white/20 rounded-lg overflow-hidden shadow-md"
                       style={{ height: "300px" }}
                     >
                       <canvas
@@ -496,14 +497,14 @@ const CustomCropAspect = () => {
               </div>
             </div>
 
-            <div className="flex justify-between p-6 border-t border-white border-opacity-20 bg-black bg-opacity-30">
+            <div className="flex justify-between p-6 border-t border-white/20 bg-white/5">
               <div className="space-x-2">
                 <button
                   onClick={() => {
                     setZoomLevel((prev) => Math.max(0.1, prev - 0.1));
                     applyChanges();
                   }}
-                  className="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-colors duration-300"
+                  className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors duration-300"
                 >
                   <AiOutlineZoomOut className="text-xl text-white" />
                 </button>
@@ -512,7 +513,7 @@ const CustomCropAspect = () => {
                     setZoomLevel((prev) => Math.min(3, prev + 0.1));
                     applyChanges();
                   }}
-                  className="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-colors duration-300"
+                  className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors duration-300"
                 >
                   <AiOutlineZoomIn className="text-xl text-white" />
                 </button>
@@ -521,7 +522,7 @@ const CustomCropAspect = () => {
                     setRotation((prev) => (prev - 90 + 360) % 360);
                     applyChanges();
                   }}
-                  className="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-colors duration-300"
+                  className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors duration-300"
                 >
                   <AiOutlineRotateLeft className="text-xl text-white" />
                 </button>
@@ -530,7 +531,7 @@ const CustomCropAspect = () => {
                     setRotation((prev) => (prev + 90) % 360);
                     applyChanges();
                   }}
-                  className="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-colors duration-300"
+                  className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors duration-300"
                 >
                   <AiOutlineRotateRight className="text-xl text-white" />
                 </button>
@@ -538,13 +539,13 @@ const CustomCropAspect = () => {
               <div className="space-x-4">
                 <button
                   onClick={resetChanges}
-                  className="px-6 py-2 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-colors duration-300"
+                  className="px-6 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors duration-300"
                 >
                   <FaUndo className="inline mr-2" /> Reset
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
                 >
                   <FaSave className="inline mr-2" /> Save
                 </button>
