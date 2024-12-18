@@ -1,418 +1,503 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
-  useTable,
-  useGlobalFilter,
-  useSortBy,
-  usePagination,
-} from "react-table";
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  flexRender,
+} from "@tanstack/react-table";
 import {
-  FaSearch,
-  FaChevronDown,
-  FaCheck,
-  FaChevronLeft,
-  FaChevronRight,
-  FaSortUp,
-  FaSortDown,
-} from "react-icons/fa";
-import { Listbox, Transition } from "@headlessui/react";
+  SearchIcon,
+  DownloadIcon,
+  LayoutGridIcon,
+  MoreVerticalIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FileTextIcon,
+  PlusIcon,
+  UsersIcon,
+  UserCheckIcon,
+  ShieldIcon,
+} from "lucide-react";
+import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { getUsers } from "../../services/userService";
+import Avatar from "react-avatar";
+import Papa from "papaparse";
+import AddUsersContent from "./AddUsersContent";
+import EditUserModal from "../common/modal/EditUserModal";
+import { Menu, Transition } from "@headlessui/react";
 
-// Avatar Component
-const Avatar = ({ src, alt = "avatar" }) => (
-  <img src={src} alt={alt} className="w-8 h-8 rounded-full object-cover" />
-);
-
-// InputGroup Component
-const InputGroup = ({
-  label,
-  name,
-  value,
-  onChange,
-  type = "text",
-  decoration,
-  className = "",
-  inputClassName = "",
-  decorationClassName = "",
-  disabled,
-}) => (
-  <div
-    className={`flex flex-row-reverse items-stretch w-full rounded-xl overflow-hidden bg-white shadow-sm ${className}`}
-  >
-    <input
-      id={name}
-      name={name}
-      value={value}
-      type={type}
-      placeholder={label}
-      aria-label={label}
-      onChange={onChange}
-      className={`peer block w-full p-3 text-gray-600 focus:outline-none ${
-        disabled ? "bg-gray-200" : ""
-      } ${inputClassName}`}
-      disabled={disabled}
-    />
-    <div
-      className={`flex items-center pl-3 py-3 text-gray-600 ${
-        disabled ? "bg-gray-200" : ""
-      } ${decorationClassName}`}
-    >
-      {decoration}
-    </div>
-  </div>
-);
-
-// GlobalSearchFilter Component
-const GlobalSearchFilter = ({
-  globalFilter,
-  setGlobalFilter,
-  className = "",
-}) => (
-  <InputGroup
-    name="search"
-    value={globalFilter || ""}
-    onChange={(e) => setGlobalFilter(e.target.value)}
-    label="Search"
-    decoration={<FaSearch size="1rem" className="text-gray-400" />}
-    className={className}
-  />
-);
-
-// SelectMenu Component
-const SelectMenu = ({ value, setValue, options, className = "", disabled }) => {
-  const selectedOption = useMemo(
-    () => options.find((o) => o.id === value),
-    [options, value]
-  );
-
-  return (
-    <Listbox value={value} onChange={setValue} disabled={disabled}>
-      <div className={`relative w-full ${className}`}>
-        <Listbox.Button
-          className={`relative w-full rounded-xl py-3 pl-3 pr-10 text-base text-gray-700 shadow-sm ${
-            disabled ? "bg-gray-200 cursor-not-allowed" : "bg-white"
-          }`}
-        >
-          <span className="block truncate">{selectedOption.caption}</span>
-          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-            <FaChevronDown size="0.80rem" className="text-gray-400" />
-          </span>
-        </Listbox.Button>
-        <Transition
-          as={React.Fragment}
-          leave="transition ease-in duration-100"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white shadow-sm">
-            {options.map((option) => (
-              <Listbox.Option
-                key={option.id}
-                className={({ active }) =>
-                  `cursor-default select-none py-3 pl-10 pr-4 ${
-                    active ? "bg-red-100" : ""
-                  }`
-                }
-                value={option.id}
-              >
-                {({ selected }) => (
-                  <>
-                    <span
-                      className={`block truncate ${
-                        selected ? "font-medium" : "font-normal"
-                      }`}
-                    >
-                      {" "}
-                      {option.caption}
-                    </span>
-                    {selected && (
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-red-400">
-                        <FaCheck size="0.5rem" />
-                      </span>
-                    )}
-                  </>
-                )}
-              </Listbox.Option>
-            ))}
-          </Listbox.Options>
-        </Transition>
-      </div>
-    </Listbox>
-  );
-};
-
-// PaginationNav Component
-const PaginationNav = ({
-  gotoPage,
-  canPreviousPage,
-  canNextPage,
-  pageCount,
-  pageIndex,
-}) => {
-  const renderPageLinks = useCallback(() => {
-    if (pageCount === 0) return null;
-
-    const visiblePageButtonCount = 3;
-    let numberOfButtons = Math.min(pageCount, visiblePageButtonCount);
-    const pageIndices = [pageIndex];
-    numberOfButtons--;
-
-    Array.from({ length: numberOfButtons }).forEach((_item, index) => {
-      const pageBefore = pageIndices[0] - 1;
-      const pageAfter = pageIndices[pageIndices.length - 1] + 1;
-
-      if (
-        pageBefore >= 0 &&
-        (index < numberOfButtons / 2 || pageAfter > pageCount - 1)
-      ) {
-        pageIndices.unshift(pageBefore);
-      } else {
-        pageIndices.push(pageAfter);
-      }
-    });
-
-    return pageIndices.map((page) => (
-      <li key={page}>
-        <button
-          onClick={() => gotoPage(page)}
-          className={`px-3 py-2 rounded-lg ${
-            pageIndex === page ? "bg-red-200" : "bg-white"
-          }`}
-        >
-          {page + 1}
-        </button>
-      </li>
-    ));
-  }, [pageCount, pageIndex, gotoPage]);
-
-  return (
-    <ul className="flex gap-2">
-      <li>
-        <button
-          onClick={() => gotoPage(0)}
-          disabled={!canPreviousPage}
-          className="p-2 disabled:bg-gray-300"
-        >
-          <FaChevronLeft />
-        </button>
-      </li>
-      {renderPageLinks()}
-      <li>
-        <button
-          onClick={() => gotoPage(pageCount - 1)}
-          disabled={!canNextPage}
-          className="p-2 disabled:bg-gray-300"
-        >
-          <FaChevronRight />
-        </button>
-      </li>
-    </ul>
-  );
-};
-
-// TableComponent
-const TableComponent = ({
-  getTableProps,
-  headerGroups,
-  getTableBodyProps,
-  rows,
-  prepareRow,
-}) => (
-  <div className="w-full min-w-[30rem] p-4 bg-white rounded-xl shadow-sm">
-    <table {...getTableProps()}>
-      <thead>
-        {headerGroups.map((headerGroup, headerGroupIndex) => (
-          <tr
-            key={`header-group-${headerGroupIndex}`}
-            {...headerGroup.getHeaderGroupProps()}
-          >
-            {headerGroup.headers.map((column) => (
-              <th
-                key={`header-${column.id}`}
-                {...column.getHeaderProps(column.getSortByToggleProps())}
-                className="px-3 text-start text-xs font-light uppercase cursor-pointer"
-                style={{ width: column.width }}
-              >
-                <div className="flex gap-2 items-center">
-                  <span className="text-gray-600">
-                    {column.render("Header")}
-                  </span>
-                  <div className="flex flex-col">
-                    <FaSortUp
-                      className={`text-sm translate-y-1/2 ${
-                        column.isSorted && !column.isSortedDesc
-                          ? "text-red-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                    <FaSortDown
-                      className={`text-sm -translate-y-1/2 ${
-                        column.isSortedDesc ? "text-red-400" : "text-gray-300"
-                      }`}
-                    />
-                  </div>
-                </div>
-              </th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-      <tbody {...getTableBodyProps()}>
-        {rows.map((row, rowIndex) => {
-          prepareRow(row);
-          return (
-            <tr key={`row-${rowIndex}`} {...row.getRowProps()}>
-              {row.cells.map((cell) => (
-                <td
-                  key={`cell-${cell.column.id}-${cell.row.index}`}
-                  {...cell.getCellProps()}
-                  className="p-3 text-sm font-normal text-gray-700 first:rounded-l-lg last:rounded-r-lg"
-                >
-                  {cell.render("Cell")}
-                </td>
-              ))}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  </div>
-);
-
-// Main Table Component
-const Table = () => {
+const UsersContent = () => {
   const [data, setData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnVisibility, setColumnVisibility] = useState({});
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+  const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const dropdownRef = useRef(null);
+
+  // Fetch user data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getUsers();
+        setData(response || []);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setExportDropdownOpen(false);
+        setColumnsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const columns = useMemo(
     () => [
       {
-        Header: "Name",
-        accessor: "name",
-        width: "300px",
-        Cell: ({ row, value }) => (
-          <div className="flex gap-2 items-center">
-            <Avatar src={row.original.photo?.url} alt={`${value}'s Avatar`} />
-            <span>{value}</span>
+        accessorKey: "photo",
+        header: "Profile",
+        cell: ({ row }) => (
+          <div className="flex items-center">
+            <Avatar
+              name={row.original.name}
+              src={row.original.photo?.url}
+              size="40"
+              round
+              className="mr-3"
+            />
+            <div>
+              <div className="font-medium text-gray-900">
+                {row.original.name}
+              </div>
+              <div className="text-sm text-gray-500">{row.original.email}</div>
+            </div>
           </div>
         ),
       },
-      { Header: "Email", accessor: "email" },
-      { Header: "Role", accessor: "role" },
       {
-        Header: "Verified",
-        accessor: "isVerified",
-        Cell: ({ value }) => (value ? "Yes" : "No"),
+        accessorKey: "role",
+        header: "Role",
+        cell: ({ getValue }) => (
+          <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+            {getValue()}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "isVerified",
+        header: "Status",
+        cell: ({ getValue }) => (
+          <span
+            className={`px-3 py-1 text-xs font-medium rounded-full ${
+              getValue()
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {getValue() ? "Active" : "Inactive"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "mobile",
+        header: "Mobile",
+        cell: ({ getValue }) => getValue(),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created On",
+        cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
       },
     ],
     []
   );
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await getUsers();
-      const users = Array.isArray(response)
-        ? response
-        : Array.isArray(response.users)
-        ? response.users
-        : [];
-      setData(users);
-      setError(null);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setError(error.message || "Failed to fetch users");
-      setData([]);
-    } finally {
-      setIsLoading(false);
-    }
+  const table = useReactTable({
+    data,
+    columns,
+    state: { globalFilter, columnVisibility },
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    enableGlobalFilter: true,
+    enableSorting: true,
+  });
+
+  const exportToCSV = () => {
+    const csvData = Papa.unparse(
+      data.map((row) => ({
+        Name: row.name,
+        Email: row.email,
+        Role: row.role,
+        Status: row.isVerified ? "Active" : "Inactive",
+        Mobile: row.mobile,
+        CreatedOn: new Date(row.createdAt).toLocaleDateString(),
+      }))
+    );
+    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "users.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    autoTable(doc, {
+      head: [["Name", "Email", "Role", "Status", "Mobile", "Created On"]],
+      body: data.map((row) => [
+        row.name,
+        row.email,
+        row.role,
+        row.isVerified ? "Active" : "Inactive",
+        row.mobile,
+        new Date(row.createdAt).toLocaleDateString(),
+      ]),
+    });
+    doc.save("users.pdf");
+  };
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    prepareRow,
-    state,
-    setGlobalFilter,
-    page: rows,
-    canPreviousPage,
-    canNextPage,
-    pageCount,
-    gotoPage,
-    setPageSize,
-    state: { pageIndex, pageSize },
-  } = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageSize: 5 },
-    },
-    useGlobalFilter,
-    useSortBy,
-    usePagination
-  );
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setShowEditUserModal(true);
+  };
 
-  if (isLoading) {
-    return <div>Loading users...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const handleDeleteUser = (userId) => {
+    // Implement delete user logic here
+    console.log(`Deleting user with ID: ${userId}`);
+  };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row justify-between gap-2">
-        <GlobalSearchFilter
-          className="sm:w-64"
-          globalFilter={state.globalFilter}
-          setGlobalFilter={setGlobalFilter}
-        />
-        <SelectMenu
-          className="sm:w-44"
-          value={pageSize}
-          setValue={setPageSize}
-          options={[
-            { id: 5, caption: "5 items per page" },
-            { id: 10, caption: "10 items per page" },
-            { id: 20, caption: "20 items per page" },
-          ]}
-        />
+    <div className="container mx-auto px-4 py-8 bg-gray-50 min-h-screen">
+      {/* Stats section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+          <div className="bg-blue-100 p-3 rounded-full mr-4">
+            <UsersIcon className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700">Total Users</h3>
+            <p className="text-2xl font-bold text-gray-900">{data.length}</p>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+          <div className="bg-green-100 p-3 rounded-full mr-4">
+            <UserCheckIcon className="h-6 w-6 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700">
+              Active Users
+            </h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {data.filter((user) => user.isVerified).length}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
+          <div className="bg-purple-100 p-3 rounded-full mr-4">
+            <ShieldIcon className="h-6 w-6 text-purple-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700">Admin Users</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {data.filter((user) => user.role === "Admin").length}
+            </p>
+          </div>
+        </div>
       </div>
-      {data.length > 0 ? (
-        <TableComponent
-          getTableProps={getTableProps}
-          headerGroups={headerGroups}
-          getTableBodyProps={getTableBodyProps}
-          rows={rows}
-          prepareRow={prepareRow}
-        />
-      ) : (
-        <div>No users found</div>
+
+      <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <h2 className="text-2xl font-bold text-white">User Management</h2>
+            <div className="flex flex-wrap justify-center md:justify-end space-x-3 space-y-2 md:space-y-0">
+              {/* Add New User button */}
+              <button
+                onClick={() => setShowAddUserModal(true)}
+                className="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors flex items-center"
+              >
+                <PlusIcon className="mr-2" size={20} />
+                Add New User
+              </button>
+
+              {/* Search */}
+              <div className="relative flex-grow max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={globalFilter || ""}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+                <SearchIcon
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70"
+                  size={20}
+                />
+              </div>
+
+              {/* Actions Dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+                  className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
+                >
+                  <DownloadIcon className="text-white" size={20} />
+                </button>
+                {exportDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-10 overflow-hidden">
+                    <button
+                      onClick={exportToCSV}
+                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none"
+                    >
+                      <FileTextIcon className="mr-3 text-blue-500" size={18} />
+                      Export to CSV
+                    </button>
+                    <button
+                      onClick={exportToPDF}
+                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none"
+                    >
+                      <FileTextIcon className="mr-3 text-green-500" size={18} />
+                      Export to PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Columns Dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
+                  className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
+                >
+                  <LayoutGridIcon className="text-white" size={20} />
+                </button>
+                {columnsDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-10 overflow-hidden">
+                    {table.getAllLeafColumns().map((column) => (
+                      <label
+                        key={column.id}
+                        className="flex items-center px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={column.getIsVisible()}
+                          onChange={column.getToggleVisibilityHandler()}
+                          className="mr-3 rounded text-blue-500 focus:ring-blue-400"
+                        />
+                        <span className="text-sm text-gray-700">
+                          {column.id}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div
+                          className={`flex items-center ${
+                            header.column.getCanSort()
+                              ? "cursor-pointer select-none"
+                              : ""
+                          }`}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: <FaSortUp className="ml-2" />,
+                            desc: <FaSortDown className="ml-2" />,
+                          }[header.column.getIsSorted()] ??
+                            (header.column.getCanSort() ? (
+                              <FaSort className="ml-2" />
+                            ) : null)}
+                        </div>
+                      )}
+                    </th>
+                  ))}
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              ))}
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Menu as="div" className="relative inline-block text-left">
+                      <div>
+                        <Menu.Button className="text-gray-500 hover:text-blue-600 focus:outline-none">
+                          <MoreVerticalIcon size={20} />
+                        </Menu.Button>
+                      </div>
+                      <Transition
+                        as={React.Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute right-0 w-56 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          <div className="px-1 py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleEditUser(row.original)}
+                                  className={`${
+                                    active
+                                      ? "bg-blue-500 text-white"
+                                      : "text-gray-900"
+                                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                >
+                                  Edit User
+                                </button>
+                              )}
+                            </Menu.Item>
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteUser(row.original.id)
+                                  }
+                                  className={`${
+                                    active
+                                      ? "bg-red-500 text-white"
+                                      : "text-gray-900"
+                                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                >
+                                  Delete User
+                                </button>
+                              )}
+                            </Menu.Item>
+                          </div>
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex flex-col md:flex-row justify-between items-center mt-6 space-y-4 md:space-y-0 px-8 pb-6">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Show</span>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value));
+              }}
+              className="border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              {[10, 20, 30, 40, 50].map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </select>
+            <span className="text-sm text-gray-600">entries</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="px-3 py-1 rounded-md bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeftIcon size={20} />
+            </button>
+            <span className="text-sm text-gray-600">
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </span>
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="px-3 py-1 rounded-md bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRightIcon size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <AddUsersContent />
+            <button
+              onClick={() => setShowAddUserModal(false)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
-      <div className="flex justify-center">
-        <PaginationNav
-          gotoPage={gotoPage}
-          canPreviousPage={canPreviousPage}
-          canNextPage={canNextPage}
-          pageCount={pageCount}
-          pageIndex={pageIndex}
-        />
-      </div>
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        isOpen={showEditUserModal}
+        onClose={() => setShowEditUserModal(false)}
+        user={selectedUser}
+      />
     </div>
   );
 };
-
-// Main UsersContent Component
-const UsersContent = () => (
-  <div className="flex flex-col overflow-auto py-4 sm:py-0">
-    <Table />
-  </div>
-);
 
 export default UsersContent;

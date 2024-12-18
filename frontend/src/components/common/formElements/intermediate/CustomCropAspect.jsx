@@ -31,6 +31,7 @@ const CustomCropAspect = () => {
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
   const [saturation, setSaturation] = useState(100);
+  const [blur, setBlur] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState(null);
   const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [isCropping, setIsCropping] = useState(false);
@@ -104,7 +105,7 @@ const CustomCropAspect = () => {
       ctx.scale(zoomLevel, zoomLevel);
       ctx.translate(-canvas.width / 2, -canvas.height / 2);
 
-      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) ${
+      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) blur(${blur}px) ${
         selectedFilter || ""
       }`;
 
@@ -134,6 +135,7 @@ const CustomCropAspect = () => {
     brightness,
     contrast,
     saturation,
+    blur,
     selectedFilter,
     rotation,
     zoomLevel,
@@ -201,6 +203,7 @@ const CustomCropAspect = () => {
     setBrightness(100);
     setContrast(100);
     setSaturation(100);
+    setBlur(0);
     setSelectedFilter(null);
     setCropArea({
       x: 0,
@@ -289,7 +292,7 @@ const CustomCropAspect = () => {
               {["Freeform", "1:1", "4:3", "16:9"].map((aspect) => (
                 <button
                   key={aspect}
-                  className="px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-colors duration-300"
+                  className="px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-colors duration-300 text-gray-200"
                 >
                   {aspect}
                 </button>
@@ -321,7 +324,7 @@ const CustomCropAspect = () => {
                   );
                   applyChanges();
                 }}
-                className={`p-2 border rounded transition-all duration-300 ${
+                className={`p-2 border rounded transition-all duration-300 text-gray-200 ${
                   selectedFilter === `${filter.toLowerCase()}(100%)` ||
                   (filter === "Original" && !selectedFilter)
                     ? "border-blue-500 bg-blue-500/20 scale-105"
@@ -348,6 +351,11 @@ const CustomCropAspect = () => {
                 value: saturation,
                 setValue: setSaturation,
               },
+              {
+                label: "Blur",
+                value: blur,
+                setValue: setBlur,
+              },
             ].map(({ label, value, setValue }) => (
               <div key={label}>
                 <label className="block text-sm font-medium text-gray-200 mb-1">
@@ -369,17 +377,47 @@ const CustomCropAspect = () => {
           </div>
         );
       case "draw":
+        return (
+          <div className="text-center py-4">
+            <p className="text-gray-200">
+              Drawing tools will be implemented here.
+            </p>
+            <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+              Draw
+            </button>
+          </div>
+        );
       case "text":
+        return (
+          <div className="text-center py-4">
+            <p className="text-gray-200">
+              Text tools will be implemented here.
+            </p>
+            <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+              Add Text
+            </button>
+          </div>
+        );
       case "sticker":
+        return (
+          <div className="text-center py-4">
+            <p className="text-gray-200">
+              Sticker tools will be implemented here.
+            </p>
+            <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+              Add Sticker
+            </button>
+          </div>
+        );
       case "shapes":
         return (
           <div className="text-center py-4">
             <p className="text-gray-200">
-              This feature is not implemented in this demo.
+              Shape tools will be implemented here.
             </p>
-            <p className="text-gray-300 text-sm mt-2">
-              In a full implementation, it would include tools for {activeTab}.
-            </p>
+            <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+              Add Shape
+            </button>
           </div>
         );
       default:
@@ -388,14 +426,14 @@ const CustomCropAspect = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="bg-gradient-to-br from-blue-400/20 to-purple-500/20 p-6 rounded-lg shadow-lg backdrop-blur-sm">
-        <label className="block text-2xl font-bold text-white mb-6">
-          Advanced Image Editor
+    <div className="flex justify-center bg-gray-100 p-6 rounded-lg shadow-md mt-4">
+      <div className="flex-col w-full max-w-lg">
+        <label className="block text-sm font-medium text-gray-700 mb-4">
+          Fixed Crop Aspects
         </label>
         <div
           onClick={() => fileInputRef.current.click()}
-          className="border-2 border-dashed border-white/30 p-8 rounded-lg text-center cursor-pointer hover:border-white/50 transition-all duration-300 bg-white/10 backdrop-filter backdrop-blur-sm"
+          className="border-2 border-dashed border-gray-400 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition"
         >
           <input
             type="file"
@@ -405,22 +443,25 @@ const CustomCropAspect = () => {
             className="hidden"
           />
           <div className="flex flex-col items-center">
-            <div className="bg-white/20 p-6 rounded-full mb-6 transform transition-transform duration-300 hover:scale-110">
-              <BiCloudUpload className="text-6xl text-white" />
+            <div className="bg-gray-200 p-4 rounded-full mb-2">
+              <BiCloudUpload className="text-4xl text-blue-500" />
             </div>
-            <p className="text-white font-semibold text-xl mb-2">Drag & Drop</p>
-            <p className="text-gray-200 text-base mb-4">
+            <p className="text-gray-500 font-medium">Drag & Drop</p>
+            <p className="text-gray-600 text-sm">
               or{" "}
-              <span className="text-blue-300 underline cursor-pointer hover:text-blue-200 transition-colors duration-300">
+              <span className="text-blue-600 underline cursor-pointer">
                 browse
               </span>
             </p>
-            <p className="text-gray-300 text-sm">Supports: JPG, JPEG, PNG</p>
+            <p className="text-gray-400 text-xs mt-2">
+              Supports: JPG, JPEG, PNG
+            </p>
           </div>
-          <div className="flex items-center justify-between mt-8 px-2">
-            <p className="text-gray-300 text-xs">Max Size: 2MB</p>
-            <p className="text-gray-300 text-xs flex items-center">
-              <GoShieldLock className="mr-1" /> Secured
+          <div className="flex items-center justify-between mt-5 px-2 bottom-0">
+            <p className="text-gray-400 text-xs">Max Size: 2MB</p>
+            <p className="text-gray-400 text-xs flex items-center">
+              <GoShieldLock /> {"    "}
+              Secured
             </p>
           </div>
         </div>
@@ -430,7 +471,7 @@ const CustomCropAspect = () => {
             <img
               src={editedImage}
               alt="Edited"
-              className="w-full max-h-64 object-contain rounded-lg"
+              className="w-full max-h-64 object-cover rounded-lg border"
             />
             <button
               onClick={() => setEditedImage(null)}
@@ -473,7 +514,7 @@ const CustomCropAspect = () => {
                 <div className="w-1/2 p-6 border-l border-white/20 overflow-y-auto flex flex-col bg-white/5">
                   <div className="mb-6">
                     {renderEditTabs()}
-                    <div className="mt-4 bg-white/10 p-4 rounded-lg">
+                    <div className=" mt-4 bg-white/10 p-4 rounded-lg">
                       {renderTabContent()}
                     </div>
                   </div>

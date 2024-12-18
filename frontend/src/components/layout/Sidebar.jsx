@@ -14,9 +14,15 @@ import {
 import { toast } from "react-hot-toast";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useAuth } from "../../hooks/useAuth";
+import ThemeToggle from "../common/ThemeToggle"; // Import ThemeToggle
+import { IoMdLogOut } from "react-icons/io";
+import LogoutModal from "../common/modal/LogoutModal";
+import { IoSettingsOutline } from "react-icons/io5";
 
 const Sidebar = () => {
   const [openMenus, setOpenMenus] = useState({});
+  
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { isDarkMode } = useContext(ThemeContext);
   const { user, handleLogout } = useAuth();
   const navigate = useNavigate();
@@ -119,7 +125,7 @@ const Sidebar = () => {
         />
         <Submenu isOpen={openMenus.users}>
           <MenuItem icon={<FaUserPlus />} label="Add Users" to="/users/add" />
-          <MenuItem icon={<FaRegUser  />} label="All Users" to="/users" />
+          <MenuItem icon={<FaRegUser />} label="All Users" to="/users" />
         </Submenu>
 
         {/* Customers Menu */}
@@ -137,7 +143,7 @@ const Sidebar = () => {
             to="/customers/add"
           />
           <MenuItem
-            icon={<FaRegUser  />}
+            icon={<FaRegUser />}
             label="All Customers"
             to="/customers"
           />
@@ -158,7 +164,7 @@ const Sidebar = () => {
             to="/suppliers/add"
           />
           <MenuItem
-            icon={<FaRegUser  />}
+            icon={<FaRegUser />}
             label="All Suppliers"
             to="/suppliers"
           />
@@ -179,27 +185,53 @@ const Sidebar = () => {
             to="/form-elements/basic"
           />
           <MenuItem
-            icon={<FaRegUser  />}
+            icon={<FaRegUser />}
             label="Intermediate"
             to="/form-elements/intermediate"
           />
           <MenuItem
-            icon={<FaRegUser  />}
+            icon={<FaRegUser />}
             label="Advanced"
             to="/form-elements/advanced"
           />
         </Submenu>
-
-        {/* Settings and Logout */}
-        <div className="pt-4 border-t dark:border-gray-700">
-          <MenuItem icon={<FaCog />} label="Settings" to="/settings" />
-          <MenuItem icon={<FaSignOutAlt />} label="Logout" onClick={onLogout} />
-        </div>
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t text-center text-neutral-500 text-sm dark:border-gray-700 dark:text-gray-400">
-        Version 1.02.01
+      <div className="p-4 border-t dark:border-gray-700">
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          <button
+            className={`${
+              isDarkMode
+                ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-500 shadow-custom-dark"
+                : "px-3 py-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100"
+            }`}
+            onClick={() => navigate("/settings")}
+          >
+            <IoSettingsOutline />
+          </button>
+          <button
+            className={`${
+              isDarkMode
+                ? "px-3 py-3 text-white bg-gradient-light rounded-lg transition hover:bg-gradient-dark hover:text-primary-100 border border-neutral-500 shadow-custom-dark"
+                : "px-3 py-3 text-white bg-gradient-dark rounded-lg transition hover:bg-gradient-light hover:text-primary-50 border border-neutral-100 shadow-custom-light"
+            }`}
+            onClick={() => setShowLogoutModal(true)}
+          >
+            <IoMdLogOut />
+          </button>
+        </div>
+        {showLogoutModal && (
+          <LogoutModal
+            isDarkMode={isDarkMode}
+            onCancel={() => setShowLogoutModal(false)}
+            onConfirm={() => {
+              confirmLogout();
+              setShowLogoutModal(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

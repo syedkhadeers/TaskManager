@@ -456,6 +456,7 @@ export const updateOtherUser = asyncHandler(async (req, res) => {
       role: updated.role,
       photo: updated.photo.url,
       bio: updated.bio,
+      mobile: updated.mobile,
       isVerified: updated.isVerified,
     });
   } else {

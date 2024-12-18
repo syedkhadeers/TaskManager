@@ -36,6 +36,9 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "India",
     },
+    mobile: {
+      type: String,
+    },
     bio: {
       type: String,
       default: "I am a new user",
