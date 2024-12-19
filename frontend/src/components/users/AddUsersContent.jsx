@@ -1,13 +1,12 @@
-import React, { useState, useContext, useRef } from "react";
-import ReactCrop from "react-image-crop";
-import "react-image-crop/dist/ReactCrop.css";
+import React, { useState, useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { FiUser, FiMail, FiPhone, FiLock, FiGlobe } from "react-icons/fi";
 import { MdAddPhotoAlternate } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { registerUser } from "../../services/authService";
+import { addUser } from "../../services/authService";
+import CustomCropAspect from "../common/formElements/intermediate/CustomCropAspect";
 
-const AddUsersContent = () => {
+const AddUsersContent = ({ onClose }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [formData, setFormData] = useState({
     name: "",
@@ -20,220 +19,155 @@ const AddUsersContent = () => {
     role: "user",
   });
 
-  // New state for image cropping
-  const [imageSrc, setImageSrc] = useState(null);
-  const [crop, setCrop] = useState({ aspect: 1, unit: "%", width: 50 });
-  const [completedCrop, setCompletedCrop] = useState(null);
-  const imageRef = useRef(null);
-
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
-    if (name === "photo" && files && files.length > 0) {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        setImageSrc(reader.result);
-      });
-      reader.readAsDataURL(files[0]);
-    } else {
-      setFormData((prevData) => ({
-        ...prevData,
-        [name]: files ? files[0] : value,
-      }));
-    }
-  };
-
-  const getCroppedImg = (image, crop) => {
-    const canvas = document.createElement("canvas");
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-    const ctx = canvas.getContext("2d");
-
-    ctx.drawImage(
-      image,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, "image/jpeg");
-    });
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: files ? files[0] : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // If there's a cropped image, process it
-    if (imageSrc && completedCrop && imageRef.current) {
-      const croppedImageBlob = await getCroppedImg(
-        imageRef.current,
-        completedCrop
-      );
-      const croppedFile = new File([croppedImageBlob], "profile.jpg", {
-        type: "image/jpeg",
-      });
-
-      // Update formData with the cropped image
-      const updatedFormData = {
-        ...formData,
-        photo: croppedFile,
-      };
-
-      const response = await registerUser(updatedFormData);
-      if (response) {
-        navigate("/login");
-      }
-    } else {
-      // If no image cropping, proceed with original submission
-      const response = await registerUser(formData);
-      if (response) {
-        navigate("/login");
-      }
+    const response = await addUser(formData);
+    if (response) {
+      onClose();
+      // Optionally, you can refresh the user list or show a success message
     }
   };
 
   return (
-    <div className="inset-0 flex items-center justify-center">
-      <div
-        className={`w-screen p-6 rounded-lg shadow-lg ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-        }`}
-      >
-        <h2 className="text-xl font-semibold mb-4 text-center">Add User</h2>
-
-        <form
-          onSubmit={handleSubmit}
-          className="font-[sans-serif] m-6 max-w-4xl mx-auto"
-        >
-          <div className="grid sm:grid-cols-2 gap-10">
-            {/* Name */}
-            <InputField
-              icon={<FiUser />}
-              type="text"
-              name="name"
-              placeholder="Enter full name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-
-            {/* Email */}
-            <InputField
-              icon={<FiMail />}
-              type="email"
-              name="email"
-              placeholder="Enter email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-
-            {/* Phone */}
-            <InputField
-              icon={<FiPhone />}
-              type="text"
-              name="phone"
-              placeholder="Enter phone number"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-
-            {/* Country */}
-            <InputField
-              icon={<FiGlobe />}
-              type="text"
-              name="country"
-              placeholder="Enter country"
-              value={formData.country}
-              onChange={handleChange}
-            />
-
-            {/* Bio */}
-            <div className="sm:col-span-2">
-              <textarea
-                name="bio"
-                placeholder="Enter bio"
-                value={formData.bio}
-                onChange={handleChange}
-                rows="4"
-                className="px-4 py-3.5 bg-white text-black w-full text-sm border-2 border-gray-100 focus:border-blue-500 rounded outline-none"
-              />
-            </div>
-
-            {/* Role */}
-            <div className="relative sm:col-span-2">
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="px-4 py-3.5 bg-white text-black w-full text-sm border-2 border-gray-100 focus:border-blue-500 rounded outline-none"
-              >
-                <option value="user">User </option>
-                <option value="admin">Admin</option>
-                <option value="creator">Creator</option>
-              </select>
-            </div>
-
-            {/* Password */}
-            <InputField
-              icon={<FiLock />}
-              type="password"
-              name="password"
-              placeholder="Enter password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-
-            {/* Photo Upload */}
-            <div className="relative flex items-center w-full">
-              <MdAddPhotoAlternate className="absolute left-4 text-gray-500" />
-              <input
-                type="file"
-                name="photo"
-                onChange={handleChange}
-                accept="image/*"
-                className="px-12 py-3.5 bg-white text-black w-full text-sm border-2 border-gray-100 focus:border-blue-500 rounded outline-none"
-              />
-            </div>
-
-            {/* Image Cropper */}
-            {imageSrc && (
-              <div className="mt-4 w-full">
-                <ReactCrop
-                  src={imageSrc}
-                  onImageLoaded={(img) => (imageRef.current = img)}
-                  crop={crop}
-                  onChange={(newCrop) => setCrop(newCrop)}
-                  onComplete={(c) => setCompletedCrop(c)}
-                  aspect={1}
-                >
-                  <img src={imageSrc} ref={imageRef} alt="Crop" />
-                </ReactCrop>
-              </div>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="mt-8 px-6 py-2.5 w-full text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-all"
+    <div
+      className={`p-6 ${
+        isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+      }`}
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">Add User</h2>
+        <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            Submit
-          </button>
-        </form>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <InputField
+            icon={<FiUser />}
+            type="text"
+            name="name"
+            placeholder="Enter full name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Email</label>
+          <InputField
+            icon={<FiMail />}
+            type="email"
+            name="email"
+            placeholder="Enter email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Phone</label>
+          <InputField
+            icon={<FiPhone />}
+            type="text"
+            name="phone"
+            placeholder="Enter phone number"
+            value={formData.phone}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Country</label>
+          <InputField
+            icon={<FiGlobe />}
+            type="text"
+            name="country"
+            placeholder="Enter country"
+            value={formData.country}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Bio</label>
+          <textarea
+            name="bio"
+            placeholder="Enter bio"
+            value={formData.bio}
+            onChange={handleChange}
+            rows="4"
+            className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Role</label>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+            <option value="creator">Creator</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Password</label>
+          <InputField
+            icon={<FiLock />}
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Profile Photo
+          </label>
+          <CustomCropAspect />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+        >
+          Add User
+        </button>
+      </form>
     </div>
   );
 };
@@ -247,15 +181,17 @@ const InputField = ({
   onChange,
   required,
 }) => (
-  <div className="relative flex items-center">
-    {icon}
+  <div className="relative">
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      {icon}
+    </div>
     <input
       type={type}
       name={name}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className="px-12 py-3.5 bg-white text-black w-full text-sm border-2 border-gray-100 focus:border-blue-500 rounded outline-none"
+      className="w-full pl-10 pr-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
       required={required}
     />
   </div>

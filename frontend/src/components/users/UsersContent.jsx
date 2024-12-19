@@ -19,6 +19,7 @@ import {
   UsersIcon,
   UserCheckIcon,
   ShieldIcon,
+  PencilIcon,
 } from "lucide-react";
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { jsPDF } from "jspdf";
@@ -29,6 +30,7 @@ import Papa from "papaparse";
 import AddUsersContent from "./AddUsersContent";
 import EditUserModal from "../common/modal/EditUserModal";
 import { Menu, Transition } from "@headlessui/react";
+import { motion } from "framer-motion";
 
 const UsersContent = () => {
   const [data, setData] = useState([]);
@@ -72,24 +74,27 @@ const UsersContent = () => {
     () => [
       {
         accessorKey: "photo",
-        header: "Profile",
+        header: "Photo",
         cell: ({ row }) => (
-          <div className="flex items-center">
-            <Avatar
-              name={row.original.name}
-              src={row.original.photo?.url}
-              size="40"
-              round
-              className="mr-3"
-            />
-            <div>
-              <div className="font-medium text-gray-900">
-                {row.original.name}
-              </div>
-              <div className="text-sm text-gray-500">{row.original.email}</div>
-            </div>
-          </div>
+          <Avatar
+            name={row.original.name}
+            src={row.original.photo?.url}
+            size="40"
+            round
+          />
         ),
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+      },
+      {
+        accessorKey: "mobile",
+        header: "Mobile",
       },
       {
         accessorKey: "role",
@@ -111,14 +116,9 @@ const UsersContent = () => {
                 : "bg-red-100 text-red-800"
             }`}
           >
-            {getValue() ? "Active" : "Inactive"}
+            {getValue() ? "Verified" : "Not Verified"}
           </span>
         ),
-      },
-      {
-        accessorKey: "mobile",
-        header: "Mobile",
-        cell: ({ getValue }) => getValue(),
       },
       {
         accessorKey: "createdAt",
@@ -144,41 +144,112 @@ const UsersContent = () => {
   });
 
   const exportToCSV = () => {
-    const csvData = Papa.unparse(
-      data.map((row) => ({
-        Name: row.name,
-        Email: row.email,
-        Role: row.role,
-        Status: row.isVerified ? "Active" : "Inactive",
-        Mobile: row.mobile,
-        CreatedOn: new Date(row.createdAt).toLocaleDateString(),
-      }))
-    );
-    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "users.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Ensure Papa is available and data exists
+    if (!Papa || typeof Papa.unparse !== "function" || data.length === 0) {
+      alert("Unable to export CSV. No data or export library missing.");
+      return;
+    }
+
+    try {
+      // Prepare data for CSV export
+      const csvData = data.map((row) => ({
+        Name: row.name || "N/A",
+        Email: row.email || "N/A",
+        Role: row.role || "N/A",
+        Status: row.isVerified ? "Verified" : "Not Verified",
+        Mobile: row.mobile || "N/A",
+        CreatedOn: row.createdAt
+          ? new Date(row.createdAt).toLocaleDateString()
+          : "N/A",
+      }));
+
+      // Use Papa.unparse to convert data to CSV string
+      const csv = Papa.unparse(csvData);
+
+      // Create a Blob with the CSV data
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+      // Create a link element, use it to download the blob, then remove it
+      const link = document.createElement("a");
+
+      // Supports most modern browsers
+      if (navigator.msSaveBlob) {
+        // For IE 10+
+        navigator.msSaveBlob(blob, "users.csv");
+      } else {
+        link.href = URL.createObjectURL(blob);
+        link.download = "users.csv";
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Clean up
+      URL.revokeObjectURL(link.href);
+
+      // Close export dropdown
+      setExportDropdownOpen(false);
+    } catch (error) {
+      console.error("Error exporting to CSV:", error);
+      alert("Failed to export CSV. Please try again.");
+    }
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
-    autoTable(doc, {
-      head: [["Name", "Email", "Role", "Status", "Mobile", "Created On"]],
-      body: data.map((row) => [
-        row.name,
-        row.email,
-        row.role,
-        row.isVerified ? "Active" : "Inactive",
-        row.mobile,
-        new Date(row.createdAt).toLocaleDateString(),
-      ]),
-    });
-    doc.save("users.pdf");
-  };
+    // Ensure jsPDF and autoTable are available
+    if (!jsPDF || !autoTable || data.length === 0) {
+      alert("Unable to export PDF. No data or export library missing.");
+      return;
+    }
 
+    try {
+      const doc = new jsPDF("landscape");
+
+      // Prepare data for PDF export
+      const tableData = data.map((row) => [
+        row.name || "N/A",
+        row.email || "N/A",
+        row.role || "N/A",
+        row.isVerified ? "Verified" : "Not Verified",
+        row.mobile || "N/A",
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A",
+      ]);
+
+      // Add title to PDF
+      doc.text("User Management Report", 14, 15);
+
+      // Create table with autoTable plugin
+      autoTable(doc, {
+        head: [["Name", "Email", "Role", "Status", "Mobile", "Created On"]],
+        body: tableData,
+        startY: 25,
+        theme: "striped",
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          overflow: "linebreak",
+        },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 30 },
+          5: { cellWidth: 25 },
+        },
+      });
+
+      // Save the PDF
+      doc.save("users.pdf");
+
+      // Close export dropdown
+      setExportDropdownOpen(false);
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+      alert("Failed to export PDF. Please try again.");
+    }
+  };
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setShowEditUserModal(true);
@@ -189,44 +260,92 @@ const UsersContent = () => {
     console.log(`Deleting user with ID: ${userId}`);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+      },
+    },
+  };
+
+  const cardData = [
+    {
+      title: "Total Users",
+      value: data.length,
+      icon: <UsersIcon className="w-6 h-6" />,
+      color: "from-teal-400 to-teal-600", // Teal gradient
+      description: "Total number of registered users",
+    },
+    {
+      title: "Verified Users",
+      value: data.filter((user) => user.isVerified).length,
+      icon: <UserCheckIcon className="w-6 h-6" />,
+      color: "from-amber-400 to-amber-600", // Amber gradient
+      description: "Number of verified users",
+    },
+    {
+      title: "Admin Users",
+      value: data.filter((user) => user.role === "admin").length,
+      icon: <ShieldIcon className="w-6 h-6" />,
+      color: "from-indigo-500 to-indigo-700", // Indigo gradient
+      description: "Number of admin users",
+    },
+    {
+      title: "Creators",
+      value: data.filter((user) => user.role === "creator").length,
+      icon: <PencilIcon className="w-6 h-6" />, // Changed icon to PencilIcon for creators
+      color: "from-pink-500 to-pink-700", // Pink gradient
+      description: "Number of creators",
+    },
+  ];
+
   return (
     <div className="container mx-auto px-4 py-8 bg-gray-50 min-h-screen">
       {/* Stats section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-          <div className="bg-blue-100 p-3 rounded-full mr-4">
-            <UsersIcon className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700">Total Users</h3>
-            <p className="text-2xl font-bold text-gray-900">{data.length}</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-          <div className="bg-green-100 p-3 rounded-full mr-4">
-            <UserCheckIcon className="h-6 w-6 text-green-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700">
-              Active Users
-            </h3>
-            <p className="text-2xl font-bold text-gray-900">
-              {data.filter((user) => user.isVerified).length}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-          <div className="bg-purple-100 p-3 rounded-full mr-4">
-            <ShieldIcon className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700">Admin Users</h3>
-            <p className="text-2xl font-bold text-gray-900">
-              {data.filter((user) => user.role === "Admin").length}
-            </p>
-          </div>
-        </div>
-      </div>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+      >
+        {cardData.map((card, index) => (
+          <motion.div
+            key={index}
+            variants={cardVariants}
+            className={`bg-gradient-to-br ${card.color} 
+              rounded-lg shadow-md overflow-hidden 
+              transform transition-all duration-300 
+              hover:scale-105 hover:shadow-lg`}
+          >
+            <div className="p-4 text-white">
+              <div className="flex justify-between items-center mb-3">
+                <div className="bg-white/20 p-2 rounded-full">
+                  <span className="text-2xl">{card.icon}</span>
+                </div>
+                <div className="text-right">
+                  <h3 className="text-sm font-semibold">{card.title}</h3>
+                  <p className="text-lg font-bold">{card.value}</p>
+                </div>
+              </div>
+              <p className="text-xs opacity-75">{card.description}</p>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
 
       <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
         {/* Header */}
@@ -477,25 +596,12 @@ const UsersContent = () => {
 
       {/* Add User Modal */}
       {showAddUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <AddUsersContent />
-            <button
-              onClick={() => setShowAddUserModal(false)}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              Close
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
+          <div className="bg-white h-full w-full max-w-md overflow-y-auto">
+            <AddUsersContent onClose={() => setShowAddUserModal(false)} />
           </div>
         </div>
       )}
-
-      {/* Edit User Modal */}
-      <EditUserModal
-        isOpen={showEditUserModal}
-        onClose={() => setShowEditUserModal(false)}
-        user={selectedUser}
-      />
     </div>
   );
 };

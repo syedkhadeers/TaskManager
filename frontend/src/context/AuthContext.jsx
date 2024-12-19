@@ -4,19 +4,8 @@ import { getCurrentUser, loginUser, logoutUser } from "../services/authService";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem("user");
-    try {
-      return storedUser ? JSON.parse(storedUser) : null;
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      return null;
-    }
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token")
-  );
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAuthStatus = async () => {
@@ -36,7 +25,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(userData));
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      // If fetching profile fails, log out the user
       handleLogout();
     } finally {
       setIsLoading(false);
@@ -45,7 +33,9 @@ export const AuthProvider = ({ children }) => {
 
   const handleLogin = async (credentials) => {
     try {
-      const { user: userData } = await loginUser(credentials);
+      const { user: userData, token } = await loginUser(credentials);
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
       return userData;
@@ -57,12 +47,10 @@ export const AuthProvider = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      // Call backend logout endpoint if needed
       await logoutUser();
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      // Always clear local storage and reset state
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       setUser(null);
@@ -72,6 +60,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuthStatus();
+  }, []);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
+    }
   }, []);
 
   return (

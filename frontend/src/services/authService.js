@@ -17,6 +17,23 @@ export const registerUser = async (userData) => {
   }
 };
 
+export const addUser = async (userData) => {
+  try {
+    const formData = new FormData();
+    Object.keys(userData).forEach((key) => {
+      formData.append(key, userData[key]);
+    });
+
+    const response = await api.post("/add-user", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
 export const loginUser = async (credentials) => {
   try {
     const response = await api.post("/login", credentials);

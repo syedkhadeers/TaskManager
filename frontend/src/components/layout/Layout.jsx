@@ -1,63 +1,54 @@
-import React, { useContext } from "react";
+import React, { useState, useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import { Menu } from "lucide-react";
 import "../../App.css";
 
 const Layout = ({ children }) => {
   const { isDarkMode } = useContext(ThemeContext);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div
-      className="flex flex-col h-screen bg-primary-50 p-2"
-      style={{
-        backgroundImage: 'url("/main_bg.jpg")',
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
+    <div className={`flex h-screen bg-gray-50 ${isDarkMode ? "dark" : ""}`}>
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-gray-900/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
       <div
-        className="flex justify-between justify-items-center p-2 w-full h-full gap-3"
-        style={{
-          background: isDarkMode
-            ? "rgba(103, 94, 94, 0.46)"
-            : "rgba(255, 255, 255, 0.36)",
-          borderRadius: "16px",
-          boxShadow: "0 4px 30px rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(9px)",
-          WebkitBackdropFilter: "blur(9px)",
-          border: isDarkMode
-            ? "3px solid rgba(103, 94, 94, 1)"
-            : "3px solid rgba(255, 255, 255, 1)",
-        }}
+        className={`
+          fixed inset-y-0 z-30 w-64 transform bg-[#0f172a] transition-transform duration-200 ease-in-out lg:static lg:translate-x-0
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          ${sidebarOpen ? "" : "hidden lg:block"}
+        `}
       >
-        <div
-          className={`bg-neutral-100 dark:bg-neutral-800 shadow-lg transition-all duration-300 h-full w-1/6 left-5 overflow-y-auto p-4 rounded-lg border ${
-            isDarkMode ? "border-neutral-800" : "border-neutral-100"
-          }`}
-        >
-          <Sidebar />
-        </div>
+        <Sidebar />
+      </div>
 
-        <div
-          className={`bg-neutral-100 dark:bg-neutral-800 shadow-lg transition-all duration-300 h-full w-5/6 right-5 overflow-y-auto p-6 rounded-lg border ${
-            isDarkMode ? "border-neutral-800" : "border-neutral-100"
-          }`}
-        >
-          <header className="w-12/12">
-            <Navbar />
-          </header>
-
-          <div
-            className="w-12/12 relative overflow-y-auto rounded-lg"
-            style={{
-              scrollbarWidth: "thin",
-            }}
-          >
-            {children}
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col min-h-screen overflow-x-hidden">
+        <header className="z-10 bg-white dark:bg-gray-800 shadow-sm">
+          <div className="flex h-16 items-center justify-between px-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <div className="flex-1">
+              <Navbar />
+            </div>
           </div>
-        </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          <div className="container mx-auto px-4 py-8">{children}</div>
+        </main>
       </div>
     </div>
   );

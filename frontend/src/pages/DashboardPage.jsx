@@ -3,8 +3,10 @@ import { ThemeContext } from "../context/ThemeContext";
 import DashboardContent from "../components/dashboard/DashboardContent";
 import Layout from "../components/layout/Layout.jsx";
 
+
 const DashboardPage = () => {
   const { isDarkMode } = useContext(ThemeContext);
+  
 
   return (
 

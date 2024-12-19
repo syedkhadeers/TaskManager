@@ -78,5 +78,3 @@ const App = () => {
 
 export default App;
 
-
-// #850481  #FF005C  
