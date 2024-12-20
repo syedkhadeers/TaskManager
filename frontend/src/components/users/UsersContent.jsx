@@ -1,3 +1,5 @@
+// UsersContent.jsx
+
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   useReactTable,
@@ -20,17 +22,19 @@ import {
   UserCheckIcon,
   ShieldIcon,
   PencilIcon,
+  RefreshCcw,
 } from "lucide-react";
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
 import Avatar from "react-avatar";
-import Papa from "papaparse";
 import AddUsersContent from "./AddUsersContent";
-import EditUserModal from "../common/modal/EditUserModal";
 import { Menu, Transition } from "@headlessui/react";
 import { motion } from "framer-motion";
-import { getAllUsers } from "../../services/userServices"; // Import getAllUsers
+import { getAllUsers, deleteUser  } from "../../services/userServices";
+import EditUsersContent from "./EditUsersContent";
+import DeleteModal from "../common/modal/DeleteModal";
+import { toast } from "react-toastify";
 
 const UsersContent = () => {
   const [data, setData] = useState([]);
@@ -40,24 +44,50 @@ const UsersContent = () => {
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser , setSelectedUser ] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const dropdownRef = useRef(null);
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userIdToDelete, setUserIdToDelete] = useState(null); // Store the user ID to delete
 
-  // Fetch user data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await getAllUsers();
-        if (Array.isArray(response)) {
-          setData(response);
-        } else {
-          console.error("Expected an array but got:", response);
-          setData([]); // Handle the error as needed
-        }
-      } catch (error) {
-        console.error("Error fetching users:", error);
+const confirmDelete = async () => {
+  if (userIdToDelete) {
+    try {
+      await deleteUser(userIdToDelete);
+      toast.success("User deleted successfully");
+      await fetchData();
+      setUserIdToDelete(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Failed to delete user");
+    }
+  }
+};
+
+
+
+  const fetchData = async () => {
+    try {
+      const response = await getAllUsers();
+      if (Array.isArray(response)) {
+        setData(response);
+      } else {
+        console.error("Expected an array but got:", response);
+        setData([]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData();
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -148,122 +178,124 @@ const UsersContent = () => {
     enableSorting: true,
   });
 
-  const exportToCSV = () => {
-    // Ensure Papa is available and data exists
-    if (!Papa || typeof Papa.unparse !== "function" || data.length === 0) {
-      alert("Unable to export CSV. No data or export library missing.");
-      return;
-    }
+const exportToCSV = () => {
+  try {
+    const visibleColumns = columns.filter(
+      (col) =>
+        col.accessorKey !== "photo" &&
+        table.getState().columnVisibility[col.accessorKey] !== false
+    );
 
-    try {
-      // Prepare data for CSV export
-      const csvData = data.map((row) => ({
-        Name: row.name || "N/A",
-        Email: row.email || "N/A",
-        Role: row.role || "N/A",
-        Status: row.isVerified ? "Verified" : "Not Verified",
-        Mobile: row.mobile || "N/A",
-        CreatedOn: row.createdAt
-          ? new Date(row.createdAt).toLocaleDateString()
-          : "N/A",
-      }));
-
-      // Use Papa.unparse to convert data to CSV string
-      const csv = Papa.unparse(csvData);
-
-      // Create a Blob with the CSV data
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-
-      // Create a link element, use it to download the blob, then remove it
-      const link = document.createElement("a");
-
-      // Supports most modern browsers
-      if (navigator.msSaveBlob) {
-        // For IE 10+
-        navigator.msSaveBlob(blob, "users.csv");
-      } else {
-        link.href = URL.createObjectURL(blob);
-        link.download = "users.csv";
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
-      // Clean up
-      URL.revokeObjectURL(link.href);
-
-      // Close export dropdown
-      setExportDropdownOpen(false);
-    } catch (error) {
-      console.error("Error exporting to CSV:", error);
-      alert("Failed to export CSV. Please try again.");
-    }
-  };
-
-  const exportToPDF = () => {
-    // Ensure jsPDF and autoTable are available
-    if (!jsPDF || !autoTable || data.length === 0) {
-      alert("Unable to export PDF. No data or export library missing.");
-      return;
-    }
-
-    try {
-      const doc = new jsPDF("landscape");
-
-      // Prepare data for PDF export
-      const tableData = data.map((row) => [
-        row.name || "N/A",
-        row.email || "N/A",
-        row.role || "N/A",
-        row.isVerified ? "Verified" : "Not Verified",
-        row.mobile || "N/A",
-        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A",
-      ]);
-
-      // Add title to PDF
-      doc.text("User Management Report", 14, 15);
-
-      // Create table with autoTable plugin
-      autoTable(doc, {
-        head: [["Name", "Email", "Role", "Status", "Mobile", "Created On"]],
-        body: tableData,
-        startY: 25,
-        theme: "striped",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          overflow: "linebreak",
-        },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 20 },
-          4: { cellWidth: 30 },
-          5: { cellWidth: 25 },
-        },
+    const csvData = table.getFilteredRowModel().rows.map((row) => {
+      const rowData = {};
+      visibleColumns.forEach((col) => {
+        let value = row.getValue(col.accessorKey);
+        if (col.accessorKey === "isVerified") {
+          value = value ? "Verified" : "Not Verified";
+        } else if (col.accessorKey === "createdAt") {
+          value = new Date(value).toLocaleDateString();
+        }
+        rowData[col.header] = value;
       });
+      return rowData;
+    });
 
-      // Save the PDF
-      doc.save("users.pdf");
+    const headers = visibleColumns.map((col) => col.header);
+    const csvRows = [
+      headers.join(","),
+      ...csvData.map((row) =>
+        headers
+          .map((header) => {
+            const value = row[header];
+            return typeof value === "string" && value.includes(",")
+              ? `"${value}"`
+              : value;
+          })
+          .join(",")
+      ),
+    ];
 
-      // Close export dropdown
-      setExportDropdownOpen(false);
-    } catch (error) {
-      console.error("Error exporting to PDF:", error);
-      alert("Failed to export PDF. Please try again.");
-    }
-  };
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setShowEditUserModal(true);
-  };
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "users_export.csv";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setExportDropdownOpen(false);
+  } catch (error) {
+    console.error("CSV Export Error:", error);
+    alert("Failed to export CSV. Please try again.");
+  }
+};
 
-  const handleDeleteUser = (userId) => {
-    // Implement delete user logic here
-    console.log(`Deleting user with ID: ${userId}`);
-  };
+
+const exportToPDF = () => {
+  try {
+    const doc = new jsPDF("landscape");
+    const visibleColumns = columns.filter(
+      (col) =>
+        col.accessorKey !== "photo" &&
+        table.getState().columnVisibility[col.accessorKey] !== false
+    );
+
+    const tableData = table.getFilteredRowModel().rows.map((row) =>
+      visibleColumns.map((col) => {
+        let value = row.getValue(col.accessorKey);
+        if (col.accessorKey === "isVerified") {
+          return value ? "Verified" : "Not Verified";
+        } else if (col.accessorKey === "createdAt") {
+          return new Date(value).toLocaleDateString();
+        }
+        return value?.toString() || "";
+      })
+    );
+
+    const headers = visibleColumns.map((col) => col.header);
+
+    doc.text("Users Report", 14, 15);
+    doc.autoTable({
+      head: [headers],
+      body: tableData,
+      startY: 25,
+      theme: "grid",
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [71, 85, 105],
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+      margin: { top: 20 },
+    });
+
+    doc.save("users_export.pdf");
+    setExportDropdownOpen(false);
+  } catch (error) {
+    console.error("PDF Export Error:", error);
+    alert("Failed to export PDF. Please try again.");
+  }
+};
+
+
+const handleEditUser = (user) => {
+  setSelectedUser(user);
+  setShowEditUserModal(true);
+};
+
+const handleDeleteUser = (user) => {
+  // MongoDB IDs are typically stored in the _id field
+  setUserIdToDelete(user._id);
+  setShowDeleteModal(true);
+};
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -382,33 +414,73 @@ const UsersContent = () => {
                 />
               </div>
 
+              {/* Refresh Button */}
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
+              >
+                <RefreshCcw
+                  className={`text-white ${isRefreshing ? "animate-spin" : ""}`}
+                  size={20}
+                />
+              </button>
+
               {/* Actions Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-                  className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
-                >
+              <Menu as="div" className="relative" ref={dropdownRef}>
+                <Menu.Button className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors">
                   <DownloadIcon className="text-white" size={20} />
-                </button>
-                {exportDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-10 overflow-hidden">
-                    <button
-                      onClick={exportToCSV}
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none"
-                    >
-                      <FileTextIcon className="mr-3 text-blue-500" size={18} />
-                      Export to CSV
-                    </button>
-                    <button
-                      onClick={exportToPDF}
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none"
-                    >
-                      <FileTextIcon className="mr-3 text-green-500" size={18} />
-                      Export to PDF
-                    </button>
-                  </div>
-                )}
-              </div>
+                </Menu.Button>
+
+                <Transition
+                  enter="transition duration-100 ease-out"
+                  enterFrom="transform scale-95 opacity-0"
+                  enterTo="transform scale-100 opacity-100"
+                  leave="transition duration-75 ease-in"
+                  leaveFrom="transform scale-100 opacity-100"
+                  leaveTo="transform scale-95 opacity-0"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-10 overflow-hidden ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={exportToCSV}
+                          className={`flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none ${
+                            active ? "bg-gray-50" : ""
+                          }`}
+                        >
+                          <FileTextIcon
+                            className="mr-3 text-blue-500 group-hover:text-blue-600"
+                            size={18}
+                          />
+                          <span className="group-hover:text-gray-900">
+                            Export to CSV
+                          </span>
+                        </button>
+                      )}
+                    </Menu.Item>
+
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={exportToPDF}
+                          className={`flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none ${
+                            active ? "bg-gray-50" : ""
+                          }`}
+                        >
+                          <FileTextIcon
+                            className="mr-3 text-green-500 group-hover:text-green-600"
+                            size={18}
+                          />
+                          <span className="group-hover:text-gray-900">
+                            Export to PDF
+                          </span>
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
 
               {/* Columns Dropdown */}
               <div className="relative" ref={dropdownRef}>
@@ -530,12 +602,11 @@ const UsersContent = () => {
                                 </button>
                               )}
                             </Menu.Item>
+                            
                             <Menu.Item>
                               {({ active }) => (
                                 <button
-                                  onClick={() =>
-                                    handleDeleteUser(row.original.id)
-                                  }
+                                  onClick={() => handleDeleteUser(row.original)}
                                   className={`${
                                     active
                                       ? "bg-red-500 text-white"
@@ -603,9 +674,37 @@ const UsersContent = () => {
       {showAddUserModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white h-full w-full max-w-md overflow-y-auto">
-            <AddUsersContent onClose={() => setShowAddUserModal(false)} />
+            <AddUsersContent
+              onClose={() => setShowAddUserModal(false)}
+              onUserAdded={handleRefresh} // Pass handleRefresh as a prop
+            />
           </div>
         </div>
+      )}
+
+      {showEditUserModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
+          <div className="bg-white h-full w-full max-w-md overflow-y-auto">
+            <EditUsersContent
+              user={selectedUser}
+              onClose={() => {
+                setShowEditUserModal(false);
+                setSelectedUser(null);
+              }}
+              onUserUpdated={handleRefresh}
+            />
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <DeleteModal
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={() => {
+            confirmDelete();
+            setShowDeleteModal(false);
+          }}
+        />
       )}
     </div>
   );

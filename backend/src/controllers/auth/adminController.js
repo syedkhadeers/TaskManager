@@ -59,17 +59,21 @@ export const updateOtherUser = asyncHandler(async (req, res) => {
   const user = await User.findById(userId);
 
   if (user) {
-    const { name, bio } = req.body;
+    const { name, bio, email, mobile, country, role } = req.body;
 
-    // Update the user's details
+    // Update all the user's details
     user.name = name || user.name;
     user.bio = bio || user.bio;
+    user.email = email || user.email;
+    user.mobile = mobile || user.mobile;
+    user.country = country || user.country;
+    user.role = role || user.role;
 
     // If a new photo is uploaded, update the user's photo
     if (req.file) {
       const updateResult = await updateImage(
         req.file,
-        user.photo.publicId,
+        user.photo?.publicId, // Make publicId optional
         "user_photos"
       );
       user.photo = {
@@ -87,12 +91,14 @@ export const updateOtherUser = asyncHandler(async (req, res) => {
       name: updated.name,
       email: updated.email,
       role: updated.role,
-      photo: updated.photo.url,
+      photo: updated.photo,
       bio: updated.bio,
       mobile: updated.mobile,
+      country: updated.country,
       isVerified: updated.isVerified,
     });
   } else {
-    res.status(404).json({ message: "User  not found" });
+    res.status(404).json({ message: "User not found" });
   }
 });
+

@@ -45,18 +45,34 @@ export const addUser = async (userData) => {
   }
 };
 
+// export const deleteUser = async (userId) => {
+//   try {
+//     const response = await api.delete(`/admin/users/${userId}`);
+//     return response.data;
+//   } catch (error) {
+//     throw handleApiError(error);
+//   }
+// };
+
 export const deleteUser = async (userId) => {
   try {
     const response = await api.delete(`/admin/users/${userId}`);
     return response.data;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Delete user error:", error);
+    throw error;
   }
 };
 
 export const updateOtherUser = async (userId, userData) => {
   try {
+    
+
     const formData = new FormData();
+
+    // Add userId to formData
+    formData.append("userId", userId);
+
     Object.entries(userData).forEach(([key, value]) => {
       if (value !== undefined) {
         formData.append(key, value);
@@ -69,6 +85,8 @@ export const updateOtherUser = async (userId, userData) => {
 
     return response.data;
   } catch (error) {
+    console.log("Error details:", error.response?.data); // Add this log
     throw handleApiError(error);
   }
 };
+

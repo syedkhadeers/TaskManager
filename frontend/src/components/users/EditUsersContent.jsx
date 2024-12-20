@@ -1,26 +1,38 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
-import { FiUser, FiMail, FiPhone, FiLock, FiGlobe } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
-import { addUser } from "../../services/userServices";
+import { FiUser, FiMail, FiPhone, FiGlobe } from "react-icons/fi";
+import { updateOtherUser } from "../../services/userServices";
 import { toast } from "react-toastify";
 import ImageEditor from "../editors/ImageEditor";
 
-const AddUsersContent = ({ onClose, onUserAdded }) => {
+const EditUsersContent = ({ user, onClose, onUserUpdated }) => {
   const { isDarkMode } = useContext(ThemeContext);
-  const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
     country: "",
     email: "",
-    password: "",
     photo: null,
     bio: "",
     role: "user",
   });
   const [imagePreview, setImagePreview] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        mobile: user.mobile || "",
+        country: user.country || "",
+        email: user.email || "",
+        bio: user.bio || "",
+        role: user.role || "user",
+      });
+      if (user.photo?.url) {
+        setImagePreview(user.photo.url);
+      }
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,7 +55,7 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
       ...prev,
       photo: null,
     }));
-    setImagePreview(null);
+    setImagePreview(user?.photo?.url || null);
   };
 
   const handleSubmit = async (e) => {
@@ -52,7 +64,7 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
     try {
       const dataToSend = { ...formData };
 
-      if (formData.photo) {
+      if (formData.photo && formData.photo !== user?.photo?.url) {
         const response = await fetch(formData.photo);
         const blob = await response.blob();
         dataToSend.photo = new File([blob], "profile.jpg", {
@@ -60,16 +72,13 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
         });
       }
 
-      const response = await addUser(dataToSend);
-      if (response) {
-        toast.success("User added successfully!");
-        onUserAdded();
-        onClose();
-        navigate("/users");
-      }
+      await updateOtherUser(user._id, dataToSend);
+      toast.success("User updated successfully!");
+      onUserUpdated();
+      onClose();
     } catch (error) {
-      toast.error("Failed to add user.");
-      console.error("Error adding user:", error);
+      toast.error("Failed to update user.");
+      console.error("Error updating user:", error);
     }
   };
 
@@ -80,7 +89,7 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
       }`}
     >
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Add User</h2>
+        <h2 className="text-2xl font-semibold">Edit User</h2>
         <button
           type="button"
           onClick={onClose}
@@ -104,6 +113,7 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Regular form fields */}
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
           <InputField
@@ -181,19 +191,6 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
-          <InputField
-            icon={<FiLock />}
-            type="password"
-            name="password"
-            placeholder="Enter password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div>
           <label className="block text-sm font-medium mb-1">
             Profile Photo
           </label>
@@ -201,11 +198,11 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
             onCropComplete={handleCropComplete}
             onCancel={handleCropCancel}
             aspectRatios={[{ label: "Free Cropping", value: null }]}
-            modalTitle="Crop Profile Photo"
+            modalTitle="Edit Profile Photo"
           />
           {imagePreview && (
             <div className="mt-4">
-              <h4 className="text-sm font-medium">Image Preview:</h4>
+              <h4 className="text-sm font-medium">Current Photo:</h4>
               <img
                 src={imagePreview}
                 alt="Profile Preview"
@@ -219,7 +216,7 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
           type="submit"
           className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
         >
-          Add User
+          Update User
         </button>
       </form>
     </div>
@@ -251,4 +248,4 @@ const InputField = ({
   </div>
 );
 
-export default AddUsersContent;
+export default EditUsersContent;
