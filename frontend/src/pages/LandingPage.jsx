@@ -1,30 +1,19 @@
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, Navigate } from "react-router-dom";
 import { FaRocket, FaChartLine, FaUsers, FaLightbulb } from "react-icons/fa";
-import ThemeToggle from "../components/common/ThemeToggle"; // Import the new component
+import { useAuth } from "../hooks/useAuth";
 import Navbar from "../components/layout/Navbar";
-import { useAuth } from "../hooks/useAuth"; // Custom hook to get auth state
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 
 const LandingPage = () => {
+  const { isAuthenticated } = useAuth();
 
-   const { isAuthenticated } = useAuth();
-   const navigate = useNavigate();
-
-   useEffect(() => {
-     if (isAuthenticated) {
-       toast.success("You have already logged in");
-       navigate("/dashboard");
-     }
-   }, [isAuthenticated, navigate]);
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" />;
+  }
 
   return (
     <div className="w-full min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Navbar */}
       <Navbar />
-
-      {/* Hero Section */}
       <header className="relative w-full min-h-screen flex items-center justify-center pt-16">
         <div className="container mx-auto px-6 grid md:grid-cols-2 items-center gap-12">
           <div className="text-left">
@@ -40,7 +29,6 @@ const LandingPage = () => {
                 to="/register"
                 className="px-6 py-3 bg-secondary-light text-white rounded-md hover:bg-secondary-dark transition duration-300 flex items-center"
               >
-                
                 <FaRocket className="mr-2" /> Get Started
               </Link>
               <Link
@@ -53,7 +41,7 @@ const LandingPage = () => {
           </div>
           <div>
             <img
-              src="./hero1.jpg"
+              src="/hero1.jpg"
               alt="Productivity"
               className="rounded-lg shadow-xl"
             />
@@ -110,9 +98,6 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-
-      {/* Rest of the sections remain mostly the same */}
-      {/* ... (Testimonials, CTA, Footer) ... */}
     </div>
   );
 };

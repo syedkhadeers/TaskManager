@@ -1,32 +1,20 @@
 import express from "express";
-import {
-  getUser,
-  loginUser,
-  logoutUser,
-  registerUser,
-  updateUser,
-  userLoginStatus,
-  verifyEmail,
-  verifyUser,
-  forgotPassword,
-  resetPassword,
-  changePassword,
-  updateOtherUser,
-} from "../controllers/auth/userController.js";
+
 import {
   adminMiddleware,
   creatorMiddleware,
   protect,
 } from "../middleware/authMiddleware.js";
-import {
-  deleteUser,
-  getAllUsers,
-} from "../controllers/auth/adminController.js";
+
 import {uploadUserPhoto} from "../middleware/uploadMiddleware.js";
+import { changePassword, forgotPassword, loginUser, logoutUser, registerUser, resetPassword, userLoginStatus, verifyEmail, verifyUser } from "../controllers/auth/authController.js";
+import { addUser, getUser, updateUser } from "../controllers/auth/userController.js";
+import { deleteUser, getAllUsers, updateOtherUser } from "../controllers/auth/adminController.js";
 
 const router = express.Router();
 
 router.post("/register", uploadUserPhoto.single("photo"), registerUser);
+router.post("/add-user", uploadUserPhoto.single("photo"), addUser);
 router.post("/login", loginUser);
 router.post("/logout", protect, logoutUser);
 router.get("/user", protect, getUser);

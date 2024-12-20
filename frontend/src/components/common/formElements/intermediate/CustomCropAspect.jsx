@@ -42,6 +42,7 @@ const CustomCropAspect = () => {
   const imageRef = useRef(null);
   const containerRef = useRef(null);
 
+
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {

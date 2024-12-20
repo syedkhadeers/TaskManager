@@ -24,13 +24,13 @@ import {
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { getUsers } from "../../services/userService";
 import Avatar from "react-avatar";
 import Papa from "papaparse";
 import AddUsersContent from "./AddUsersContent";
 import EditUserModal from "../common/modal/EditUserModal";
 import { Menu, Transition } from "@headlessui/react";
 import { motion } from "framer-motion";
+import { getAllUsers } from "../../services/userServices"; // Import getAllUsers
 
 const UsersContent = () => {
   const [data, setData] = useState([]);
@@ -47,8 +47,13 @@ const UsersContent = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await getUsers();
-        setData(response || []);
+        const response = await getAllUsers();
+        if (Array.isArray(response)) {
+          setData(response);
+        } else {
+          console.error("Expected an array but got:", response);
+          setData([]); // Handle the error as needed
+        }
       } catch (error) {
         console.error("Error fetching users:", error);
       }

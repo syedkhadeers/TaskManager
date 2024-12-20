@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { forgotPassword } from "../../services/userService.js";
 import { AiOutlineMail } from "react-icons/ai";
 import { Link } from "react-router-dom";
+import { forgotPassword } from "../../services/authServices";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");

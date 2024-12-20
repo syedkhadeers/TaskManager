@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { registerUser } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineMail } from "react-icons/ai";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { FiUser, FiUserPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { registerUser } from "../../services/authServices";
 
 const Register = () => {
   const [name, setName] = useState("");

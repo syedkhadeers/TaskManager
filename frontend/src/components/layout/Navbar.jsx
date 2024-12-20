@@ -1,9 +1,10 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sun, Moon, Settings, LogOut, ChevronDown } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useAuth } from "../../hooks/useAuth";
 import LogoutModal from "../common/modal/LogoutModal";
+import { getCurrentUser } from "../../services/authServices";
 
 const Navbar = () => {
   const { isDarkMode, toggleTheme } = useContext(ThemeContext);
@@ -20,6 +21,8 @@ const Navbar = () => {
       console.error("Logout error:", error);
     }
   };
+
+
 
   return (
     <div className="flex items-center justify-end h-full px-4">
@@ -50,7 +53,7 @@ const Navbar = () => {
                 Welcome,
               </p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {user?.name || "User"}
+                {user?.name || "User  "}
               </p>
             </div>
             <ChevronDown className="h-4 w-4 text-gray-500" />

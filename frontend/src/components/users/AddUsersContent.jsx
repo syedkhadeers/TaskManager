@@ -1,10 +1,16 @@
 import React, { useState, useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
-import { FiUser, FiMail, FiPhone, FiLock, FiGlobe } from "react-icons/fi";
-import { MdAddPhotoAlternate } from "react-icons/md";
+import {
+  FiUser,
+  FiMail,
+  FiPhone,
+  FiLock,
+  FiGlobe,
+  FiImage,
+} from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { addUser } from "../../services/authService";
-import CustomCropAspect from "../common/formElements/intermediate/CustomCropAspect";
+import { addUser } from "../../services/userServices";
+import { toast } from "react-toastify"; // Import toast
 
 const AddUsersContent = ({ onClose }) => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -31,10 +37,17 @@ const AddUsersContent = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await addUser(formData);
-    if (response) {
-      onClose();
-      // Optionally, you can refresh the user list or show a success message
+    console.log("Form submitted:", formData);
+    try {
+      const response = await addUser(formData);
+      if (response) {
+        onClose();
+        toast.success("User  added successfully!"); // Show success message
+        navigate("/users"); // Refresh the user list
+      }
+    } catch (error) {
+      toast.error("Failed to add user."); // Show error message
+      console.error("Error adding user:", error);
     }
   };
 
@@ -135,7 +148,7 @@ const AddUsersContent = ({ onClose }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
           >
-            <option value="user">User</option>
+            <option value="user">User </option>
             <option value="admin">Admin</option>
             <option value="creator">Creator</option>
           </select>
@@ -158,7 +171,12 @@ const AddUsersContent = ({ onClose }) => {
           <label className="block text-sm font-medium mb-1">
             Profile Photo
           </label>
-          <CustomCropAspect />
+          <InputField
+            icon={<FiImage />}
+            type="file"
+            name="photo"
+            onChange={handleChange}
+          />
         </div>
 
         <button

@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { requestEmailVerification, verifyEmail } from "../services/userService";
+import {
+  requestEmailVerification,
+  verifyEmail,
+} from "./authServices";
 
 const EmailVerification = () => {
   const [message, setMessage] = useState("");

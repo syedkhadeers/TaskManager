@@ -22,8 +22,8 @@ const Login = () => {
 
     try {
       await handleLogin({ email, password });
+      window.location.reload();
       toast.success("Login successful!");
-      navigate("/dashboard");
     } catch (error) {
       toast.error(error.message || "Login failed. Please try again.");
     } finally {

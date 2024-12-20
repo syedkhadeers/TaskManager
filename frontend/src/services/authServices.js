@@ -1,16 +1,42 @@
 import { api, handleApiError } from "../utils/api";
 
-export const updateUserProfile = async (userData) => {
+export const registerUser = async (userData) => {
   try {
     const formData = new FormData();
-    Object.keys(userData).forEach((key) => {
-      formData.append(key, userData[key]);
+    Object.entries(userData).forEach(([key, value]) => {
+      formData.append(key, value);
     });
 
-    const response = await api.patch("/user", formData, {
+    const response = await api.post("/register", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const loginUser = async (credentials) => {
+  try {
+    const response = await api.post("/login", credentials);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    await api.post("/logout");
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const response = await api.get("/user");
     return response.data;
   } catch (error) {
     throw handleApiError(error);
@@ -26,10 +52,10 @@ export const forgotPassword = async (email) => {
   }
 };
 
-export const resetPassword = async (resetPasswordToken, newPassword) => {
+export const resetPassword = async (resetPasswordToken, password) => {
   try {
     const response = await api.post(`/reset-password/${resetPasswordToken}`, {
-      password: newPassword,
+      password,
     });
     return response.data;
   } catch (error) {
@@ -61,16 +87,6 @@ export const requestEmailVerification = async () => {
 export const verifyEmail = async (verificationToken) => {
   try {
     const response = await api.post(`/verify-user/${verificationToken}`);
-    return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
-};
-
-// Existing methods...
-export const getUsers = async () => {
-  try {
-    const response = await api.get("/users");
     return response.data;
   } catch (error) {
     throw handleApiError(error);

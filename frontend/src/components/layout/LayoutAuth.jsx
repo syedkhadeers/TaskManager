@@ -32,10 +32,6 @@ const LayoutAuth = ({ children }) => {
         }}
       >
         <div className="w-full ml-5">
-          <header className="w-12/12">
-            <Navbar />
-          </header>
-
           <main
             className={`w-12/12 w-12/12 relative overflow-y-auto rounded-lg p-6`}
             style={{
