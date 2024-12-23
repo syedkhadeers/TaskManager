@@ -45,15 +45,6 @@ export const addUser = async (userData) => {
   }
 };
 
-// export const deleteUser = async (userId) => {
-//   try {
-//     const response = await api.delete(`/admin/users/${userId}`);
-//     return response.data;
-//   } catch (error) {
-//     throw handleApiError(error);
-//   }
-// };
-
 export const deleteUser = async (userId) => {
   try {
     const response = await api.delete(`/admin/users/${userId}`);
@@ -90,3 +81,12 @@ export const updateOtherUser = async (userId, userData) => {
   }
 };
 
+// get other user data using 'router.get("/user/:id", protect, getOtherUser);'
+export const getOtherUser = async (userId) => {
+  try {
+    const response = await api.get(`/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}

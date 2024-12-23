@@ -16,6 +16,8 @@ import FormElements from "./pages/FormElements";
 import FormElementBasic from "./pages/forms/FormElementBasic";
 import FormElementIntermediate from "./pages/forms/FormElementIntermediate";
 import FormElementAdvanced from "./pages/forms/FormElementAdvanced";
+import ViewUserContent from "./components/users/VIewUserContent";
+import ViewUserPage from "./pages/ViewUserPage";
 
 
 
@@ -34,6 +36,8 @@ const App = () => {
               <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
               <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
               <Route path="/users/add" element={<PrivateRoute element={<AddUsersPage />} />} />
+              <Route path="/users/view/:id" element={<PrivateRoute element={<ViewUserPage />} />} />
+
               <Route path="/users" element={<PrivateRoute element={<UsersPage />} />} />
               <Route path="/form" element={<PrivateRoute element={<FormElements />} />} />
               <Route path="/form-elements/basic" element={<PrivateRoute element={<FormElementBasic />} />} />

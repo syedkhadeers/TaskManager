@@ -23,6 +23,8 @@ import {
   ShieldIcon,
   PencilIcon,
   RefreshCcw,
+  EyeIcon,
+  TrashIcon,
 } from "lucide-react";
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { jsPDF } from "jspdf";
@@ -31,10 +33,13 @@ import Avatar from "react-avatar";
 import AddUsersContent from "./AddUsersContent";
 import { Menu, Transition } from "@headlessui/react";
 import { motion } from "framer-motion";
-import { getAllUsers, deleteUser  } from "../../services/userServices";
+import { getAllUsers, deleteUser, getOtherUser } from "../../services/userServices";
 import EditUsersContent from "./EditUsersContent";
 import DeleteModal from "../common/modal/DeleteModal";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+
+
 
 const UsersContent = () => {
   const [data, setData] = useState([]);
@@ -50,6 +55,8 @@ const UsersContent = () => {
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState(null); // Store the user ID to delete
+
+  const navigate = useNavigate();
 
 const confirmDelete = async () => {
   if (userIdToDelete) {
@@ -573,8 +580,8 @@ const handleDeleteUser = (user) => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Menu as="div" className="relative inline-block text-left">
                       <div>
-                        <Menu.Button className="text-gray-500 hover:text-blue-600 focus:outline-none">
-                          <MoreVerticalIcon size={20} />
+                        <Menu.Button className="inline-flex items-center justify-center w-8 h-8 text-gray-400 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 focus:outline-none">
+                          <MoreVerticalIcon size={18} />
                         </Menu.Button>
                       </div>
                       <Transition
@@ -586,33 +593,53 @@ const handleDeleteUser = (user) => {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                       >
-                        <Menu.Items className="absolute right-0 w-56 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                          <div className="px-1 py-1">
+                        <Menu.Items className="absolute right-0 w-48 mt-2 origin-top-right bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none divide-y divide-gray-100 border border-gray-100 transform transition-all duration-200">
+                          <div className="py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() =>
+                                    navigate(`/users/view/${row.original._id}`)
+                                  }
+                                  className={`${
+                                    active
+                                      ? "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700"
+                                      : "text-gray-700"
+                                  } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
+                                >
+                                  <EyeIcon className="mr-3 h-4 w-4" />
+                                  View User
+                                </button>
+                              )}
+                            </Menu.Item>
+
                             <Menu.Item>
                               {({ active }) => (
                                 <button
                                   onClick={() => handleEditUser(row.original)}
                                   className={`${
                                     active
-                                      ? "bg-blue-500 text-white"
-                                      : "text-gray-900"
-                                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      ? "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700"
+                                      : "text-gray-700"
+                                  } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                                 >
+                                  <PencilIcon className="mr-3 h-4 w-4" />
                                   Edit User
                                 </button>
                               )}
                             </Menu.Item>
-                            
+
                             <Menu.Item>
                               {({ active }) => (
                                 <button
                                   onClick={() => handleDeleteUser(row.original)}
                                   className={`${
                                     active
-                                      ? "bg-red-500 text-white"
-                                      : "text-gray-900"
-                                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      ? "bg-gradient-to-r from-red-50 to-red-100 text-red-700"
+                                      : "text-gray-700"
+                                  } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                                 >
+                                  <TrashIcon className="mr-3 h-4 w-4" />
                                   Delete User
                                 </button>
                               )}

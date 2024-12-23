@@ -8,7 +8,7 @@ import {
 
 import {uploadUserPhoto} from "../middleware/uploadMiddleware.js";
 import { changePassword, forgotPassword, loginUser, logoutUser, registerUser, resetPassword, userLoginStatus, verifyEmail, verifyUser } from "../controllers/auth/authController.js";
-import { addUser, getUser, updateUser } from "../controllers/auth/userController.js";
+import { addUser, getOtherUser, getUser, updateUser } from "../controllers/auth/userController.js";
 import { deleteUser, getAllUsers, updateOtherUser } from "../controllers/auth/adminController.js";
 
 const router = express.Router();
@@ -24,18 +24,16 @@ router.patch("/update-user/:id", protect, uploadUserPhoto.single("photo"), updat
 // Admin routes
 router.delete("/admin/users/:id", protect, adminMiddleware, deleteUser);
 router.get("/users", protect, creatorMiddleware, getAllUsers);
-
 router.get("/login-status", userLoginStatus);
+
+//get other user details
+router.get("/user/:id", protect, getOtherUser);
 
 // Corrected line
 router.post("/verify-email", protect, verifyEmail);
-
 router.post("/verify-user/:verificationToken", verifyUser);
-
 router.post("/forgot-password",  forgotPassword);
-
 router.post("/reset-password/:resetPasswordToken",  resetPassword);
-
 router.patch("/change-password", protect, changePassword);
 
 export default router;

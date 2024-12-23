@@ -105,3 +105,16 @@ export const updateUser = asyncHandler(async (req, res) => {
     res.status(404).json({ message: "User not found" });
   }
 });
+
+
+//get the details of other single user
+
+export const getOtherUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (user) {
+    res.status(200).json(user);
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
+});
