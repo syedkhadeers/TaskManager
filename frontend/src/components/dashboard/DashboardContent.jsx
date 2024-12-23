@@ -1,383 +1,446 @@
 import React from "react";
-import {
-  FaUsers,
-  FaUserFriends,
-  FaBuilding,
-  FaWarehouse,
-  FaChartLine,
-  FaFileAlt,
-  FaShoppingCart,
-  FaMoneyBillWave,
-  FaChartPie,
-  FaMapMarkerAlt,
-  FaEnvelope,
-  FaPhone,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { BarChart, Bar, Cell } from 'recharts';
+import {
+  Users,
+  Building,
+  CreditCard,
+  TrendingUp,
+  Calendar,
+  MessageSquare,
+  AlertCircle,
+  Activity,
+  Package,
+  ShoppingCart,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Sector,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend,
+} from "recharts";
 
 const DashboardContent = () => {
-  const cardData = [
+  const stats = [
     {
-      title: "Customers",
-      icon: <FaUsers />,
-      color: "from-blue-500 to-blue-700",
-      value: "1,234",
-      description: "Total registered customers",
+      label: "Total Users",
+      value: "2,543",
+      icon: Users,
+      trend: "+12.5%",
+      color: "bg-purple-100 text-purple-600",
     },
     {
-      title: "Suppliers",
-      icon: <FaUserFriends />,
-      color: "from-green-500 to-green-700",
-      value: "87",
-      description: "Active supplier partnerships",
+      label: "Active Rooms",
+      value: "185",
+      icon: Building,
+      trend: "+5.2%",
+      color: "bg-green-100 text-green-600",
     },
     {
-      title: "Rooms",
-      icon: <FaBuilding />,
-      color: "from-red-500 to-red-700",
-      value: "42",
-      description: "Total rooms managed",
+      label: "Revenue",
+      value: "$12,543",
+      icon: CreditCard,
+      trend: "+18.7%",
+      color: "bg-yellow-100 text-yellow-600",
     },
     {
-      title: "Inventory",
-      icon: <FaWarehouse />,
-      color: "from-yellow-500 to-yellow-700",
-      value: "653",
-      description: "Items in stock",
-    },
-    {
-      title: "Sales",
-      icon: <FaShoppingCart />,
-      color: "from-purple-500 to-purple-700",
-      value: "$45,678",
-      description: "Total sales this month",
-    },
-    {
-      title: "Revenue",
-      icon: <FaMoneyBillWave />,
-      color: "from-pink-500 to-pink-700",
-      value: "$123,456",
-      description: "Total revenue YTD",
-    },
-    {
-      title: "Growth",
-      icon: <FaChartLine />,
-      color: "from-green-400 to-green-600",
-      value: "24%",
-      description: "Growth rate this year",
-    },
-    {
-      title: "Expenses",
-      icon: <FaFileAlt />,
-      color: "from-gray-500 to-gray-700",
-      value: "$67,890",
-      description: "Total expenses this quarter",
-    },
-    {
-      title: "Profit Margin",
-      icon: <FaChartPie />,
-      color: "from-indigo-500 to-indigo-700",
-      value: "58%",
-      description: "Current profit margin",
+      label: "Growth",
+      value: "23.5%",
+      icon: TrendingUp,
+      trend: "+2.4%",
+      color: "bg-pink-100 text-pink-600",
     },
   ];
 
-  const quickActions = [
-    { icon: <FaChartLine />, title: "Analytics" },
-    { icon: <FaFileAlt />, title: "Reports" },
-    { icon: <FaChartPie />, title: "Insights" },
-    { icon: <FaUsers />, title: "Manage Users" },
-    { icon: <FaBuilding />, title: "Manage Rooms" },
-    { icon: <FaWarehouse />, title: "Stock Overview" },
-    { icon: <FaShoppingCart />, title: "New Orders" },
-    { icon: <FaMoneyBillWave />, title: "Financial Reports" },
+  const chartData = [
+    { name: "Jan", value: 400, orders: 240, visitors: 1200 },
+    { name: "Feb", value: 300, orders: 139, visitors: 1000 },
+    { name: "Mar", value: 600, orders: 380, visitors: 1600 },
+    { name: "Apr", value: 800, orders: 430, visitors: 1800 },
+    { name: "May", value: 700, orders: 350, visitors: 1700 },
+    { name: "Jun", value: 900, orders: 470, visitors: 2100 },
   ];
 
-  const newsFeed = [
-    {
-      title: "New Sales Report",
-      description: "Check out the latest sales report for this quarter.",
-      date: "2023-02-15",
-    },
-    {
-      title: "New Supplier Partnership",
-      description:
-        "We're excited to announce a new partnership with XYZ Suppliers.",
-      date: "2023-02-10",
-    },
-    {
-      title: "System Update",
-      description: "Our system will be undergoing maintenance on 2023-02-20.",
-      date: "2023-02-05",
-    },
+  const pieData = [
+    { name: "Desktop", value: 400, color: "#FF6B6B" },
+    { name: "Mobile", value: 300, color: "#4ECDC4" },
+    { name: "Tablet", value: 200, color: "#45B7D1" },
+    { name: "Smart TV", value: 100, color: "#FFA07A" },
+    { name: "Others", value: 50, color: "#98D8C8" },
   ];
 
-  const calendarEvents = [
-    {
-      title: "Team Meeting",
-      date: "2023-02-20",
-      time: "10:00 AM",
-    },
-    {
-      title: "Client Meeting",
-      date: "2023-02-22",
-      time: "2:00 PM",
-    },
-    {
-      title: "Sales Report Deadline",
-      date: "2023-02-25",
-      time: "5:00 PM",
-    },
+  const radarData = [
+    { subject: "Performance", A: 120, B: 110, fullMark: 150 },
+    { subject: "Reliability", A: 98, B: 130, fullMark: 150 },
+    { subject: "Usability", A: 86, B: 130, fullMark: 150 },
+    { subject: "Security", A: 99, B: 100, fullMark: 150 },
+    { subject: "Functionality", A: 85, B: 90, fullMark: 150 },
+    { subject: "Support", A: 65, B: 85, fullMark: 150 },
   ];
 
-  const contactInfo = [
+  const recentActivities = [
     {
-      title: "Email",
-      value: "info@example.com",
-      icon: <FaEnvelope />,
+      id: 1,
+      title: "New user registration",
+      time: "2 minutes ago",
+      icon: Users,
+      color: "text-blue-500 bg-blue-100",
     },
     {
-      title: "Phone",
-      value: "+1 (555) 123-4567",
-      icon: <FaPhone />,
+      id: 2,
+      title: "New order received",
+      time: "1 hour ago",
+      icon: ShoppingCart,
+      color: "text-green-500 bg-green-100",
     },
     {
-      title: "Address",
-      value: "123 Main St, Anytown, USA",
-      icon: <FaMapMarkerAlt />,
+      id: 3,
+      title: "Server alert",
+      time: "3 hours ago",
+      icon: AlertCircle,
+      color: "text-red-500 bg-red-100",
     },
   ];
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        delayChildren: 0.2,
-        staggerChildren: 0.1,
-      },
+  const tableData = [
+    {
+      id: 1,
+      product: "Premium Plan",
+      amount: "$99.00",
+      status: "Completed",
+      date: "2024-01-15",
+      change: "+5.2%",
+      trend: "up",
     },
+    {
+      id: 2,
+      product: "Basic Plan",
+      amount: "$29.00",
+      status: "Pending",
+      date: "2024-01-14",
+      change: "-2.1%",
+      trend: "down",
+    },
+    {
+      id: 3,
+      product: "Enterprise Plan",
+      amount: "$299.00",
+      status: "Completed",
+      date: "2024-01-13",
+      change: "+12.5%",
+      trend: "up",
+    },
+  ];
+
+  const renderActiveShape = (props) => {
+    const RADIAN = Math.PI / 180;
+    const {
+      cx,
+      cy,
+      midAngle,
+      innerRadius,
+      outerRadius,
+      startAngle,
+      endAngle,
+      fill,
+      payload,
+      percent,
+      value,
+    } = props;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? "start" : "end";
+
+    return (
+      <g>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
+          {payload.name}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 6}
+          outerRadius={outerRadius + 10}
+          fill={fill}
+        />
+        <path
+          d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`}
+          stroke={fill}
+          fill="none"
+        />
+        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+        <text
+          x={ex + (cos >= 0 ? 1 : -1) * 12}
+          y={ey}
+          textAnchor={textAnchor}
+          fill="#333"
+        >{`Value ${value}`}</text>
+        <text
+          x={ex + (cos >= 0 ? 1 : -1) * 12}
+          y={ey}
+          dy={18}
+          textAnchor={textAnchor}
+          fill="#999"
+        >
+          {`(${(percent * 100).toFixed(2)}%)`}
+        </text>
+      </g>
+    );
   };
 
-  const cardVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-      },
-    },
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const onPieEnter = (_, index) => {
+    setActiveIndex(index);
   };
-
-  const lineChartData = [
-    { name: 'Jan', uv: 4000, pv: 2400, amt: 2400 },
-    { name: 'Feb', uv: 3000, pv: 1398, amt: 2210 },
-    { name: 'Mar', uv: 2000, pv: 9800, amt: 2290 },
-    { name: 'Apr', uv: 2780, pv: 3908, amt: 2000 },
-    { name: 'May', uv: 1890, pv: 4800, amt: 2181 },
-    { name: 'Jun', uv: 2390, pv: 3800, amt: 2500 },
-    { name: 'Jul', uv: 3490, pv: 4300, amt: 2100 },
-  ];
-
-  const barChartData = [
-    { name: 'Jan', uv: 4000, pv: 2400, amt: 2400 },
-    { name: 'Feb', uv: 3000, pv: 1398, amt: 2210 },
-    { name: 'Mar', uv: 2000, pv: 9800, amt: 2290 },
-    { name: 'Apr', uv: 2780, pv: 3908, amt: 2000 },
-    { name: 'May', uv: 1890, pv: 4800, amt: 2181 },
-    { name: 'Jun', uv: 2390, pv: 3800, amt: 2500 },
-    { name: 'Jul', uv: 3490, pv: 4300, amt: 2100 },
-  ];
 
   return (
-    <div className="max-w-7xl mx-auto pt-4">
-      {/* Dashboard Header */}
-      <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
-        Welcome Back, Syed Khadeer!
-      </h2>
-
-      {/* Cards Section */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8"
-      >
-        {cardData.map((card, index) => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-8"
+    >
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
           <motion.div
             key={index}
-            variants={cardVariants}
-            className={`bg-gradient-to-br ${card.color} 
-              rounded-lg shadow-md overflow-hidden 
-              transform transition-all duration-300 
-              hover:scale-105 hover:shadow-lg`}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
           >
-            <div className="p-4 text-white">
-              <div className="flex justify-between items-center mb-3">
-                <div className="bg-white/20 p-2 rounded-full">
-                  <span className="text-2xl">{card.icon}</span>
-                </div>
-                <div className="text-right">
-                  <h3 className="text-sm font-semibold">{card.title}</h3>
-                  <p className="text-lg font-bold">{card.value}</p>
-                </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {stat.label}
+                </p>
+                <h3 className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+                  {stat.value}
+                </h3>
+                <span className="text-sm text-green-500">{stat.trend}</span>
               </div>
-              <p className="text-xs opacity-75">{card.description}</p>
+              <div className={`p-3 rounded-lg ${stat.color}`}>
+                <stat.icon className="h-6 w-6" />
+              </div>
             </div>
           </motion.div>
         ))}
-      </motion.div>
-      <div className="flex space-x-4">
-        <div
-          className={`w-1/2 bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg mb-4`}
-        >
-          {/* Line Chart */}
-          <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white text-start">
-            Sales Trend
-          </h2>
-          <LineChart width={500} height={300} data={lineChartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="pv"
-              stroke="#8884d8"
-              activeDot={{ r: 8 }}
-            />
-            <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
-          </LineChart>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Revenue Overview
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#FF6B6B"
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div
-          className={`w-1/2 bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg mb-4`}
-        >
-          {/* Bar Chart */}
-          <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white text-start">
-            Sales by Month
-          </h2>
-          <BarChart width={500} height={300} data={barChartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="pv" fill="#8884d8" />
-            <Bar dataKey="uv" fill="#82ca9d" />
-          </BarChart>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Device Distribution
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveShape}
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  onMouseEnter={onPieEnter}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* Quick Actions Section */}
-      <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">
-        Quick Actions
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {quickActions.map((action, index) => (
-          <motion.button
-            key={index}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="
-              rounded-lg p-3 
-              flex flex-col items-center 
-              shadow-sm 
-              hover:shadow-md 
-              transition-all 
-              bg-white dark:bg-gray-800
-              text-gray-700 dark:text-gray-200"
-          >
-            <span className="text-xl mb-1 text-blue-500">{action.icon}</span>
-            <span className="text-sm font-medium text-center">
-              {action.title}
-            </span>
-          </motion.button>
-        ))}
+      {/* Activity and Orders Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Recent Activities
+          </h3>
+          <div className="space-y-4">
+            {recentActivities.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-center space-x-3 border-b border-gray-200 dark:border-gray-700 pb-3"
+              >
+                <div className={`p-2 rounded-full ${activity.color}`}>
+                  <activity.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {activity.title}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {activity.time}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Recent Orders
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="pb-3">Product</th>
+                  <th className="pb-3">Amount</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">Change</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                {tableData.map((item) => (
+                  <tr key={item.id}>
+                    <td className="py-2">{item.product}</td>
+                    <td>{item.amount}</td>
+                    <td>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          item.status === "Completed"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="flex items-center">
+                      <span
+                        className={
+                          item.trend === "up"
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }
+                      >
+                        {item.trend === "up" ? (
+                          <ArrowUp size={16} />
+                        ) : (
+                          <ArrowDown size={16} />
+                        )}
+                      </span>
+                      <span
+                        className={`ml-1 ${
+                          item.trend === "up"
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {item.change}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      {/* News Feed Section */}
-      <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">
-        News Feed
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {newsFeed.map((news, index) => (
-          <motion.div
-            key={index}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="
-              rounded-lg p-3 
-              flex flex-col items-center 
-              shadow-sm 
-              hover:shadow-md 
-              transition-all 
-              bg-white dark:bg-gray-800
-              text-gray-700 dark:text-gray-200"
-          >
-            <h3 className="text-lg font-bold">{news.title}</h3>
-            <p className="text-sm">{news.description}</p>
-            <p className="text-xs opacity-75">{news.date}</p>
-          </motion.div>
-        ))}
+      {/* Radar Chart */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Performance Metrics
+        </h3>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+              <PolarGrid gridType="circular" />
+              <PolarAngleAxis dataKey="subject" />
+              <PolarRadiusAxis angle={30} domain={[0, 150]} />
+              <Radar
+                name="Product A"
+                dataKey="A"
+                stroke="#FF6B6B"
+                fill="#FF6B6B"
+                fillOpacity={0.6}
+              />
+              <Radar
+                name="Product B"
+                dataKey="B"
+                stroke="#4ECDC4"
+                fill="#4ECDC4"
+                fillOpacity={0.6}
+              />
+              <Legend />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-
-      {/* Calendar Events Section */}
-      <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">
-        Calendar Events
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {calendarEvents.map((event, index) => (
-          <motion.div
-            key={index}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="
-              rounded-lg p-3 
-              flex flex-col items-center 
-              shadow-sm 
-              hover:shadow-md 
-              transition-all 
-              bg-white dark:bg-gray-800
-              text-gray-700 dark:text-gray-200"
-          >
-            <h3 className="text-lg font-bold">{event.title}</h3>
-            <p className="text-sm">
-              {event.date} {event.time}
-            </p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Contact Info Section */}
-      <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">
-        Contact Info
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {contactInfo.map((contact, index) => (
-          <motion.div
-            key={index}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="
-              rounded-lg p-3 
-              flex flex-col items-center 
-              shadow-sm 
-              hover:shadow-md 
-              transition-all 
-              bg-white dark:bg-gray-800
-              text-gray-700 dark:text-gray-200"
-          >
-            <h3 className="text-lg font-bold">{contact.title}</h3>
-            <p className="text-sm">{contact.value}</p>
-            <span className="text-xl">{contact.icon}</span>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+    </motion.div>
   );
 };
 

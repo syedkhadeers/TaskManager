@@ -15,6 +15,11 @@ const timeSlotSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    sameDay: {
+      type: String,
+      enum: ["Same Day", "Next Day"],
+      default: "Same Day",
+    },
     priceMultiplier: {
       type: Number,
       default: 1,

@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
-import { ThemeContext } from "../context/ThemeContext";
-import UsersContent from "../components/users/UsersContent";
-import Layout from "../components/layout/Layout";
+import UsersContent from "../../components/users/UsersContent";
+import Layout from "../../components/layout/Layout";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const UsersPage = () => {
   const { isDarkMode } = useContext(ThemeContext);

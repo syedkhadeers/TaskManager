@@ -1,10 +1,10 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import Login from "../components/auth/Login";
-import LayoutAuth from "../components/layout/LayoutAuth";
+import { useAuth } from "../../hooks/useAuth";
+import Register from "../../components/auth/Register";
+import LayoutAuth from "../../components/layout/LayoutAuth";
 
-const LoginPage = () => {
+const RegisterPage = () => {
   const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
@@ -15,11 +15,11 @@ const LoginPage = () => {
     <LayoutAuth>
       <div className="flex items-center justify-center h-full w-full">
         <div className="w-full max-w-md p-6">
-          <Login />
+          <Register />
         </div>
       </div>
     </LayoutAuth>
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

@@ -1,12 +1,11 @@
 import React, { useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import LayoutAuth from "../components/layout/LayoutAuth";
-import ForgotPassword from "../components/auth/ForgotPassword";
+import LayoutAuth from "../../components/layout/LayoutAuth";
+import ForgotPassword from "../../components/auth/ForgotPassword";
 
 const ForgotPasswordPage = () => {
-
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 

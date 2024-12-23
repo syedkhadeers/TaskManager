@@ -77,3 +77,12 @@ export const uploadRoomImages = multer({
     files: 10, // Maximum 10 files
   },
 });
+
+export const uploadServicePhoto = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB file size limit for room images
+    files: 10, // Maximum 10 files
+  },
+});

@@ -14,6 +14,12 @@ const roomTypeSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    specialPrice: {
+      type: Number,
+    },
+    offerPrice: {
+      type: Number,
+    },
     maxOccupancy: {
       type: Number,
       min: [1, "Minimum occupancy is 1"],
@@ -25,6 +31,17 @@ const roomTypeSchema = new mongoose.Schema(
           ref: "TimeSlot",
         },
         price: Number,
+      },
+    ],
+    extraServices: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ExtraService",
+      },
+    ],
+    images: [
+      {
+        type: String, 
       },
     ],
     isActive: {

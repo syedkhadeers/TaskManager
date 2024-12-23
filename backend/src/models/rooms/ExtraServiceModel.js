@@ -12,6 +12,10 @@ const extraServiceSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    image : {
+      type: String,
+      default: "",
+    },
     price: {
       type: Number,
       required: [true, "Price is required"],
