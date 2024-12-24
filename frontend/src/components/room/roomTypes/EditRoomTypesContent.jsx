@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { ThemeContext } from "../../../context/ThemeContext";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, Check, Edit2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { updateRoomType } from "../../../services/rooms/roomTypeServices";
 import { getAllExtraServices } from "../../../services/rooms/extraServiceServices";
@@ -8,142 +8,218 @@ import { getAllTimeSlotsExport } from "../../../services/rooms/timeSlotServices"
 import { toast } from "react-toastify";
 import MultiImageEditor from "../../editors/MultiImageEditor";
 import Select from "react-select";
+import LoadingSpinner from "../../common/LoadingSpinner";
 
 const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
   const { isDarkMode } = useContext(ThemeContext);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   const [formData, setFormData] = useState({
-    name: roomType.name,
-    description: roomType.description,
-    basePrice: roomType.basePrice,
-    specialPrice: roomType.specialPrice,
-    offerPrice: roomType.offerPrice,
-    maxOccupancy: roomType.maxOccupancy,
-    extraServices: roomType.extraServices,
-    timeSlotPricing: roomType.timeSlotPricing,
-    images: roomType.images.map((url) => ({ preview: url })),
-    isActive: roomType.isActive,
+    name: roomType.name || "",
+    description: roomType.description || "",
+    basePrice: roomType.basePrice || 0,
+    specialPrice: roomType.specialPrice || 0,
+    offerPrice: roomType.offerPrice || 0,
+    maxOccupancy: roomType.maxOccupancy || 1,
+    extraServices: roomType.extraServices || [],
+    timeSlotPricing: roomType.timeSlotPricing || [],
+    images: roomType.images?.map((url) => ({ preview: url })) || [],
+    isActive: roomType.isActive ?? true,
   });
 
   const [extraServices, setExtraServices] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [timeSlotPrice, setTimeSlotPrice] = useState("");
+  const [editingSlotIndex, setEditingSlotIndex] = useState(null);
+  const [editingPrice, setEditingPrice] = useState("");
 
   useEffect(() => {
-    fetchExtraServices();
-    fetchTimeSlots();
-  }, []);
-
-  const fetchExtraServices = async () => {
-    try {
-      const services = await getAllExtraServices();
-      setExtraServices(services);
-    } catch (error) {
-      console.error("Error fetching extra services:", error);
-    }
-  };
-
-  const fetchTimeSlots = async () => {
-    try {
-      const slots = await getAllTimeSlotsExport();
-      if (Array.isArray(slots)) {
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      try {
+        const [services, slots] = await Promise.all([
+          getAllExtraServices(),
+          getAllTimeSlotsExport(),
+        ]);
+        setExtraServices(services);
         setTimeSlots(slots);
-      } else {
-        console.error("Fetched time slots is not an array:", slots);
-        setTimeSlots([]);
+
+      } catch (error) {
+        toast.error("Error loading initial data");
+        console.error("Error:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching time slots:", error);
-      setTimeSlots([]);
-    }
+    };
+
+    fetchInitialData();
+  }, []);
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name) errors.name = "Name is required";
+    if (!formData.basePrice) errors.basePrice = "Base price is required";
+    if (!formData.maxOccupancy)
+      errors.maxOccupancy = "Max occupancy is required";
+    return errors;
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
 
-  const handleExtraServicesChange = (selectedOptions) => {
+  const handleEditTimeSlot = (index, currentPrice) => {
+    setEditingSlotIndex(index);
+    setEditingPrice(currentPrice.toString());
+  };
+
+  const handleConfirmEdit = (index) => {
     setFormData((prevData) => ({
       ...prevData,
+      timeSlotPricing: prevData.timeSlotPricing.map((slot, i) => {
+        if (i === index) {
+          return { ...slot, price: parseFloat(editingPrice) };
+        }
+        return slot;
+      }),
+    }));
+    setEditingSlotIndex(null);
+    setEditingPrice("");
+  };
+
+
+  const handleExtraServicesChange = (selectedOptions) => {
+    setFormData((prev) => ({
+      ...prev,
       extraServices: selectedOptions.map((option) => option.value),
     }));
   };
 
   const handleAddTimeSlot = () => {
-    if (selectedTimeSlot && timeSlotPrice) {
-      setFormData((prevData) => ({
-        ...prevData,
-        timeSlotPricing: [
-          ...prevData.timeSlotPricing,
-          { timeSlot: selectedTimeSlot, price: parseFloat(timeSlotPrice) },
-        ],
-      }));
-      setSelectedTimeSlot("");
-      setTimeSlotPrice("");
+    if (!selectedTimeSlot || !timeSlotPrice) {
+      toast.warning("Please select a time slot and enter a price");
+      return;
     }
+
+    const timeSlotExists = formData.timeSlotPricing.some(
+      (slot) => (slot.timeSlot._id || slot.timeSlot) === selectedTimeSlot
+    );
+
+    if (timeSlotExists) {
+      toast.warning("This time slot already exists");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      timeSlotPricing: [
+        ...prev.timeSlotPricing,
+        { timeSlot: selectedTimeSlot, price: parseFloat(timeSlotPrice) },
+      ],
+    }));
+
+    setSelectedTimeSlot("");
+    setTimeSlotPrice("");
   };
 
   const handleRemoveTimeSlot = (index) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      timeSlotPricing: prevData.timeSlotPricing.filter((_, i) => i !== index),
+    setFormData((prev) => ({
+      ...prev,
+      timeSlotPricing: prev.timeSlotPricing.filter((_, i) => i !== index),
     }));
   };
 
   const handleImageChange = (images) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      images,
-    }));
+    setFormData((prev) => ({ ...prev, images }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    // Create a new FormData object
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setIsLoading(false);
+      return;
+    }
+
     const formDataToSend = new FormData();
 
-    // Append all form fields to the FormData object
+    // Add basic fields
     Object.keys(formData).forEach((key) => {
-      if (key === "images") {
-        formData.images.forEach((image, index) => {
-          // Use the cropped image if available, otherwise use the original file or URL
-          const fileToUpload = image.cropped
-            ? fetch(image.cropped).then((r) => r.blob())
-            : image.file || image.preview;
-          formDataToSend.append(`images`, fileToUpload);
-        });
-      } else if (key === "extraServices" || key === "timeSlotPricing") {
-        formDataToSend.append(key, JSON.stringify(formData[key]));
-      } else if (
-        key === "basePrice" ||
-        key === "specialPrice" ||
-        key === "offerPrice" ||
-        key === "maxOccupancy"
+      if (
+        key !== "images" &&
+        key !== "extraServices" &&
+        key !== "timeSlotPricing"
       ) {
-        formDataToSend.append(key, formData[key].toString());
-      } else {
         formDataToSend.append(key, formData[key]);
       }
     });
 
+    // Add arrays as JSON strings
+    formDataToSend.append(
+      "extraServices",
+      JSON.stringify(formData.extraServices)
+    );
+    formDataToSend.append(
+      "timeSlotPricing",
+      JSON.stringify(formData.timeSlotPricing)
+    );
+
+    // Handle images
+    const imagePromises = formData.images.map(async (image, index) => {
+      if (image.file) {
+        formDataToSend.append("images", image.file);
+      } else if (image.preview && !image.file) {
+        try {
+          const response = await fetch(image.preview);
+          const blob = await response.blob();
+          formDataToSend.append("images", blob, `image-${index}.jpg`);
+        } catch (error) {
+          console.error("Error processing image:", error);
+        }
+      }
+    });
+
     try {
+      await Promise.all(imagePromises);
       const response = await updateRoomType(roomType._id, formDataToSend);
+
       if (response) {
         toast.success("Room type updated successfully!");
         onRoomTypeUpdated();
         onClose();
       }
     } catch (error) {
-      toast.error(error.message || "Failed to update room type.");
+      toast.error(error.message || "Failed to update room type");
       console.error("Error updating room type:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+const getTimeSlotName = (timeSlotId) => {
+
+  const timeSlot = timeSlots.find((ts) => {
+    return String(ts._id || ts.id) === String(timeSlotId);
+  });
+
+  return timeSlot?.name || `Unknown Slot`;
+};
 
   return (
     <motion.div
@@ -152,6 +228,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
       exit={{ x: 300 }}
       className={`h-full ${isDarkMode ? "dark" : ""}`}
     >
+      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-white">Edit Room Type</h2>
@@ -164,15 +241,17 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
         </div>
       </div>
 
+      {/* Form Content */}
       <div className="p-6 overflow-y-auto max-h-[calc(100vh-80px)]">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form fields */}
           <InputField
             label="Room Type Name"
             type="text"
             name="name"
-            placeholder="Enter room type name"
             value={formData.name}
             onChange={handleInputChange}
+            error={formErrors.name}
             required
           />
 
@@ -190,6 +269,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
             />
           </div>
 
+          {/* Price Fields */}
           <InputField
             label="Base Price"
             type="number"
@@ -228,6 +308,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
             required
           />
 
+          {/* Extra Services Selection */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
               Extra Services
@@ -239,115 +320,159 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
                 label: service.serviceName,
               }))}
               value={formData.extraServices
-                .map((id) => {
-                  const service = extraServices.find((s) => s._id === id);
-                  return service
-                    ? { value: id, label: service.serviceName }
+                .map((serviceId) => {
+                  const matchingService = extraServices.find(
+                    (service) => service._id === serviceId
+                  );
+                  return matchingService
+                    ? {
+                        value: matchingService._id,
+                        label: matchingService.serviceName,
+                      }
                     : null;
                 })
-                .filter(Boolean)}
+                .filter(Boolean)} // This removes any null/undefined values
               onChange={handleExtraServicesChange}
               className="react-select-container"
               classNamePrefix="react-select"
             />
           </div>
 
-          <div>
+          {/* Time Slot Pricing */}
+          <div className="space-y-4">
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
               Time Slot Pricing
             </label>
-            <div className="flex space-x-2 mb-2">
+
+            <div className="flex gap-3 mb-4">
               <Select
-                options={
-                  Array.isArray(timeSlots)
-                    ? timeSlots.map((slot) => ({
-                        value: slot._id,
-                        label: slot.name,
-                      }))
-                    : []
-                }
+                options={timeSlots
+                  .filter(
+                    (slot) =>
+                      !formData.timeSlotPricing.some(
+                        (pricing) =>
+                          (pricing.timeSlot._id || pricing.timeSlot) ===
+                          (slot._id || slot.id)
+                      )
+                  )
+                  .map((slot) => ({
+                    value: slot._id || slot.id,
+                    label: slot.name,
+                  }))}
                 value={
                   selectedTimeSlot
                     ? {
                         value: selectedTimeSlot,
-                        label: Array.isArray(timeSlots)
-                          ? timeSlots.find(
-                              (slot) => slot._id === selectedTimeSlot
-                            )?.name
-                          : "",
+                        label: timeSlots.find(
+                          (slot) => (slot._id || slot.id) === selectedTimeSlot
+                        )?.name,
                       }
                     : null
                 }
                 onChange={(selected) => setSelectedTimeSlot(selected?.value)}
                 className="react-select-container flex-grow"
                 classNamePrefix="react-select"
+                placeholder="Select time slot..."
               />
               <input
                 type="number"
                 value={timeSlotPrice}
                 onChange={(e) => setTimeSlotPrice(e.target.value)}
                 placeholder="Price"
-                className="w-24 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-32 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 type="button"
                 onClick={handleAddTimeSlot}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
               >
                 <Plus size={20} />
               </button>
             </div>
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
-                    Time Slot
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Price
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.timeSlotPricing.map((slot, index) => (
-                  <tr
-                    key={`${slot.timeSlot}-${index}`}
-                    className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
-                  >
-                    <td className="px-6 py-4">
-                      {timeSlots.find((ts) => ts._id === slot.timeSlot)?.name ||
-                        "Unknown"}
-                    </td>
-                    <td className="px-6 py-4">${slot.price}</td>
-                    <td className="px-6 py-4">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTimeSlot(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-gray-700 dark:text-gray-200 font-semibold"
+                    >
+                      Time Slot
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-gray-700 dark:text-gray-200 font-semibold"
+                    >
+                      Price
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-gray-700 dark:text-gray-200 font-semibold"
+                    >
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {formData.timeSlotPricing.map((slot, index) => (
+                    <tr
+                      key={`${slot.timeSlot}-${index}`}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-200">
+                        {getTimeSlotName(slot.timeSlot._id || slot.timeSlot)}
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-200">
+                        {editingSlotIndex === index ? (
+                          <input
+                            type="number"
+                            value={editingPrice}
+                            onChange={(e) => setEditingPrice(e.target.value)}
+                            className="w-28 px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        ) : (
+                          <span className="font-medium">${slot.price}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {editingSlotIndex === index ? (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmEdit(index)}
+                            className="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                          >
+                            <Check size={16} />
+                          </button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleEditTimeSlot(index, slot.price)
+                              }
+                              className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTimeSlot(index)}
+                              className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-              Room Images
-            </label>
-            <MultiImageEditor
-              onImagesChange={handleImageChange}
-              maxImages={10}
-              initialImages={formData.images}
-            />
-          </div>
-
+          {/* Active Status */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -365,11 +490,27 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
             </label>
           </div>
 
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
+              Room Images
+            </label>
+            <MultiImageEditor
+              onImagesChange={handleImageChange}
+              maxImages={10}
+              initialImages={formData.images.map((image) => ({
+                preview: typeof image === "string" ? image : image.preview,
+              }))}
+            />
+          </div>
+
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+            disabled={isLoading}
+            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors disabled:opacity-50"
           >
-            Update Room Type
+            {isLoading ? "Updating..." : "Update Room Type"}
           </button>
         </form>
       </div>
@@ -395,11 +536,7 @@ const InputField = ({
       name={name}
       placeholder={placeholder}
       value={value}
-      onChange={(e) => {
-        const newValue =
-          type === "number" ? parseFloat(e.target.value) : e.target.value;
-        onChange({ target: { name, value: newValue } });
-      }}
+      onChange={onChange}
       required={required}
       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
     />

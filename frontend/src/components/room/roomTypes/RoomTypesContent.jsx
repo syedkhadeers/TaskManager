@@ -50,6 +50,7 @@ const RoomTypesContent = () => {
     {
       accessorKey: "images",
       header: "Images",
+      type: "image",
       cell: ({ row }) => (
         <div className="flex -space-x-2 overflow-hidden">
           {row.original.images.slice(0, 3).map((image, index) => (

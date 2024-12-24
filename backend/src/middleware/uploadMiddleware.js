@@ -69,7 +69,8 @@ export const uploadSupplierContactPhoto = multer({
   },
 });
 
-export const uploadRoomImages = multer({
+
+export const uploadServicePhoto = multer({
   storage,
   fileFilter,
   limits: {
@@ -78,11 +79,20 @@ export const uploadRoomImages = multer({
   },
 });
 
-export const uploadServicePhoto = multer({
+export const uploadRoomTypeImages = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB file size limit for room images
+    fileSize: 5 * 1024 * 1024, // 5MB file siz
     files: 10, // Maximum 10 files
+  },
+});
+
+export const uploadRoomImages = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 10, // Max 10 files
   },
 });

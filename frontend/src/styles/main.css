@@ -3,3 +3,14 @@
 @tailwind utilities;
 
 
+.cropper-container-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.cropper-view-box {
+  outline: none;
+  border-radius: 2px;
+}
