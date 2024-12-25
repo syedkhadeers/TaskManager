@@ -12,15 +12,15 @@ import {
 import { Menu } from "@headlessui/react";
 import Avatar from "react-avatar";
 import { toast } from "react-toastify";
-import DataTableOne from "../../table/DataTableOne";
+import DataTableOne from "../../../reusables/table/DataTableOne";
 import {
   getAllRoomTypes,
   deleteRoomType,
-} from "../../../services/rooms/roomTypeServices";
+} from "../../../../services/rooms/roomTypeServices";
 import AddRoomTypesContent from "./AddRoomTypesContent";
 import EditRoomTypesContent from "./EditRoomTypesContent";
 import ViewRoomTypesContent from "./ViewRoomTypesContent";
-import DeleteModal from "../../modal/DeleteModal";
+import DeleteModal from "../../../reusables/modal/DeleteModal";
 
 const RoomTypesContent = () => {
   const [data, setData] = useState([]);

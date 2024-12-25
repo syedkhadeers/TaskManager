@@ -1,10 +1,10 @@
 import React, { useState, useContext } from "react";
-import { ThemeContext } from "../../../context/ThemeContext";
+import { ThemeContext } from "../../../../context/ThemeContext";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
-import { createExtraService } from "../../../services/rooms/extraServiceServices";
+import { createExtraService } from "../../../../services/rooms/extraServiceServices";
 import { toast } from "react-toastify";
-import ImageEditor from "../../editors/ImageEditor";
+import ImageEditor from "../../../reusables/editors/ImageEditor";
 
 const AddExtraServicesContent = ({ onClose, onServiceAdded }) => {
   const { isDarkMode } = useContext(ThemeContext);

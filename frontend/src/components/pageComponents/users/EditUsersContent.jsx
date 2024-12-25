@@ -1,9 +1,9 @@
 import React, { useState, useContext, useEffect } from "react";
-import { ThemeContext } from "../../context/ThemeContext";
+import { ThemeContext } from "../../../context/ThemeContext";
 import { FiUser, FiMail, FiPhone, FiGlobe } from "react-icons/fi";
-import { updateOtherUser } from "../../services/userServices";
+import {  updateUserById } from "../../../services/user/userServices";
 import { toast } from "react-toastify";
-import ImageEditor from "../editors/ImageEditor";
+import ImageEditor from "../../reusables/editors/ImageEditor";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -74,7 +74,7 @@ const EditUsersContent = ({ user, onClose, onUserUpdated }) => {
         });
       }
 
-      await updateOtherUser(user._id, dataToSend);
+      await updateUserById(user._id, dataToSend);
       toast.success("User updated successfully!");
       onUserUpdated();
       onClose();

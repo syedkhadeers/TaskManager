@@ -3,7 +3,7 @@ import {
   getCurrentUser,
   loginUser,
   logoutUser,
-} from "../services/authServices";
+} from "../services/auth/authServices";
 
 export const AuthContext = createContext();
 

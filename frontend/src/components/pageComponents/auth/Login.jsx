@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../../hooks/useAuth";
 import toast from "react-hot-toast";
 import { AiOutlineMail } from "react-icons/ai";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { FiUser } from "react-icons/fi";
-import { getCurrentUser } from "../../services/authServices";
+import { getCurrentUser } from "../../../services/auth/authServices";
 import { motion } from "framer-motion";
 
 const Login = () => {

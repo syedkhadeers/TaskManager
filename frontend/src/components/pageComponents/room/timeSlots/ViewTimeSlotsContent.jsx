@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { ThemeContext } from "../../../context/ThemeContext";
+import { ThemeContext } from "../../../../context/ThemeContext";
 import { XIcon, Clock, DollarSign } from "lucide-react";
 
 const ViewTimeSlotsContent = ({ timeSlot, onClose }) => {

@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import Register from "../../components/auth/Register";
+import Register from "../../components/pageComponents/auth/Register";
 import LayoutAuth from "../../components/layout/LayoutAuth";
 
 const RegisterPage = () => {

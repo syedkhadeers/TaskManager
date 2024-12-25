@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
-import { ThemeContext } from "../../../context/ThemeContext";
+import { ThemeContext } from "../../../../context/ThemeContext";
 import { FiClock, FiCalendar, FiDollarSign } from "react-icons/fi";
-import { updateTimeSlot } from "../../../services/rooms/timeSlotServices";
+import { updateTimeSlot } from "../../../../services/rooms/timeSlotServices";
 import { toast } from "react-toastify";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";

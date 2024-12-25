@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import UsersContent from "../../components/users/UsersContent";
+import UsersContent from "../../components/pageComponents/users/UsersContent";
 import Layout from "../../components/layout/Layout";
 import { ThemeContext } from "../../context/ThemeContext";
 

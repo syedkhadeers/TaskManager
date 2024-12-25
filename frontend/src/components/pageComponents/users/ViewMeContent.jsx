@@ -4,7 +4,7 @@ import { ArrowLeftIcon, Search, Eye, Edit2 } from "lucide-react";
 import Avatar from "react-avatar";
 import EditUsersContent from "./EditUsersContent";
 import { toast } from "react-toastify";
-import { getCurrentUser } from "../../services/authServices";
+import { getCurrentUser } from "../../../services/auth/authServices";
 
 const ViewMeContent = () => {
   const [activeTab, setActiveTab] = useState("bookings");

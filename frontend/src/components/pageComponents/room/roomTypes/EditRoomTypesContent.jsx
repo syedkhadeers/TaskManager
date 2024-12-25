@@ -1,14 +1,14 @@
 import React, { useState, useContext, useEffect } from "react";
-import { ThemeContext } from "../../../context/ThemeContext";
+import { ThemeContext } from "../../../../context/ThemeContext";
 import { X, Plus, Trash2, Check, Edit2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { updateRoomType } from "../../../services/rooms/roomTypeServices";
-import { getAllExtraServices } from "../../../services/rooms/extraServiceServices";
-import { getAllTimeSlotsExport } from "../../../services/rooms/timeSlotServices";
+import { updateRoomType } from "../../../../services/rooms/roomTypeServices";
+import { getAllExtraServices } from "../../../../services/rooms/extraServiceServices";
+import { getAllTimeSlotsExport } from "../../../../services/rooms/timeSlotServices";
 import { toast } from "react-toastify";
-import MultiImageEditor from "../../editors/MultiImageEditor";
+import MultiImageEditor from "../../../reusables/editors/MultiImageEditor";
 import Select from "react-select";
-import LoadingSpinner from "../../common/LoadingSpinner";
+import LoadingSpinner from "../../../common/LoadingSpinner";
 
 const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
   const { isDarkMode } = useContext(ThemeContext);

@@ -13,10 +13,9 @@ import {
 import { ThemeContext } from "../../context/ThemeContext";
 import { useAuth } from "../../hooks/useAuth";
 import { motion } from "framer-motion";
-import LogoutModal from "../modal/LogoutModal";
-import { logoutUser } from "../../services/authServices";
+import LogoutModal from "../reusables/modal/LogoutModal";
+import { logoutUser, getCurrentUser } from "../../services/auth/authServices";
 import { toast } from "react-toastify";
-import { getCurrentUser } from "../../services/authServices";
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const { isDarkMode, toggleTheme } = useContext(ThemeContext);

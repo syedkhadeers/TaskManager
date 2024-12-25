@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AiOutlineMail } from "react-icons/ai";
 import { RiLockPasswordFill } from "react-icons/ri";
-import { forgotPassword } from "../../services/authServices";
+import { forgotPassword } from "../../../services/auth/authServices";
 import toast from "react-hot-toast";
 
 const ForgotPassword = () => {

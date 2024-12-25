@@ -1,8 +1,8 @@
 import React, { useState, useContext } from "react";
-import { ThemeContext } from "../../../context/ThemeContext";
+import { ThemeContext } from "../../../../context/ThemeContext";
 import { FiClock, FiCalendar, FiDollarSign } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { createTimeSlot } from "../../../services/rooms/timeSlotServices";
+import { createTimeSlot } from "../../../../services/rooms/timeSlotServices";
 import { toast } from "react-toastify";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";

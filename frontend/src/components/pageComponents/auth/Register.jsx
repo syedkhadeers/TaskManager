@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AiOutlineMail } from "react-icons/ai";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { FiUser, FiUserPlus } from "react-icons/fi";
-import { registerUser } from "../../services/authServices";
+import { registerUser } from "../../../services/auth/authServices";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 

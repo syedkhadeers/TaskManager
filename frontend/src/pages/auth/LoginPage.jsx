@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import Login from "../../components/auth/Login";
+import Login from "../../components/pageComponents/auth/Login";
 import LayoutAuth from "../../components/layout/LayoutAuth";
 import { motion } from "framer-motion";
 

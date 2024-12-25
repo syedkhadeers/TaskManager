@@ -1,4 +1,4 @@
-import { api, handleApiError, retryRequest } from "../utils/api";
+import { api, handleApiError, retryRequest } from "../../utils/api.js";
 
 // Constants for token management
 const TOKEN_KEY = "token";

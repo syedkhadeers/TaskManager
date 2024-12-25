@@ -1,10 +1,10 @@
 import React, { useState, useContext } from "react";
-import { ThemeContext } from "../../context/ThemeContext";
+import { ThemeContext } from "../../../context/ThemeContext";
 import { FiUser, FiMail, FiPhone, FiLock, FiGlobe } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { addUser } from "../../services/userServices";
+import { addUser } from "../../../services/user/userServices";
 import { toast } from "react-toastify";
-import ImageEditor from "../editors/ImageEditor";
+import ImageEditor from "../../reusables/editors/ImageEditor";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 
