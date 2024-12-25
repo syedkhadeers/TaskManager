@@ -3,7 +3,16 @@ import bcrypt from "bcryptjs";
 
 const UserSchema = new mongoose.Schema(
   {
-    name: {
+    title: {
+      type: String,
+      enum: ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."],
+      default: "Mr",
+    },
+    firstName: {
+      type: String,
+      required: [true, "Please add a name"],
+    },
+    lastName: {
       type: String,
       required: [true, "Please add a name"],
     },
@@ -17,6 +26,10 @@ const UserSchema = new mongoose.Schema(
         "Please add a valid email",
       ],
     },
+    userName: {
+      type: String,
+      default: "",
+    },
     password: {
       type: String,
       required: [true, "Please add a password"],
@@ -25,12 +38,37 @@ const UserSchema = new mongoose.Schema(
     photo: {
       url: {
         type: String,
-        default: "https://avatars.githubusercontent.com/u/19819005?v=4",
+        default: "https://drive.google.com/file/d/1s9LUGejbrY3HwuDqxQbdhv0ri1kdZu5l/view?usp=sharing",
       },
       publicId: {
         type: String,
         default: "",
       },
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+    },
+    dateOfBirth: {
+      type: Date,
+    },
+    department: {
+      type: String,
+    },
+    branch: {
+      type: String,
+    },
+    address: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    pinCode: {
+      type: String,
+    },
+    state: {
+      type: String,
     },
     country: {
       type: String,
@@ -45,8 +83,11 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin", "creator"],
+      enum: ["user", "admin", "creator", "superadmin", "manager"],
       default: "user",
+    },
+    alternateMobile: {
+      type: String,
     },
     isVerified: {
       type: Boolean,
@@ -70,4 +111,19 @@ UserSchema.pre("save", async function (next) {
   next();
 });
 
-export default mongoose.model("User", UserSchema);
+// Update username from email 
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("userName") && !this.isModified("email")) {
+    return next();
+  }
+  this.userName = this.email.split("@")[0];
+  next();
+});
+
+// Add compound indexes
+UserSchema.index({ email: 1, userName: 1 });
+UserSchema.index({ firstName: 1, lastName: 1 });
+UserSchema.index({ role: 1, isVerified: 1 });
+
+const UserModel = mongoose.model("User", UserSchema);
+export default UserModel;

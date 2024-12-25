@@ -13,7 +13,7 @@ import {
 import { ThemeContext } from "../../context/ThemeContext";
 import { useAuth } from "../../hooks/useAuth";
 import { motion } from "framer-motion";
-import LogoutModal from "../common/modal/LogoutModal";
+import LogoutModal from "../modal/LogoutModal";
 import { logoutUser } from "../../services/authServices";
 import { toast } from "react-toastify";
 import { getCurrentUser } from "../../services/authServices";

@@ -2,74 +2,133 @@ import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import User from "../models/auth/UserModel.js";
 
-// Protect middleware to check if the user is logged in
+// Authentication middleware
 export const protect = asyncHandler(async (req, res, next) => {
   try {
-    // Check if user is logged in
     const token = req.cookies.token;
 
     if (!token) {
-      // 401 Unauthorized
-      return res
-        .status(401)
-        .json({ message: "Token not received at protect, please login!" });
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required. Please login",
+      });
     }
 
-    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Get user details from the token ----> exclude password
     const user = await User.findById(decoded.id).select("-password");
 
-    // Check if user exists
     if (!user) {
-      return res.status(404).json({ message: "User  not found at protect!" });
+      return res.status(404).json({
+        success: false,
+        message: "User account not found",
+      });
     }
 
-    // Set user details in the request object
     req.user = user;
-
     next();
   } catch (error) {
-    // 401 Unauthorized
-    return res
-      .status(401)
-      .json({ message: "Token failed at protect, token failed!" });
+    return res.status(401).json({
+      success: false,
+      message: "Authentication failed. Invalid or expired token",
+      error: error.message,
+    });
   }
 });
 
-// Admin middleware to check if the user is an admin
-export const adminMiddleware = asyncHandler(async (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
+// Admin role middleware
+export const superadmin = asyncHandler(async (req, res, next) => {
+  if (req.user?.role === "superadmin") {
     return next();
   }
 
-  return res
-    .status(403)
-    .json({ message: "Unauthorized access at adminMiddleware!" });
+  return res.status(403).json({
+    success: false,
+    message: "Access denied. Admin privileges required",
+  });
 });
 
-// Creator middleware to check if the user is a creator or admin
-export const creatorMiddleware = asyncHandler(async (req, res, next) => {
-  if (
-    (req.user && req.user.role === "creator") ||
-    (req.user && req.user.role === "admin")
-  ) {
+// Admin role middleware
+export const admin = asyncHandler(async (req, res, next) => {
+  if (req.user?.role === "admin" || req.user?.role === "superadmin") {
     return next();
   }
 
-  return res
-    .status(403)
-    .json({ message: "Unauthorized access at creatorMiddleware!" });
+  return res.status(403).json({
+    success: false,
+    message: "Access denied. Admin privileges required",
+  });
 });
 
-// Verified middleware to check if the user is verified
-export const verifiedMiddleware = asyncHandler(async (req, res, next) => {
-  if (req.user && req.user.isVerified) {
+// Manager role middleware
+export const manager = asyncHandler(async (req, res, next) => {
+  const allowedRoles = ["manager", "admin", "superadmin"];
+
+  if (req.user && allowedRoles.includes(req.user.role)) {
     return next();
   }
 
-  return res
-    .status(403)
-    .json({ message: "Please Verify Your Email at verifiedMiddleware!" });
+  return res.status(403).json({
+    success: false,
+    message: "Access denied. Manager privileges required",
+  });
 });
+
+// Creator role middleware
+export const creator = asyncHandler(async (req, res, next) => {
+  const allowedRoles = ["creator", "admin", "superadmin", "manager"];
+
+  if (req.user && allowedRoles.includes(req.user.role)) {
+    return next();
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: "Access denied. Creator privileges required",
+  });
+});
+
+// User role middleware
+export const user = asyncHandler(async (req, res, next) => {
+  const allowedRoles = ["user", "creator", "admin", "superadmin", "manager"];
+
+  if (req.user && allowedRoles.includes(req.user.role)) {
+    return next();
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: "Access denied. User privileges required",
+  });
+});
+
+// Email verification middleware
+export const verified = asyncHandler(async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  if (!req.user.isVerified) {
+    return res.status(403).json({
+      success: false,
+      message: "Email verification required. Please verify your email",
+    });
+  }
+
+  next();
+});
+
+// Combined middleware for common checks
+export const verifiedUser = [protect, verified];
+export const verifiedCreator = [protect, verified, creator];
+export const verifiedAdmin = [protect, verified, admin];
+export const verifiedManager = [protect, verified, manager];
+
+
+// // Usage Example :
+
+// router.post("/admin-only", verifiedAdmin, adminController);
+// router.post("/creator-content", verifiedCreator, creatorController);
+// router.get("/user-profile", verifiedUser, userController);

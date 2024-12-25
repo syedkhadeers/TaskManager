@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import Layout from "../components/layout/Layout";
-import DashboardContent from "../components/dashboard/DashboardContent";
+import DashboardContent from "../components/pageComponents/dashboard/DashboardContent";
 
 const DashboardPage = () => {
   const { isAuthenticated, isLoading } = useAuth();

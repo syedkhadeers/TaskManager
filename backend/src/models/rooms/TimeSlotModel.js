@@ -34,5 +34,11 @@ const timeSlotSchema = new mongoose.Schema(
   }
 );
 
+// Compound indexes for optimized queries
+timeSlotSchema.index({ isActive: 1, sameDay: 1 });
+timeSlotSchema.index({ checkInTime: 1, checkOutTime: 1 });
+timeSlotSchema.index({ name: 1, isActive: 1 });
+
 const TimeSlotModel = mongoose.model("TimeSlot", timeSlotSchema);
+
 export default TimeSlotModel;

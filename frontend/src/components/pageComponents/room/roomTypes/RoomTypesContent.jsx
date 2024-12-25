@@ -12,7 +12,7 @@ import {
 import { Menu } from "@headlessui/react";
 import Avatar from "react-avatar";
 import { toast } from "react-toastify";
-import DataTableOne from "../../common/table/DataTableOne";
+import DataTableOne from "../../table/DataTableOne";
 import {
   getAllRoomTypes,
   deleteRoomType,
@@ -20,7 +20,7 @@ import {
 import AddRoomTypesContent from "./AddRoomTypesContent";
 import EditRoomTypesContent from "./EditRoomTypesContent";
 import ViewRoomTypesContent from "./ViewRoomTypesContent";
-import DeleteModal from "../../common/modal/DeleteModal";
+import DeleteModal from "../../modal/DeleteModal";
 
 const RoomTypesContent = () => {
   const [data, setData] = useState([]);

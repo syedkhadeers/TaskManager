@@ -461,7 +461,7 @@ import {
 import Avatar from "react-avatar";
 import { motion } from "framer-motion";
 import EditUsersContent from "./EditUsersContent";
-import DeleteModal from "../common/modal/DeleteModal";
+import DeleteModal from "../modal/DeleteModal";
 import { toast } from "react-toastify";
 import { deleteUser } from "../../services/userServices";
 

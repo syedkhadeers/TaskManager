@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import {
   getCurrentUser,
   loginUser,
@@ -7,13 +7,15 @@ import {
 
 export const AuthContext = createContext();
 
+const TOKEN_KEY = "token";
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkAuthStatus = async () => {
-    const token = localStorage.getItem("token");
+  const checkAuthStatus = useCallback(async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       setIsLoading(false);
       return;
@@ -25,20 +27,21 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Error fetching user profile:", error);
+      localStorage.removeItem(TOKEN_KEY);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const handleLogin = async (credentials) => {
     try {
       const { token, user } = await loginUser(credentials);
-      localStorage.setItem("token", token);
+      localStorage.setItem(TOKEN_KEY, token);
       setUser(user);
       setIsAuthenticated(true);
       return user;
     } catch (error) {
-      throw error;
+      throw new Error("Login failed. Please check your credentials.");
     }
   };
 
@@ -48,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem("token");
+      localStorage.removeItem(TOKEN_KEY);
       setUser(null);
       setIsAuthenticated(false);
     }
@@ -56,20 +59,18 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+  }, [checkAuthStatus]);
+
+  const contextValue = {
+    user,
+    isAuthenticated,
+    isLoading,
+    handleLogin,
+    handleLogout,
+    checkAuthStatus,
+  };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        isLoading,
-        handleLogin,
-        handleLogout,
-        checkAuthStatus,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };

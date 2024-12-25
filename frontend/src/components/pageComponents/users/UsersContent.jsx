@@ -1,3 +1,5 @@
+// // UsersContent.jsx
+
 // import React, { useMemo, useState, useEffect, useRef } from "react";
 // import {
 //   SearchIcon,
@@ -8,10 +10,12 @@
 //   ChevronRightIcon,
 //   FileTextIcon,
 //   PlusIcon,
-//   Clock,
+//   UsersIcon,
+//   UserCheckIcon,
+//   ShieldIcon,
+//   PencilIcon,
 //   RefreshCcw,
 //   EyeIcon,
-//   PencilIcon,
 //   TrashIcon,
 // } from "lucide-react";
 // import {
@@ -25,63 +29,67 @@
 // import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 // import { jsPDF } from "jspdf";
 // import "jspdf-autotable";
-// import AddTimeSlotsContent from "./AddTimeSlotsContent";
+// import Avatar from "react-avatar";
+// import AddUsersContent from "./AddUsersContent";
 // import { Menu, Transition } from "@headlessui/react";
 // import { motion } from "framer-motion";
 // import {
-//   getAllTimeSlots,
-//   deleteTimeSlot,
-// } from "../../../services/rooms/timeSlotServices";
-// import EditTimeSlotsContent from "./EditTimeSlotsContent";
-// import ViewTimeSlotsContent from "./ViewTimeSlotsContent";
-// import DeleteModal from "../../common/modal/DeleteModal";
+//   getAllUsers,
+//   deleteUser,
+//   getOtherUser,
+// } from "../../services/userServices";
+// import EditUsersContent from "./EditUsersContent";
+// import DeleteModal from "../common/modal/DeleteModal";
 // import { toast } from "react-toastify";
-// import { useNavigate } from "react-router-dom";
+// import ViewUserContent from "./ViewUserContent";
 
-// const TimeSlotsContent = () => {
+
+
+// const UsersContent = () => {
 //   const [data, setData] = useState([]);
 //   const [globalFilter, setGlobalFilter] = useState("");
 //   const [columnVisibility, setColumnVisibility] = useState({});
 //   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 //   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
-//   const [showAddTimeSlotModal, setShowAddTimeSlotModal] = useState(false);
-//   const [showEditTimeSlotModal, setShowEditTimeSlotModal] = useState(false);
-//   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+//   const [showAddUserModal, setShowAddUserModal] = useState(false);
+//   const [showEditUserModal, setShowEditUserModal] = useState(false);
+//   const [selectedUser, setSelectedUser] = useState(null);
 //   const [isRefreshing, setIsRefreshing] = useState(false);
 //   const dropdownRef = useRef(null);
 
 //   const [showDeleteModal, setShowDeleteModal] = useState(false);
-//   const [timeSlotIdToDelete, setTimeSlotIdToDelete] = useState(null);
-//   const [showViewTimeSlotModal, setShowViewTimeSlotModal] = useState(false);
-//   const [selectedViewTimeSlot, setSelectedViewTimeSlot] = useState(null);
+//   const [userIdToDelete, setUserIdToDelete] = useState(null); // Store the user ID to delete
 
-//   const navigate = useNavigate();
+//   const [showViewUserModal, setShowViewUserModal] = useState(false);
+//   const [selectedViewUser, setSelectedViewUser] = useState(null);
+
+//   // const navigate = useNavigate();
 
 //   const confirmDelete = async () => {
-//     if (timeSlotIdToDelete) {
+//     if (userIdToDelete) {
 //       try {
-//         await deleteTimeSlot(timeSlotIdToDelete);
-//         toast.success("Time slot deleted successfully");
+//         await deleteUser(userIdToDelete);
+//         toast.success("User deleted successfully");
 //         await fetchData();
-//         setTimeSlotIdToDelete(null);
+//         setUserIdToDelete(null);
 //       } catch (error) {
-//         console.error("Error deleting time slot:", error);
-//         toast.error("Failed to delete time slot");
+//         console.error("Error deleting user:", error);
+//         toast.error("Failed to delete user");
 //       }
 //     }
 //   };
 
 //   const fetchData = async () => {
 //     try {
-//       const response = await getAllTimeSlots();
-//       if (Array.isArray(response.timeSlots)) {
-//         setData(response.timeSlots);
+//       const response = await getAllUsers();
+//       if (Array.isArray(response)) {
+//         setData(response);
 //       } else {
 //         console.error("Expected an array but got:", response);
 //         setData([]);
 //       }
 //     } catch (error) {
-//       console.error("Error fetching time slots:", error);
+//       console.error("Error fetching users:", error);
 //     }
 //   };
 
@@ -112,27 +120,40 @@
 //   const columns = useMemo(
 //     () => [
 //       {
+//         accessorKey: "photo",
+//         header: "Photo",
+//         cell: ({ row }) => (
+//           <Avatar
+//             name={row.original.name}
+//             src={row.original.photo?.url}
+//             size="40"
+//             round
+//           />
+//         ),
+//       },
+//       {
 //         accessorKey: "name",
 //         header: "Name",
 //       },
 //       {
-//         accessorKey: "checkInTime",
-//         header: "Check-in Time",
+//         accessorKey: "email",
+//         header: "Email",
 //       },
 //       {
-//         accessorKey: "checkOutTime",
-//         header: "Check-out Time",
+//         accessorKey: "mobile",
+//         header: "Mobile",
 //       },
 //       {
-//         accessorKey: "sameDay",
-//         header: "Same Day",
+//         accessorKey: "role",
+//         header: "Role",
+//         cell: ({ getValue }) => (
+//           <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+//             {getValue()}
+//           </span>
+//         ),
 //       },
 //       {
-//         accessorKey: "priceMultiplier",
-//         header: "Price Multiplier",
-//       },
-//       {
-//         accessorKey: "isActive",
+//         accessorKey: "isVerified",
 //         header: "Status",
 //         cell: ({ getValue }) => (
 //           <span
@@ -142,7 +163,7 @@
 //                 : "bg-red-100 text-red-800"
 //             }`}
 //           >
-//             {getValue() ? "Active" : "Inactive"}
+//             {getValue() ? "Verified" : "Not Verified"}
 //           </span>
 //         ),
 //       },
@@ -245,7 +266,7 @@
 
 //       const headers = visibleColumns.map((col) => col.header);
 
-//       doc.text("Time Slots Report", 14, 15);
+//       doc.text("User's Data", 14, 15);
 //       doc.autoTable({
 //         head: [headers],
 //         body: tableData,
@@ -275,13 +296,14 @@
 //     }
 //   };
 
-//   const handleEditTimeSlot = (timeSlot) => {
-//     setSelectedTimeSlot(timeSlot);
-//     setShowEditTimeSlotModal(true);
+//   const handleEditUser = (user) => {
+//     setSelectedUser(user);
+//     setShowEditUserModal(true);
 //   };
 
-//   const handleDeleteTimeSlot = (timeSlot) => {
-//     setTimeSlotIdToDelete(timeSlot._id);
+//   const handleDeleteUser = (user) => {
+//     // MongoDB IDs are typically stored in the _id field
+//     setUserIdToDelete(user._id);
 //     setShowDeleteModal(true);
 //   };
 
@@ -309,18 +331,32 @@
 
 //   const cardData = [
 //     {
-//       title: "Total Time Slots",
+//       title: "Total Users",
 //       value: data.length,
-//       icon: <Clock className="w-6 h-6" />,
+//       icon: <UsersIcon className="w-6 h-6" />,
 //       bgcolor: "bg-blue-500 dark:bg-blue-600",
 //       trend: "+12.5%",
 //     },
 //     {
-//       title: "Active Time Slots",
-//       value: data.filter((timeSlot) => timeSlot.isActive).length,
-//       icon: <Clock className="w-6 h-6 p-4" />,
-//       bgcolor: "bg-green-500 dark:bg-green-600",
+//       title: "Verified Users",
+//       value: data.filter((user) => user.isVerified).length,
+//       icon: <UserCheckIcon className="w-6 h-6 p-4" />,
+//       bgcolor: "bg-gray-500 dark:bg-gray-600",
 //       trend: "+5.2%",
+//     },
+//     {
+//       title: "Admin Users",
+//       value: data.filter((user) => user.role === "admin").length,
+//       icon: <ShieldIcon className="w-6 h-6" />,
+//       bgcolor: "bg-purple-500 dark:bg-purple-600",
+//       trend: "+8.1%",
+//     },
+//     {
+//       title: "Creators",
+//       value: data.filter((user) => user.role === "creator").length,
+//       icon: <PencilIcon className="w-6 h-6" />,
+//       bgcolor: "bg-orange-500 dark:bg-orange-600",
+//       trend: "+15.3%",
 //     },
 //   ];
 
@@ -331,7 +367,7 @@
 //       className="container mx-auto px-6 py-8 dark:bg-gray-900"
 //     >
 //       {/* Stats Grid */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 //         {cardData.map((card, index) => (
 //           <motion.div
 //             key={index}
@@ -374,21 +410,21 @@
 //         <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600">
 //           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 //             <h2 className="text-2xl font-semibold text-gray-300 dark:text-white">
-//               Time Slot Management
+//               User Management
 //             </h2>
 //             <div className="flex flex-wrap items-center gap-3">
 //               <button
-//                 onClick={() => setShowAddTimeSlotModal(true)}
+//                 onClick={() => setShowAddUserModal(true)}
 //                 className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 px-4 py-2  text-gray-300 dark:text-gray-300 rounded-lg focus:outline-none transition-colors flex items-center gap-2"
 //               >
 //                 <PlusIcon size={20} />
-//                 Add Time Slot
+//                 Add User
 //               </button>
 
 //               <div className="relative">
 //                 <input
 //                   type="text"
-//                   placeholder="Search time slots..."
+//                   placeholder="Search users..."
 //                   value={globalFilter || ""}
 //                   onChange={(e) => setGlobalFilter(e.target.value)}
 //                   className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -581,8 +617,8 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() => {
-//                                         setSelectedViewTimeSlot(row.original);
-//                                         setShowViewTimeSlotModal(true);
+//                                         setSelectedViewUser(row.original);
+//                                         setShowViewUserModal(true);
 //                                       }}
 //                                       className={`${
 //                                         active
@@ -600,7 +636,7 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() =>
-//                                         handleEditTimeSlot(row.original)
+//                                         handleEditUser(row.original)
 //                                       }
 //                                       className={`${
 //                                         active
@@ -609,7 +645,7 @@
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
 //                                       <PencilIcon className="mr-3 h-4 w-4" />
-//                                       Edit Time Slot
+//                                       Edit User
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -618,7 +654,7 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() =>
-//                                         handleDeleteTimeSlot(row.original)
+//                                         handleDeleteUser(row.original)
 //                                       }
 //                                       className={`${
 //                                         active
@@ -627,7 +663,7 @@
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
 //                                       <TrashIcon className="mr-3 h-4 w-4" />
-//                                       Delete Time Slot
+//                                       Delete User
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -691,42 +727,40 @@
 //       </motion.div>
 
 //       {/* Modals */}
-//       {showAddTimeSlotModal && (
+//       {showAddUserModal && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <AddTimeSlotsContent
-//               onClose={() => setShowAddTimeSlotModal(false)}
-//               onTimeSlotAdded={handleRefresh}
+//             <AddUsersContent
+//               onClose={() => setShowAddUserModal(false)}
+//               onUserAdded={handleRefresh}
 //             />
 //           </div>
 //         </div>
 //       )}
 
-//       {showEditTimeSlotModal && selectedTimeSlot && (
+//       {showEditUserModal && selectedUser && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <EditTimeSlotsContent
-//               timeSlot={selectedTimeSlot}
+//             <EditUsersContent
+//               user={selectedUser}
 //               onClose={() => {
-//                 setShowEditTimeSlotModal(false);
-//                 setSelectedTimeSlot(null);
+//                 setShowEditUserModal(false);
+//                 setSelectedUser(null);
 //               }}
-//               onTimeSlotUpdated={handleRefresh}
+//               onUserUpdated={handleRefresh}
 //             />
 //           </div>
 //         </div>
 //       )}
 
-//       {/* View Modal */}
-//       {showViewTimeSlotModal && selectedViewTimeSlot && (
+//       {showViewUserModal && selectedViewUser && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-//           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             {/* < className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto"> */}
-//             <ViewTimeSlotsContent
-//               timeSlot={selectedViewTimeSlot}
+//           <div className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto">
+//             <ViewUserContent
+//               user={selectedViewUser}
 //               onClose={() => {
-//                 setShowViewTimeSlotModal(false);
-//                 setSelectedViewTimeSlot(null);
+//                 setShowViewUserModal(false);
+//                 setSelectedViewUser(null);
 //               }}
 //             />
 //           </div>
@@ -746,7 +780,7 @@
 //   );
 // };
 
-// export default TimeSlotsContent;
+// export default UsersContent;
 
 
 import React, { useState, useEffect } from "react";
@@ -755,46 +789,43 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
+  Users,
+  UserCheck,
+  UserX,
+  UserPlus,
   MoreVerticalIcon,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Percent,
 } from "lucide-react";
 import { Menu } from "@headlessui/react";
+import Avatar from "react-avatar";
 import { toast } from "react-toastify";
-import DataTableOne from "../../common/table/DataTableOne";
-import {
-  getAllTimeSlots,
-  deleteTimeSlot,
-} from "../../../services/rooms/timeSlotServices";
-import AddTimeSlotsContent from "./AddTimeSlotsContent";
-import EditTimeSlotsContent from "./EditTimeSlotsContent";
-import ViewTimeSlotsContent from "./ViewTimeSlotsContent";
-import DeleteModal from "../../common/modal/DeleteModal";
+import DataTableOne from "../table/DataTableOne";
+import { getAllUsers, deleteUser } from "../../services/userServices";
+import AddUsersContent from "./AddUsersContent";
+import EditUsersContent from "./EditUsersContent";
+import ViewUserContent from "./ViewUserContent";
+import DeleteModal from "../modal/DeleteModal";
 
-const TimeSlotsContent = () => {
+const UsersContent = () => {
   const [data, setData] = useState([]);
-  const [showAddTimeSlotModal, setShowAddTimeSlotModal] = useState(false);
-  const [showEditTimeSlotModal, setShowEditTimeSlotModal] = useState(false);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [timeSlotIdToDelete, setTimeSlotIdToDelete] = useState(null);
-  const [showViewTimeSlotModal, setShowViewTimeSlotModal] = useState(false);
-  const [selectedViewTimeSlot, setSelectedViewTimeSlot] = useState(null);
+  const [userIdToDelete, setUserIdToDelete] = useState(null);
+  const [showViewUserModal, setShowViewUserModal] = useState(false);
+  const [selectedViewUser, setSelectedViewUser] = useState(null);
 
   const fetchData = async () => {
     try {
-      const response = await getAllTimeSlots();
-      if (Array.isArray(response.timeSlots)) {
-        setData(response.timeSlots);
+      const response = await getAllUsers();
+      if (Array.isArray(response)) {
+        setData(response);
       } else {
         console.error("Expected an array but got:", response);
         setData([]);
       }
     } catch (error) {
-      console.error("Error fetching time slots:", error);
-      setData([]);
+      console.error("Error fetching users:", error);
     }
   };
 
@@ -804,28 +835,41 @@ const TimeSlotsContent = () => {
 
   const columns = [
     {
+      accessorKey: "photo",
+      header: "Photo",
+      type: "image",
+      cell: ({ row }) => (
+        <Avatar
+          name={row.original.name}
+          src={row.original.photo?.url}
+          size="40"
+          round
+        />
+      ),
+    },
+    {
       accessorKey: "name",
       header: "Name",
     },
     {
-      accessorKey: "checkInTime",
-      header: "Check-in Time",
+      accessorKey: "email",
+      header: "Email",
     },
     {
-      accessorKey: "checkOutTime",
-      header: "Check-out Time",
+      accessorKey: "mobile",
+      header: "Mobile",
     },
     {
-      accessorKey: "sameDay",
-      header: "Same Day",
-      cell: ({ getValue }) => (getValue() ? "Yes" : "No"),
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ getValue }) => (
+        <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+          {getValue()}
+        </span>
+      ),
     },
     {
-      accessorKey: "priceMultiplier",
-      header: "Price Multiplier",
-    },
-    {
-      accessorKey: "isActive",
+      accessorKey: "isVerified",
       header: "Status",
       cell: ({ getValue }) => (
         <span
@@ -835,7 +879,7 @@ const TimeSlotsContent = () => {
               : "bg-red-100 text-red-800"
           }`}
         >
-          {getValue() ? "Active" : "Inactive"}
+          {getValue() ? "Verified" : "Not Verified"}
         </span>
       ),
     },
@@ -851,20 +895,20 @@ const TimeSlotsContent = () => {
   };
 
   const confirmDelete = async () => {
-    if (timeSlotIdToDelete) {
+    if (userIdToDelete) {
       try {
-        await deleteTimeSlot(timeSlotIdToDelete);
-        toast.success("Time slot deleted successfully");
+        await deleteUser(userIdToDelete);
+        toast.success("User deleted successfully");
         await fetchData();
-        setTimeSlotIdToDelete(null);
+        setUserIdToDelete(null);
       } catch (error) {
-        console.error("Error deleting time slot:", error);
-        toast.error("Failed to delete time slot");
+        console.error("Error deleting user:", error);
+        toast.error("Failed to delete user");
       }
     }
   };
 
-  const renderRowActions = (timeSlot) => (
+  const renderRowActions = (user) => (
     <Menu as="div" className="relative inline-block text-left">
       {({ open }) => (
         <>
@@ -882,8 +926,8 @@ const TimeSlotsContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setSelectedViewTimeSlot(timeSlot);
-                        setShowViewTimeSlotModal(true);
+                        setSelectedViewUser(user);
+                        setShowViewUserModal(true);
                       }}
                       className={`${
                         active
@@ -892,7 +936,7 @@ const TimeSlotsContent = () => {
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
                       <EyeIcon className="mr-3 h-4 w-4" />
-                      View Time Slot
+                      View User
                     </button>
                   )}
                 </Menu.Item>
@@ -901,8 +945,8 @@ const TimeSlotsContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setSelectedTimeSlot(timeSlot);
-                        setShowEditTimeSlotModal(true);
+                        setSelectedUser(user);
+                        setShowEditUserModal(true);
                       }}
                       className={`${
                         active
@@ -911,7 +955,7 @@ const TimeSlotsContent = () => {
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
                       <PencilIcon className="mr-3 h-4 w-4" />
-                      Edit Time Slot
+                      Edit User
                     </button>
                   )}
                 </Menu.Item>
@@ -920,7 +964,7 @@ const TimeSlotsContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setTimeSlotIdToDelete(timeSlot._id);
+                        setUserIdToDelete(user._id);
                         setShowDeleteModal(true);
                       }}
                       className={`${
@@ -930,7 +974,7 @@ const TimeSlotsContent = () => {
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
                       <TrashIcon className="mr-3 h-4 w-4" />
-                      Delete Time Slot
+                      Delete User
                     </button>
                   )}
                 </Menu.Item>
@@ -953,56 +997,58 @@ const TimeSlotsContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Time Slots
+                Total Users
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
                 {data.length}
               </p>
             </div>
-            <Clock className="h-10 w-10 text-blue-500" />
+            <Users className="h-10 w-10 text-blue-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Active Time Slots
+                Verified Users
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((slot) => slot.isActive).length}
+                {data.filter((user) => user.isVerified).length}
               </p>
             </div>
-            <CheckCircle className="h-10 w-10 text-green-500" />
+            <UserCheck className="h-10 w-10 text-green-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Inactive Time Slots
+                Unverified Users
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((slot) => !slot.isActive).length}
+                {data.filter((user) => !user.isVerified).length}
               </p>
             </div>
-            <XCircle className="h-10 w-10 text-red-500" />
+            <UserX className="h-10 w-10 text-red-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Avg Price Multiplier
+                New Users (Last 30 days)
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {(
-                  data.reduce((sum, slot) => sum + slot.priceMultiplier, 0) /
-                  data.length
-                ).toFixed(2)}
-                x
+                {
+                  data.filter((user) => {
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    return new Date(user.createdAt) > thirtyDaysAgo;
+                  }).length
+                }
               </p>
             </div>
-            <Percent className="h-10 w-10 text-purple-500" />
+            <UserPlus className="h-10 w-10 text-purple-500" />
           </div>
         </div>
       </div>
@@ -1010,47 +1056,47 @@ const TimeSlotsContent = () => {
         data={data}
         columns={columns}
         onRefresh={handleRefresh}
-        onAddNew={() => setShowAddTimeSlotModal(true)}
-        addNewText="Add Time Slot"
-        onTitle="Time Slots' Records"
+        onAddNew={() => setShowAddUserModal(true)}
+        addNewText="Add User"
+        onTitle="Users' Records"
         renderRowActions={renderRowActions}
       />
 
       {/* Modals */}
-      {showAddTimeSlotModal && (
+      {showAddUserModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <AddTimeSlotsContent
-              onClose={() => setShowAddTimeSlotModal(false)}
-              onTimeSlotAdded={handleRefresh}
+            <AddUsersContent
+              onClose={() => setShowAddUserModal(false)}
+              onUserAdded={handleRefresh}
             />
           </div>
         </div>
       )}
 
-      {showEditTimeSlotModal && selectedTimeSlot && (
+      {showEditUserModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <EditTimeSlotsContent
-              timeSlot={selectedTimeSlot}
+            <EditUsersContent
+              user={selectedUser}
               onClose={() => {
-                setShowEditTimeSlotModal(false);
-                setSelectedTimeSlot(null);
+                setShowEditUserModal(false);
+                setSelectedUser(null);
               }}
-              onTimeSlotUpdated={handleRefresh}
+              onUserUpdated={handleRefresh}
             />
           </div>
         </div>
       )}
 
-      {showViewTimeSlotModal && selectedViewTimeSlot && (
+      {showViewUserModal && selectedViewUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <ViewTimeSlotsContent
-              timeSlot={selectedViewTimeSlot}
+          <div className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto">
+            <ViewUserContent
+              user={selectedViewUser}
               onClose={() => {
-                setShowViewTimeSlotModal(false);
-                setSelectedViewTimeSlot(null);
+                setShowViewUserModal(false);
+                setSelectedViewUser(null);
               }}
             />
           </div>
@@ -1070,5 +1116,5 @@ const TimeSlotsContent = () => {
   );
 };
 
-export default TimeSlotsContent;
+export default UsersContent;
 

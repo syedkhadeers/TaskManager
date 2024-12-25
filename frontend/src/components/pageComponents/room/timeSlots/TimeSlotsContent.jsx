@@ -8,10 +8,11 @@
 //   ChevronRightIcon,
 //   FileTextIcon,
 //   PlusIcon,
+//   Clock,
 //   RefreshCcw,
 //   EyeIcon,
-//   Edit2Icon,
-//   Trash2Icon,
+//   PencilIcon,
+//   TrashIcon,
 // } from "lucide-react";
 // import {
 //   useReactTable,
@@ -24,78 +25,65 @@
 // import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 // import { jsPDF } from "jspdf";
 // import "jspdf-autotable";
+// import AddTimeSlotsContent from "./AddTimeSlotsContent";
 // import { Menu, Transition } from "@headlessui/react";
 // import { motion } from "framer-motion";
-// import { getAllExtraServices, deleteExtraService } from "../../../services/rooms/extraServiceServices";
-// import AddExtraServicesContent from "./AddExtraServicesContent";
-// import EditExtraServicesContent from "./EditExtraServicesContent";
-// import ViewExtraServicesContent from "./ViewExtraServicesContent";
+// import {
+//   getAllTimeSlots,
+//   deleteTimeSlot,
+// } from "../../../services/rooms/timeSlotServices";
+// import EditTimeSlotsContent from "./EditTimeSlotsContent";
+// import ViewTimeSlotsContent from "./ViewTimeSlotsContent";
 // import DeleteModal from "../../common/modal/DeleteModal";
 // import { toast } from "react-toastify";
 // import { useNavigate } from "react-router-dom";
-// import Avatar from "react-avatar";
 
-
-// const ExtraServicesContent = () => {
+// const TimeSlotsContent = () => {
 //   const [data, setData] = useState([]);
 //   const [globalFilter, setGlobalFilter] = useState("");
 //   const [columnVisibility, setColumnVisibility] = useState({});
 //   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 //   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
-//   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
-//   const [showEditServiceModal, setShowEditServiceModal] = useState(false);
-//   const [selectedService, setSelectedService] = useState(null);
+//   const [showAddTimeSlotModal, setShowAddTimeSlotModal] = useState(false);
+//   const [showEditTimeSlotModal, setShowEditTimeSlotModal] = useState(false);
+//   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
 //   const [isRefreshing, setIsRefreshing] = useState(false);
 //   const dropdownRef = useRef(null);
 
 //   const [showDeleteModal, setShowDeleteModal] = useState(false);
-//   const [serviceIdToDelete, setServiceIdToDelete] = useState(null);
-//   const [showViewServiceModal, setShowViewServiceModal] = useState(false);
-//   const [selectedViewService, setSelectedViewService] = useState(null);
+//   const [timeSlotIdToDelete, setTimeSlotIdToDelete] = useState(null);
+//   const [showViewTimeSlotModal, setShowViewTimeSlotModal] = useState(false);
+//   const [selectedViewTimeSlot, setSelectedViewTimeSlot] = useState(null);
 
 //   const navigate = useNavigate();
 
 //   const confirmDelete = async () => {
-//     if (serviceIdToDelete) {
+//     if (timeSlotIdToDelete) {
 //       try {
-//         await deleteExtraService(serviceIdToDelete);
-//         toast.success("Extra service deleted successfully");
+//         await deleteTimeSlot(timeSlotIdToDelete);
+//         toast.success("Time slot deleted successfully");
 //         await fetchData();
-//         setServiceIdToDelete(null);
+//         setTimeSlotIdToDelete(null);
 //       } catch (error) {
-//         console.error("Error deleting extra service:", error);
-//         toast.error("Failed to delete extra service");
+//         console.error("Error deleting time slot:", error);
+//         toast.error("Failed to delete time slot");
 //       }
 //     }
 //   };
 
-// const fetchData = async () => {
-//   try {
-//     const response = await getAllExtraServices();
-
-//     // If response is an array directly
-//     if (Array.isArray(response)) {
-//       setData(response);
+//   const fetchData = async () => {
+//     try {
+//       const response = await getAllTimeSlots();
+//       if (Array.isArray(response.timeSlots)) {
+//         setData(response.timeSlots);
+//       } else {
+//         console.error("Expected an array but got:", response);
+//         setData([]);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching time slots:", error);
 //     }
-//     // If response has extraServices property
-//     else if (response && Array.isArray(response.extraServices)) {
-//       setData(response.extraServices);
-//     }
-//     // If response is an object with data property
-//     else if (response && Array.isArray(response.data)) {
-//       setData(response.data);
-//     }
-//     // If none of above, set empty array
-//     else {
-//       console.log("Response structure:", response);
-//       setData([]);
-//     }
-//   } catch (error) {
-//     console.error("Error fetching extra services:", error);
-//     setData([]);
-//   }
-// };
-
+//   };
 
 //   const handleRefresh = async () => {
 //     setIsRefreshing(true);
@@ -124,37 +112,28 @@
 //   const columns = useMemo(
 //     () => [
 //       {
-//         accessorKey: "image",
-//         header: "Image",
-//         cell: ({ row }) => (
-//           <Avatar
-//             name={row.original.serviceName}
-//             src={row.original.image}
-//             size="40"
-//             round
-//           />
-//         ),
+//         accessorKey: "name",
+//         header: "Name",
 //       },
 //       {
-//         accessorKey: "serviceName",
-//         header: "Service Name",
+//         accessorKey: "checkInTime",
+//         header: "Check-in Time",
 //       },
 //       {
-//         accessorKey: "description",
-//         header: "Description",
+//         accessorKey: "checkOutTime",
+//         header: "Check-out Time",
 //       },
 //       {
-//         accessorKey: "price",
-//         header: "Price",
-//         cell: ({ getValue }) => `$${getValue().toFixed(2)}`,
+//         accessorKey: "sameDay",
+//         header: "Same Day",
 //       },
 //       {
-//         accessorKey: "serviceType",
-//         header: "Service Type",
+//         accessorKey: "priceMultiplier",
+//         header: "Price Multiplier",
 //       },
 //       {
-//         accessorKey: "availability",
-//         header: "Availability",
+//         accessorKey: "isActive",
+//         header: "Status",
 //         cell: ({ getValue }) => (
 //           <span
 //             className={`px-3 py-1 text-xs font-medium rounded-full ${
@@ -163,9 +142,14 @@
 //                 : "bg-red-100 text-red-800"
 //             }`}
 //           >
-//             {getValue() ? "Available" : "Unavailable"}
+//             {getValue() ? "Active" : "Inactive"}
 //           </span>
 //         ),
+//       },
+//       {
+//         accessorKey: "createdAt",
+//         header: "Created On",
+//         cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
 //       },
 //     ],
 //     []
@@ -188,17 +172,19 @@
 //   const exportToCSV = () => {
 //     try {
 //       const visibleColumns = columns.filter(
-//         (col) => table.getState().columnVisibility[col.accessorKey] !== false
+//         (col) =>
+//           col.accessorKey !== "photo" &&
+//           table.getState().columnVisibility[col.accessorKey] !== false
 //       );
 
 //       const csvData = table.getFilteredRowModel().rows.map((row) => {
 //         const rowData = {};
 //         visibleColumns.forEach((col) => {
 //           let value = row.getValue(col.accessorKey);
-//           if (col.accessorKey === "availability") {
-//             value = value ? "Available" : "Unavailable";
-//           } else if (col.accessorKey === "price") {
-//             value = `$${value.toFixed(2)}`;
+//           if (col.accessorKey === "isVerified") {
+//             value = value ? "Verified" : "Not Verified";
+//           } else if (col.accessorKey === "createdAt") {
+//             value = new Date(value).toLocaleDateString();
 //           }
 //           rowData[col.header] = value;
 //         });
@@ -224,7 +210,7 @@
 //       const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
 //       const link = document.createElement("a");
 //       link.href = URL.createObjectURL(blob);
-//       link.download = "extra_services_export.csv";
+//       link.download = "users_export.csv";
 //       link.style.display = "none";
 //       document.body.appendChild(link);
 //       link.click();
@@ -238,20 +224,20 @@
 
 //   const exportToPDF = () => {
 //     try {
-//       const doc = new jsPDF();
+//       const doc = new jsPDF("landscape");
 //       const visibleColumns = columns.filter(
 //         (col) =>
-//           col.accessorKey !== "image" &&
+//           col.accessorKey !== "photo" &&
 //           table.getState().columnVisibility[col.accessorKey] !== false
 //       );
 
 //       const tableData = table.getFilteredRowModel().rows.map((row) =>
 //         visibleColumns.map((col) => {
 //           let value = row.getValue(col.accessorKey);
-//           if (col.accessorKey === "availability") {
-//             return value ? "Available" : "Unavailable";
-//           } else if (col.accessorKey === "price") {
-//             return `$${value.toFixed(2)}`;
+//           if (col.accessorKey === "isVerified") {
+//             return value ? "Verified" : "Not Verified";
+//           } else if (col.accessorKey === "createdAt") {
+//             return new Date(value).toLocaleDateString();
 //           }
 //           return value?.toString() || "";
 //         })
@@ -259,7 +245,7 @@
 
 //       const headers = visibleColumns.map((col) => col.header);
 
-//       doc.text("Extra Services' Data", 14, 15);
+//       doc.text("Time Slots Report", 14, 15);
 //       doc.autoTable({
 //         head: [headers],
 //         body: tableData,
@@ -281,7 +267,7 @@
 //         margin: { top: 20 },
 //       });
 
-//       doc.save("extra_services_export.pdf");
+//       doc.save("users_export.pdf");
 //       setExportDropdownOpen(false);
 //     } catch (error) {
 //       console.error("PDF Export Error:", error);
@@ -289,22 +275,96 @@
 //     }
 //   };
 
-//   const handleEditService = (service) => {
-//     setSelectedService(service);
-//     setShowEditServiceModal(true);
+//   const handleEditTimeSlot = (timeSlot) => {
+//     setSelectedTimeSlot(timeSlot);
+//     setShowEditTimeSlotModal(true);
 //   };
 
-//   const handleDeleteService = (service) => {
-//     setServiceIdToDelete(service._id);
+//   const handleDeleteTimeSlot = (timeSlot) => {
+//     setTimeSlotIdToDelete(timeSlot._id);
 //     setShowDeleteModal(true);
 //   };
+
+//   const containerVariants = {
+//     hidden: { opacity: 0 },
+//     visible: {
+//       opacity: 1,
+//       transition: {
+//         staggerChildren: 0.1,
+//       },
+//     },
+//   };
+
+//   const cardVariants = {
+//     hidden: { y: 20, opacity: 0 },
+//     visible: {
+//       y: 0,
+//       opacity: 1,
+//       transition: {
+//         type: "spring",
+//         stiffness: 100,
+//       },
+//     },
+//   };
+
+//   const cardData = [
+//     {
+//       title: "Total Time Slots",
+//       value: data.length,
+//       icon: <Clock className="w-6 h-6" />,
+//       bgcolor: "bg-blue-500 dark:bg-blue-600",
+//       trend: "+12.5%",
+//     },
+//     {
+//       title: "Active Time Slots",
+//       value: data.filter((timeSlot) => timeSlot.isActive).length,
+//       icon: <Clock className="w-6 h-6 p-4" />,
+//       bgcolor: "bg-green-500 dark:bg-green-600",
+//       trend: "+5.2%",
+//     },
+//   ];
 
 //   return (
 //     <motion.div
 //       initial={{ opacity: 0 }}
 //       animate={{ opacity: 1 }}
-//       className="container mx-auto px-6 py-8"
+//       className="container mx-auto px-6 py-8 dark:bg-gray-900"
 //     >
+//       {/* Stats Grid */}
+//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+//         {cardData.map((card, index) => (
+//           <motion.div
+//             key={index}
+//             initial={{ y: 20, opacity: 0 }}
+//             animate={{ y: 0, opacity: 1 }}
+//             transition={{ delay: index * 0.1 }}
+//             className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
+//           >
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-sm text-gray-500 dark:text-gray-400">
+//                   {card.title}
+//                 </p>
+//                 <h3 className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
+//                   {card.value}
+//                 </h3>
+//                 <span className="text-sm text-green-500 dark:text-green-400">
+//                   {card.trend}
+//                 </span>
+//               </div>
+//               <div
+//                 className={`${card.bgcolor} bg-opacity-10 dark:bg-opacity-20 p-3 rounded-lg`}
+//               >
+//                 {React.cloneElement(card.icon, {
+//                   className: `h-6 w-6 text-gray-900 dark:text-white`,
+//                 })}
+//               </div>
+//             </div>
+//           </motion.div>
+//         ))}
+//       </div>
+
+//       {/* Main Content Card */}
 //       <motion.div
 //         initial={{ y: 20, opacity: 0 }}
 //         animate={{ y: 0, opacity: 1 }}
@@ -313,22 +373,22 @@
 //         {/* Header */}
 //         <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600">
 //           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-//             <h2 className="text-2xl font-semibold text-white">
-//               Extra Services Management
+//             <h2 className="text-2xl font-semibold text-gray-300 dark:text-white">
+//               Time Slot Management
 //             </h2>
 //             <div className="flex flex-wrap items-center gap-3">
 //               <button
-//                 onClick={() => setShowAddServiceModal(true)}
-//                 className="bg-white/20 hover:bg-white/30 px-4 py-2 text-white rounded-lg focus:outline-none transition-colors flex items-center gap-2"
+//                 onClick={() => setShowAddTimeSlotModal(true)}
+//                 className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 px-4 py-2  text-gray-300 dark:text-gray-300 rounded-lg focus:outline-none transition-colors flex items-center gap-2"
 //               >
 //                 <PlusIcon size={20} />
-//                 Add Service
+//                 Add Time Slot
 //               </button>
 
 //               <div className="relative">
 //                 <input
 //                   type="text"
-//                   placeholder="Search services..."
+//                   placeholder="Search time slots..."
 //                   value={globalFilter || ""}
 //                   onChange={(e) => setGlobalFilter(e.target.value)}
 //                   className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -343,18 +403,23 @@
 //               <button
 //                 onClick={handleRefresh}
 //                 disabled={isRefreshing}
-//                 className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
+//                 className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 p-2 rounded-lg focus:outline-none"
 //               >
 //                 <RefreshCcw
-//                   className={`text-white ${isRefreshing ? "animate-spin" : ""}`}
+//                   className={`text-gray-300 dark:text-gray-300 ${
+//                     isRefreshing ? "animate-spin" : ""
+//                   }`}
 //                   size={20}
 //                 />
 //               </button>
 
 //               {/* Export Dropdown */}
 //               <Menu as="div" className="relative" ref={dropdownRef}>
-//                 <Menu.Button className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none">
-//                   <DownloadIcon className="text-white" size={20} />
+//                 <Menu.Button className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 p-2 rounded-lg focus:outline-none">
+//                   <DownloadIcon
+//                     className="text-gray-300 dark:text-gray-300"
+//                     size={20}
+//                   />
 //                 </Menu.Button>
 
 //                 <Transition
@@ -407,9 +472,12 @@
 //               <div className="relative" ref={dropdownRef}>
 //                 <button
 //                   onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
-//                   className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
+//                   className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 p-2 rounded-lg focus:outline-none"
 //                 >
-//                   <LayoutGridIcon className="text-white" size={20} />
+//                   <LayoutGridIcon
+//                     className="text-gray-300 dark:text-gray-300"
+//                     size={20}
+//                   />
 //                 </button>
 //                 {columnsDropdownOpen && (
 //                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 overflow-hidden">
@@ -513,8 +581,8 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() => {
-//                                         setSelectedViewService(row.original);
-//                                         setShowViewServiceModal(true);
+//                                         setSelectedViewTimeSlot(row.original);
+//                                         setShowViewTimeSlotModal(true);
 //                                       }}
 //                                       className={`${
 //                                         active
@@ -523,7 +591,7 @@
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
 //                                       <EyeIcon className="mr-3 h-4 w-4" />
-//                                       View Service
+//                                       View Time Slot
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -532,7 +600,7 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() =>
-//                                         handleEditService(row.original)
+//                                         handleEditTimeSlot(row.original)
 //                                       }
 //                                       className={`${
 //                                         active
@@ -540,8 +608,8 @@
 //                                           : "text-gray-700 dark:text-gray-300"
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
-//                                       <Edit2Icon className="mr-3 h-4 w-4" />
-//                                       Edit Service
+//                                       <PencilIcon className="mr-3 h-4 w-4" />
+//                                       Edit Time Slot
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -550,7 +618,7 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() =>
-//                                         handleDeleteService(row.original)
+//                                         handleDeleteTimeSlot(row.original)
 //                                       }
 //                                       className={`${
 //                                         active
@@ -558,8 +626,8 @@
 //                                           : "text-gray-700 dark:text-gray-300"
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
-//                                       <Trash2Icon className="mr-3 h-4 w-4" />
-//                                       Delete Service
+//                                       <TrashIcon className="mr-3 h-4 w-4" />
+//                                       Delete Time Slot
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -623,41 +691,42 @@
 //       </motion.div>
 
 //       {/* Modals */}
-//       {showAddServiceModal && (
+//       {showAddTimeSlotModal && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <AddExtraServicesContent
-//               onClose={() => setShowAddServiceModal(false)}
-//               onServiceAdded={handleRefresh}
+//             <AddTimeSlotsContent
+//               onClose={() => setShowAddTimeSlotModal(false)}
+//               onTimeSlotAdded={handleRefresh}
 //             />
 //           </div>
 //         </div>
 //       )}
 
-//       {showEditServiceModal && selectedService && (
+//       {showEditTimeSlotModal && selectedTimeSlot && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <EditExtraServicesContent
-//               service={selectedService}
+//             <EditTimeSlotsContent
+//               timeSlot={selectedTimeSlot}
 //               onClose={() => {
-//                 setShowEditServiceModal(false);
-//                 setSelectedService(null);
+//                 setShowEditTimeSlotModal(false);
+//                 setSelectedTimeSlot(null);
 //               }}
-//               onServiceUpdated={handleRefresh}
+//               onTimeSlotUpdated={handleRefresh}
 //             />
 //           </div>
 //         </div>
 //       )}
 
 //       {/* View Modal */}
-//       {showViewServiceModal && selectedViewService && (
+//       {showViewTimeSlotModal && selectedViewTimeSlot && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <ViewExtraServicesContent
-//               service={selectedViewService}
+//             {/* < className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto"> */}
+//             <ViewTimeSlotsContent
+//               timeSlot={selectedViewTimeSlot}
 //               onClose={() => {
-//                 setShowViewServiceModal(false);
-//                 setSelectedViewService(null);
+//                 setShowViewTimeSlotModal(false);
+//                 setSelectedViewTimeSlot(null);
 //               }}
 //             />
 //           </div>
@@ -677,58 +746,54 @@
 //   );
 // };
 
-// export default ExtraServicesContent;
+// export default TimeSlotsContent;
+
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   EyeIcon,
-  Edit2Icon,
-  Trash2Icon,
+  PencilIcon,
+  TrashIcon,
   MoreVerticalIcon,
-  Package,
+  Clock,
   CheckCircle,
   XCircle,
-  DollarSign,
+  Percent,
 } from "lucide-react";
 import { Menu } from "@headlessui/react";
-import Avatar from "react-avatar";
 import { toast } from "react-toastify";
-import DataTableOne from "../../common/table/DataTableOne";
+import DataTableOne from "../../table/DataTableOne";
 import {
-  getAllExtraServices,
-  deleteExtraService,
-} from "../../../services/rooms/extraServiceServices";
-import AddExtraServicesContent from "./AddExtraServicesContent";
-import EditExtraServicesContent from "./EditExtraServicesContent";
-import ViewExtraServicesContent from "./ViewExtraServicesContent";
-import DeleteModal from "../../common/modal/DeleteModal";
+  getAllTimeSlots,
+  deleteTimeSlot,
+} from "../../../services/rooms/timeSlotServices";
+import AddTimeSlotsContent from "./AddTimeSlotsContent";
+import EditTimeSlotsContent from "./EditTimeSlotsContent";
+import ViewTimeSlotsContent from "./ViewTimeSlotsContent";
+import DeleteModal from "../../modal/DeleteModal";
 
-const ExtraServicesContent = () => {
+const TimeSlotsContent = () => {
   const [data, setData] = useState([]);
-  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
-  const [showEditServiceModal, setShowEditServiceModal] = useState(false);
-  const [selectedService, setSelectedService] = useState(null);
+  const [showAddTimeSlotModal, setShowAddTimeSlotModal] = useState(false);
+  const [showEditTimeSlotModal, setShowEditTimeSlotModal] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [serviceIdToDelete, setServiceIdToDelete] = useState(null);
-  const [showViewServiceModal, setShowViewServiceModal] = useState(false);
-  const [selectedViewService, setSelectedViewService] = useState(null);
+  const [timeSlotIdToDelete, setTimeSlotIdToDelete] = useState(null);
+  const [showViewTimeSlotModal, setShowViewTimeSlotModal] = useState(false);
+  const [selectedViewTimeSlot, setSelectedViewTimeSlot] = useState(null);
 
   const fetchData = async () => {
     try {
-      const response = await getAllExtraServices();
-      if (Array.isArray(response)) {
-        setData(response);
-      } else if (response && Array.isArray(response.extraServices)) {
-        setData(response.extraServices);
-      } else if (response && Array.isArray(response.data)) {
-        setData(response.data);
+      const response = await getAllTimeSlots();
+      if (Array.isArray(response.timeSlots)) {
+        setData(response.timeSlots);
       } else {
-        console.error("Unexpected response structure:", response);
+        console.error("Expected an array but got:", response);
         setData([]);
       }
     } catch (error) {
-      console.error("Error fetching extra services:", error);
+      console.error("Error fetching time slots:", error);
       setData([]);
     }
   };
@@ -739,38 +804,29 @@ const ExtraServicesContent = () => {
 
   const columns = [
     {
-      accessorKey: "image",
-      header: "Image",
-      type: "image",
-      cell: ({ row }) => (
-        <Avatar
-          name={row.original.serviceName}
-          src={row.original.image}
-          size="40"
-          round
-        />
-      ),
+      accessorKey: "name",
+      header: "Name",
     },
     {
-      accessorKey: "serviceName",
-      header: "Service Name",
+      accessorKey: "checkInTime",
+      header: "Check-in Time",
     },
     {
-      accessorKey: "description",
-      header: "Description",
+      accessorKey: "checkOutTime",
+      header: "Check-out Time",
     },
     {
-      accessorKey: "price",
-      header: "Price",
-      cell: ({ getValue }) => `$${getValue().toFixed(2)}`,
+      accessorKey: "sameDay",
+      header: "Same Day",
+      cell: ({ getValue }) => (getValue() ? "Yes" : "No"),
     },
     {
-      accessorKey: "serviceType",
-      header: "Service Type",
+      accessorKey: "priceMultiplier",
+      header: "Price Multiplier",
     },
     {
-      accessorKey: "availability",
-      header: "Availability",
+      accessorKey: "isActive",
+      header: "Status",
       cell: ({ getValue }) => (
         <span
           className={`px-3 py-1 text-xs font-medium rounded-full ${
@@ -779,9 +835,14 @@ const ExtraServicesContent = () => {
               : "bg-red-100 text-red-800"
           }`}
         >
-          {getValue() ? "Available" : "Unavailable"}
+          {getValue() ? "Active" : "Inactive"}
         </span>
       ),
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Created On",
+      cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
     },
   ];
 
@@ -790,20 +851,20 @@ const ExtraServicesContent = () => {
   };
 
   const confirmDelete = async () => {
-    if (serviceIdToDelete) {
+    if (timeSlotIdToDelete) {
       try {
-        await deleteExtraService(serviceIdToDelete);
-        toast.success("Extra service deleted successfully");
+        await deleteTimeSlot(timeSlotIdToDelete);
+        toast.success("Time slot deleted successfully");
         await fetchData();
-        setServiceIdToDelete(null);
+        setTimeSlotIdToDelete(null);
       } catch (error) {
-        console.error("Error deleting extra service:", error);
-        toast.error("Failed to delete extra service");
+        console.error("Error deleting time slot:", error);
+        toast.error("Failed to delete time slot");
       }
     }
   };
 
-  const renderRowActions = (service) => (
+  const renderRowActions = (timeSlot) => (
     <Menu as="div" className="relative inline-block text-left">
       {({ open }) => (
         <>
@@ -821,8 +882,8 @@ const ExtraServicesContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setSelectedViewService(service);
-                        setShowViewServiceModal(true);
+                        setSelectedViewTimeSlot(timeSlot);
+                        setShowViewTimeSlotModal(true);
                       }}
                       className={`${
                         active
@@ -831,7 +892,7 @@ const ExtraServicesContent = () => {
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
                       <EyeIcon className="mr-3 h-4 w-4" />
-                      View Service
+                      View Time Slot
                     </button>
                   )}
                 </Menu.Item>
@@ -840,8 +901,8 @@ const ExtraServicesContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setSelectedService(service);
-                        setShowEditServiceModal(true);
+                        setSelectedTimeSlot(timeSlot);
+                        setShowEditTimeSlotModal(true);
                       }}
                       className={`${
                         active
@@ -849,8 +910,8 @@ const ExtraServicesContent = () => {
                           : "text-gray-700 dark:text-gray-300"
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
-                      <Edit2Icon className="mr-3 h-4 w-4" />
-                      Edit Service
+                      <PencilIcon className="mr-3 h-4 w-4" />
+                      Edit Time Slot
                     </button>
                   )}
                 </Menu.Item>
@@ -859,7 +920,7 @@ const ExtraServicesContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setServiceIdToDelete(service._id);
+                        setTimeSlotIdToDelete(timeSlot._id);
                         setShowDeleteModal(true);
                       }}
                       className={`${
@@ -868,8 +929,8 @@ const ExtraServicesContent = () => {
                           : "text-gray-700 dark:text-gray-300"
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
-                      <Trash2Icon className="mr-3 h-4 w-4" />
-                      Delete Service
+                      <TrashIcon className="mr-3 h-4 w-4" />
+                      Delete Time Slot
                     </button>
                   )}
                 </Menu.Item>
@@ -885,30 +946,30 @@ const ExtraServicesContent = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto px-6 py-8"
+      className="container mx-auto px-6 py-8 dark:bg-gray-900"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Services
+                Total Time Slots
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
                 {data.length}
               </p>
             </div>
-            <Package className="h-10 w-10 text-blue-500" />
+            <Clock className="h-10 w-10 text-blue-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Available Services
+                Active Time Slots
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((service) => service.availability).length}
+                {data.filter((slot) => slot.isActive).length}
               </p>
             </div>
             <CheckCircle className="h-10 w-10 text-green-500" />
@@ -918,10 +979,10 @@ const ExtraServicesContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Unavailable Services
+                Inactive Time Slots
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((service) => !service.availability).length}
+                {data.filter((slot) => !slot.isActive).length}
               </p>
             </div>
             <XCircle className="h-10 w-10 text-red-500" />
@@ -931,17 +992,17 @@ const ExtraServicesContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Average Price
+                Avg Price Multiplier
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                $
                 {(
-                  data.reduce((sum, service) => sum + service.price, 0) /
+                  data.reduce((sum, slot) => sum + slot.priceMultiplier, 0) /
                   data.length
                 ).toFixed(2)}
+                x
               </p>
             </div>
-            <DollarSign className="h-10 w-10 text-purple-500" />
+            <Percent className="h-10 w-10 text-purple-500" />
           </div>
         </div>
       </div>
@@ -949,47 +1010,47 @@ const ExtraServicesContent = () => {
         data={data}
         columns={columns}
         onRefresh={handleRefresh}
-        onAddNew={() => setShowAddServiceModal(true)}
-        addNewText="Add Service"
-        onTitle="Extra Services' Records"
+        onAddNew={() => setShowAddTimeSlotModal(true)}
+        addNewText="Add Time Slot"
+        onTitle="Time Slots' Records"
         renderRowActions={renderRowActions}
       />
 
       {/* Modals */}
-      {showAddServiceModal && (
+      {showAddTimeSlotModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <AddExtraServicesContent
-              onClose={() => setShowAddServiceModal(false)}
-              onServiceAdded={handleRefresh}
+            <AddTimeSlotsContent
+              onClose={() => setShowAddTimeSlotModal(false)}
+              onTimeSlotAdded={handleRefresh}
             />
           </div>
         </div>
       )}
 
-      {showEditServiceModal && selectedService && (
+      {showEditTimeSlotModal && selectedTimeSlot && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <EditExtraServicesContent
-              service={selectedService}
+            <EditTimeSlotsContent
+              timeSlot={selectedTimeSlot}
               onClose={() => {
-                setShowEditServiceModal(false);
-                setSelectedService(null);
+                setShowEditTimeSlotModal(false);
+                setSelectedTimeSlot(null);
               }}
-              onServiceUpdated={handleRefresh}
+              onTimeSlotUpdated={handleRefresh}
             />
           </div>
         </div>
       )}
 
-      {showViewServiceModal && selectedViewService && (
+      {showViewTimeSlotModal && selectedViewTimeSlot && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <ViewExtraServicesContent
-              service={selectedViewService}
+            <ViewTimeSlotsContent
+              timeSlot={selectedViewTimeSlot}
               onClose={() => {
-                setShowViewServiceModal(false);
-                setSelectedViewService(null);
+                setShowViewTimeSlotModal(false);
+                setSelectedViewTimeSlot(null);
               }}
             />
           </div>
@@ -1009,5 +1070,5 @@ const ExtraServicesContent = () => {
   );
 };
 
-export default ExtraServicesContent;
+export default TimeSlotsContent;
 

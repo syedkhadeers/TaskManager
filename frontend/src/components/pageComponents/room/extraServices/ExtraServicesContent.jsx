@@ -1,5 +1,3 @@
-// // UsersContent.jsx
-
 // import React, { useMemo, useState, useEffect, useRef } from "react";
 // import {
 //   SearchIcon,
@@ -10,13 +8,10 @@
 //   ChevronRightIcon,
 //   FileTextIcon,
 //   PlusIcon,
-//   UsersIcon,
-//   UserCheckIcon,
-//   ShieldIcon,
-//   PencilIcon,
 //   RefreshCcw,
 //   EyeIcon,
-//   TrashIcon,
+//   Edit2Icon,
+//   Trash2Icon,
 // } from "lucide-react";
 // import {
 //   useReactTable,
@@ -29,69 +24,78 @@
 // import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 // import { jsPDF } from "jspdf";
 // import "jspdf-autotable";
-// import Avatar from "react-avatar";
-// import AddUsersContent from "./AddUsersContent";
 // import { Menu, Transition } from "@headlessui/react";
 // import { motion } from "framer-motion";
-// import {
-//   getAllUsers,
-//   deleteUser,
-//   getOtherUser,
-// } from "../../services/userServices";
-// import EditUsersContent from "./EditUsersContent";
-// import DeleteModal from "../common/modal/DeleteModal";
+// import { getAllExtraServices, deleteExtraService } from "../../../services/rooms/extraServiceServices";
+// import AddExtraServicesContent from "./AddExtraServicesContent";
+// import EditExtraServicesContent from "./EditExtraServicesContent";
+// import ViewExtraServicesContent from "./ViewExtraServicesContent";
+// import DeleteModal from "../../common/modal/DeleteModal";
 // import { toast } from "react-toastify";
-// import ViewUserContent from "./ViewUserContent";
+// import { useNavigate } from "react-router-dom";
+// import Avatar from "react-avatar";
 
 
-
-// const UsersContent = () => {
+// const ExtraServicesContent = () => {
 //   const [data, setData] = useState([]);
 //   const [globalFilter, setGlobalFilter] = useState("");
 //   const [columnVisibility, setColumnVisibility] = useState({});
 //   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 //   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
-//   const [showAddUserModal, setShowAddUserModal] = useState(false);
-//   const [showEditUserModal, setShowEditUserModal] = useState(false);
-//   const [selectedUser, setSelectedUser] = useState(null);
+//   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+//   const [showEditServiceModal, setShowEditServiceModal] = useState(false);
+//   const [selectedService, setSelectedService] = useState(null);
 //   const [isRefreshing, setIsRefreshing] = useState(false);
 //   const dropdownRef = useRef(null);
 
 //   const [showDeleteModal, setShowDeleteModal] = useState(false);
-//   const [userIdToDelete, setUserIdToDelete] = useState(null); // Store the user ID to delete
+//   const [serviceIdToDelete, setServiceIdToDelete] = useState(null);
+//   const [showViewServiceModal, setShowViewServiceModal] = useState(false);
+//   const [selectedViewService, setSelectedViewService] = useState(null);
 
-//   const [showViewUserModal, setShowViewUserModal] = useState(false);
-//   const [selectedViewUser, setSelectedViewUser] = useState(null);
-
-//   // const navigate = useNavigate();
+//   const navigate = useNavigate();
 
 //   const confirmDelete = async () => {
-//     if (userIdToDelete) {
+//     if (serviceIdToDelete) {
 //       try {
-//         await deleteUser(userIdToDelete);
-//         toast.success("User deleted successfully");
+//         await deleteExtraService(serviceIdToDelete);
+//         toast.success("Extra service deleted successfully");
 //         await fetchData();
-//         setUserIdToDelete(null);
+//         setServiceIdToDelete(null);
 //       } catch (error) {
-//         console.error("Error deleting user:", error);
-//         toast.error("Failed to delete user");
+//         console.error("Error deleting extra service:", error);
+//         toast.error("Failed to delete extra service");
 //       }
 //     }
 //   };
 
-//   const fetchData = async () => {
-//     try {
-//       const response = await getAllUsers();
-//       if (Array.isArray(response)) {
-//         setData(response);
-//       } else {
-//         console.error("Expected an array but got:", response);
-//         setData([]);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching users:", error);
+// const fetchData = async () => {
+//   try {
+//     const response = await getAllExtraServices();
+
+//     // If response is an array directly
+//     if (Array.isArray(response)) {
+//       setData(response);
 //     }
-//   };
+//     // If response has extraServices property
+//     else if (response && Array.isArray(response.extraServices)) {
+//       setData(response.extraServices);
+//     }
+//     // If response is an object with data property
+//     else if (response && Array.isArray(response.data)) {
+//       setData(response.data);
+//     }
+//     // If none of above, set empty array
+//     else {
+//       console.log("Response structure:", response);
+//       setData([]);
+//     }
+//   } catch (error) {
+//     console.error("Error fetching extra services:", error);
+//     setData([]);
+//   }
+// };
+
 
 //   const handleRefresh = async () => {
 //     setIsRefreshing(true);
@@ -120,41 +124,37 @@
 //   const columns = useMemo(
 //     () => [
 //       {
-//         accessorKey: "photo",
-//         header: "Photo",
+//         accessorKey: "image",
+//         header: "Image",
 //         cell: ({ row }) => (
 //           <Avatar
-//             name={row.original.name}
-//             src={row.original.photo?.url}
+//             name={row.original.serviceName}
+//             src={row.original.image}
 //             size="40"
 //             round
 //           />
 //         ),
 //       },
 //       {
-//         accessorKey: "name",
-//         header: "Name",
+//         accessorKey: "serviceName",
+//         header: "Service Name",
 //       },
 //       {
-//         accessorKey: "email",
-//         header: "Email",
+//         accessorKey: "description",
+//         header: "Description",
 //       },
 //       {
-//         accessorKey: "mobile",
-//         header: "Mobile",
+//         accessorKey: "price",
+//         header: "Price",
+//         cell: ({ getValue }) => `$${getValue().toFixed(2)}`,
 //       },
 //       {
-//         accessorKey: "role",
-//         header: "Role",
-//         cell: ({ getValue }) => (
-//           <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-//             {getValue()}
-//           </span>
-//         ),
+//         accessorKey: "serviceType",
+//         header: "Service Type",
 //       },
 //       {
-//         accessorKey: "isVerified",
-//         header: "Status",
+//         accessorKey: "availability",
+//         header: "Availability",
 //         cell: ({ getValue }) => (
 //           <span
 //             className={`px-3 py-1 text-xs font-medium rounded-full ${
@@ -163,14 +163,9 @@
 //                 : "bg-red-100 text-red-800"
 //             }`}
 //           >
-//             {getValue() ? "Verified" : "Not Verified"}
+//             {getValue() ? "Available" : "Unavailable"}
 //           </span>
 //         ),
-//       },
-//       {
-//         accessorKey: "createdAt",
-//         header: "Created On",
-//         cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
 //       },
 //     ],
 //     []
@@ -193,19 +188,17 @@
 //   const exportToCSV = () => {
 //     try {
 //       const visibleColumns = columns.filter(
-//         (col) =>
-//           col.accessorKey !== "photo" &&
-//           table.getState().columnVisibility[col.accessorKey] !== false
+//         (col) => table.getState().columnVisibility[col.accessorKey] !== false
 //       );
 
 //       const csvData = table.getFilteredRowModel().rows.map((row) => {
 //         const rowData = {};
 //         visibleColumns.forEach((col) => {
 //           let value = row.getValue(col.accessorKey);
-//           if (col.accessorKey === "isVerified") {
-//             value = value ? "Verified" : "Not Verified";
-//           } else if (col.accessorKey === "createdAt") {
-//             value = new Date(value).toLocaleDateString();
+//           if (col.accessorKey === "availability") {
+//             value = value ? "Available" : "Unavailable";
+//           } else if (col.accessorKey === "price") {
+//             value = `$${value.toFixed(2)}`;
 //           }
 //           rowData[col.header] = value;
 //         });
@@ -231,7 +224,7 @@
 //       const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
 //       const link = document.createElement("a");
 //       link.href = URL.createObjectURL(blob);
-//       link.download = "users_export.csv";
+//       link.download = "extra_services_export.csv";
 //       link.style.display = "none";
 //       document.body.appendChild(link);
 //       link.click();
@@ -245,20 +238,20 @@
 
 //   const exportToPDF = () => {
 //     try {
-//       const doc = new jsPDF("landscape");
+//       const doc = new jsPDF();
 //       const visibleColumns = columns.filter(
 //         (col) =>
-//           col.accessorKey !== "photo" &&
+//           col.accessorKey !== "image" &&
 //           table.getState().columnVisibility[col.accessorKey] !== false
 //       );
 
 //       const tableData = table.getFilteredRowModel().rows.map((row) =>
 //         visibleColumns.map((col) => {
 //           let value = row.getValue(col.accessorKey);
-//           if (col.accessorKey === "isVerified") {
-//             return value ? "Verified" : "Not Verified";
-//           } else if (col.accessorKey === "createdAt") {
-//             return new Date(value).toLocaleDateString();
+//           if (col.accessorKey === "availability") {
+//             return value ? "Available" : "Unavailable";
+//           } else if (col.accessorKey === "price") {
+//             return `$${value.toFixed(2)}`;
 //           }
 //           return value?.toString() || "";
 //         })
@@ -266,7 +259,7 @@
 
 //       const headers = visibleColumns.map((col) => col.header);
 
-//       doc.text("User's Data", 14, 15);
+//       doc.text("Extra Services' Data", 14, 15);
 //       doc.autoTable({
 //         head: [headers],
 //         body: tableData,
@@ -288,7 +281,7 @@
 //         margin: { top: 20 },
 //       });
 
-//       doc.save("users_export.pdf");
+//       doc.save("extra_services_export.pdf");
 //       setExportDropdownOpen(false);
 //     } catch (error) {
 //       console.error("PDF Export Error:", error);
@@ -296,111 +289,22 @@
 //     }
 //   };
 
-//   const handleEditUser = (user) => {
-//     setSelectedUser(user);
-//     setShowEditUserModal(true);
+//   const handleEditService = (service) => {
+//     setSelectedService(service);
+//     setShowEditServiceModal(true);
 //   };
 
-//   const handleDeleteUser = (user) => {
-//     // MongoDB IDs are typically stored in the _id field
-//     setUserIdToDelete(user._id);
+//   const handleDeleteService = (service) => {
+//     setServiceIdToDelete(service._id);
 //     setShowDeleteModal(true);
 //   };
-
-//   const containerVariants = {
-//     hidden: { opacity: 0 },
-//     visible: {
-//       opacity: 1,
-//       transition: {
-//         staggerChildren: 0.1,
-//       },
-//     },
-//   };
-
-//   const cardVariants = {
-//     hidden: { y: 20, opacity: 0 },
-//     visible: {
-//       y: 0,
-//       opacity: 1,
-//       transition: {
-//         type: "spring",
-//         stiffness: 100,
-//       },
-//     },
-//   };
-
-//   const cardData = [
-//     {
-//       title: "Total Users",
-//       value: data.length,
-//       icon: <UsersIcon className="w-6 h-6" />,
-//       bgcolor: "bg-blue-500 dark:bg-blue-600",
-//       trend: "+12.5%",
-//     },
-//     {
-//       title: "Verified Users",
-//       value: data.filter((user) => user.isVerified).length,
-//       icon: <UserCheckIcon className="w-6 h-6 p-4" />,
-//       bgcolor: "bg-gray-500 dark:bg-gray-600",
-//       trend: "+5.2%",
-//     },
-//     {
-//       title: "Admin Users",
-//       value: data.filter((user) => user.role === "admin").length,
-//       icon: <ShieldIcon className="w-6 h-6" />,
-//       bgcolor: "bg-purple-500 dark:bg-purple-600",
-//       trend: "+8.1%",
-//     },
-//     {
-//       title: "Creators",
-//       value: data.filter((user) => user.role === "creator").length,
-//       icon: <PencilIcon className="w-6 h-6" />,
-//       bgcolor: "bg-orange-500 dark:bg-orange-600",
-//       trend: "+15.3%",
-//     },
-//   ];
 
 //   return (
 //     <motion.div
 //       initial={{ opacity: 0 }}
 //       animate={{ opacity: 1 }}
-//       className="container mx-auto px-6 py-8 dark:bg-gray-900"
+//       className="container mx-auto px-6 py-8"
 //     >
-//       {/* Stats Grid */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-//         {cardData.map((card, index) => (
-//           <motion.div
-//             key={index}
-//             initial={{ y: 20, opacity: 0 }}
-//             animate={{ y: 0, opacity: 1 }}
-//             transition={{ delay: index * 0.1 }}
-//             className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
-//           >
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-sm text-gray-500 dark:text-gray-400">
-//                   {card.title}
-//                 </p>
-//                 <h3 className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
-//                   {card.value}
-//                 </h3>
-//                 <span className="text-sm text-green-500 dark:text-green-400">
-//                   {card.trend}
-//                 </span>
-//               </div>
-//               <div
-//                 className={`${card.bgcolor} bg-opacity-10 dark:bg-opacity-20 p-3 rounded-lg`}
-//               >
-//                 {React.cloneElement(card.icon, {
-//                   className: `h-6 w-6 text-gray-900 dark:text-white`,
-//                 })}
-//               </div>
-//             </div>
-//           </motion.div>
-//         ))}
-//       </div>
-
-//       {/* Main Content Card */}
 //       <motion.div
 //         initial={{ y: 20, opacity: 0 }}
 //         animate={{ y: 0, opacity: 1 }}
@@ -409,22 +313,22 @@
 //         {/* Header */}
 //         <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600">
 //           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-//             <h2 className="text-2xl font-semibold text-gray-300 dark:text-white">
-//               User Management
+//             <h2 className="text-2xl font-semibold text-white">
+//               Extra Services Management
 //             </h2>
 //             <div className="flex flex-wrap items-center gap-3">
 //               <button
-//                 onClick={() => setShowAddUserModal(true)}
-//                 className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 px-4 py-2  text-gray-300 dark:text-gray-300 rounded-lg focus:outline-none transition-colors flex items-center gap-2"
+//                 onClick={() => setShowAddServiceModal(true)}
+//                 className="bg-white/20 hover:bg-white/30 px-4 py-2 text-white rounded-lg focus:outline-none transition-colors flex items-center gap-2"
 //               >
 //                 <PlusIcon size={20} />
-//                 Add User
+//                 Add Service
 //               </button>
 
 //               <div className="relative">
 //                 <input
 //                   type="text"
-//                   placeholder="Search users..."
+//                   placeholder="Search services..."
 //                   value={globalFilter || ""}
 //                   onChange={(e) => setGlobalFilter(e.target.value)}
 //                   className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -439,23 +343,18 @@
 //               <button
 //                 onClick={handleRefresh}
 //                 disabled={isRefreshing}
-//                 className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 p-2 rounded-lg focus:outline-none"
+//                 className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
 //               >
 //                 <RefreshCcw
-//                   className={`text-gray-300 dark:text-gray-300 ${
-//                     isRefreshing ? "animate-spin" : ""
-//                   }`}
+//                   className={`text-white ${isRefreshing ? "animate-spin" : ""}`}
 //                   size={20}
 //                 />
 //               </button>
 
 //               {/* Export Dropdown */}
 //               <Menu as="div" className="relative" ref={dropdownRef}>
-//                 <Menu.Button className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 p-2 rounded-lg focus:outline-none">
-//                   <DownloadIcon
-//                     className="text-gray-300 dark:text-gray-300"
-//                     size={20}
-//                   />
+//                 <Menu.Button className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none">
+//                   <DownloadIcon className="text-white" size={20} />
 //                 </Menu.Button>
 
 //                 <Transition
@@ -508,12 +407,9 @@
 //               <div className="relative" ref={dropdownRef}>
 //                 <button
 //                   onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
-//                   className="bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 p-2 rounded-lg focus:outline-none"
+//                   className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
 //                 >
-//                   <LayoutGridIcon
-//                     className="text-gray-300 dark:text-gray-300"
-//                     size={20}
-//                   />
+//                   <LayoutGridIcon className="text-white" size={20} />
 //                 </button>
 //                 {columnsDropdownOpen && (
 //                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 overflow-hidden">
@@ -617,8 +513,8 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() => {
-//                                         setSelectedViewUser(row.original);
-//                                         setShowViewUserModal(true);
+//                                         setSelectedViewService(row.original);
+//                                         setShowViewServiceModal(true);
 //                                       }}
 //                                       className={`${
 //                                         active
@@ -627,7 +523,7 @@
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
 //                                       <EyeIcon className="mr-3 h-4 w-4" />
-//                                       View Time Slot
+//                                       View Service
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -636,7 +532,7 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() =>
-//                                         handleEditUser(row.original)
+//                                         handleEditService(row.original)
 //                                       }
 //                                       className={`${
 //                                         active
@@ -644,8 +540,8 @@
 //                                           : "text-gray-700 dark:text-gray-300"
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
-//                                       <PencilIcon className="mr-3 h-4 w-4" />
-//                                       Edit User
+//                                       <Edit2Icon className="mr-3 h-4 w-4" />
+//                                       Edit Service
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -654,7 +550,7 @@
 //                                   {({ active }) => (
 //                                     <button
 //                                       onClick={() =>
-//                                         handleDeleteUser(row.original)
+//                                         handleDeleteService(row.original)
 //                                       }
 //                                       className={`${
 //                                         active
@@ -662,8 +558,8 @@
 //                                           : "text-gray-700 dark:text-gray-300"
 //                                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
 //                                     >
-//                                       <TrashIcon className="mr-3 h-4 w-4" />
-//                                       Delete User
+//                                       <Trash2Icon className="mr-3 h-4 w-4" />
+//                                       Delete Service
 //                                     </button>
 //                                   )}
 //                                 </Menu.Item>
@@ -727,40 +623,41 @@
 //       </motion.div>
 
 //       {/* Modals */}
-//       {showAddUserModal && (
+//       {showAddServiceModal && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <AddUsersContent
-//               onClose={() => setShowAddUserModal(false)}
-//               onUserAdded={handleRefresh}
+//             <AddExtraServicesContent
+//               onClose={() => setShowAddServiceModal(false)}
+//               onServiceAdded={handleRefresh}
 //             />
 //           </div>
 //         </div>
 //       )}
 
-//       {showEditUserModal && selectedUser && (
+//       {showEditServiceModal && selectedService && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
 //           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-//             <EditUsersContent
-//               user={selectedUser}
+//             <EditExtraServicesContent
+//               service={selectedService}
 //               onClose={() => {
-//                 setShowEditUserModal(false);
-//                 setSelectedUser(null);
+//                 setShowEditServiceModal(false);
+//                 setSelectedService(null);
 //               }}
-//               onUserUpdated={handleRefresh}
+//               onServiceUpdated={handleRefresh}
 //             />
 //           </div>
 //         </div>
 //       )}
 
-//       {showViewUserModal && selectedViewUser && (
+//       {/* View Modal */}
+//       {showViewServiceModal && selectedViewService && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-//           <div className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto">
-//             <ViewUserContent
-//               user={selectedViewUser}
+//           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
+//             <ViewExtraServicesContent
+//               service={selectedViewService}
 //               onClose={() => {
-//                 setShowViewUserModal(false);
-//                 setSelectedViewUser(null);
+//                 setShowViewServiceModal(false);
+//                 setSelectedViewService(null);
 //               }}
 //             />
 //           </div>
@@ -780,52 +677,59 @@
 //   );
 // };
 
-// export default UsersContent;
-
+// export default ExtraServicesContent;
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  Users,
-  UserCheck,
-  UserX,
-  UserPlus,
+  Edit2Icon,
+  Trash2Icon,
   MoreVerticalIcon,
+  Package,
+  CheckCircle,
+  XCircle,
+  DollarSign,
 } from "lucide-react";
 import { Menu } from "@headlessui/react";
 import Avatar from "react-avatar";
 import { toast } from "react-toastify";
-import DataTableOne from "../common/table/DataTableOne";
-import { getAllUsers, deleteUser } from "../../services/userServices";
-import AddUsersContent from "./AddUsersContent";
-import EditUsersContent from "./EditUsersContent";
-import ViewUserContent from "./ViewUserContent";
-import DeleteModal from "../common/modal/DeleteModal";
+import DataTableOne from "../../table/DataTableOne";
+import {
+  getAllExtraServices,
+  deleteExtraService,
+} from "../../../services/rooms/extraServiceServices";
+import AddExtraServicesContent from "./AddExtraServicesContent";
+import EditExtraServicesContent from "./EditExtraServicesContent";
+import ViewExtraServicesContent from "./ViewExtraServicesContent";
+import DeleteModal from "../../modal/DeleteModal";
 
-const UsersContent = () => {
+const ExtraServicesContent = () => {
   const [data, setData] = useState([]);
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [showEditServiceModal, setShowEditServiceModal] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userIdToDelete, setUserIdToDelete] = useState(null);
-  const [showViewUserModal, setShowViewUserModal] = useState(false);
-  const [selectedViewUser, setSelectedViewUser] = useState(null);
+  const [serviceIdToDelete, setServiceIdToDelete] = useState(null);
+  const [showViewServiceModal, setShowViewServiceModal] = useState(false);
+  const [selectedViewService, setSelectedViewService] = useState(null);
 
   const fetchData = async () => {
     try {
-      const response = await getAllUsers();
+      const response = await getAllExtraServices();
       if (Array.isArray(response)) {
         setData(response);
+      } else if (response && Array.isArray(response.extraServices)) {
+        setData(response.extraServices);
+      } else if (response && Array.isArray(response.data)) {
+        setData(response.data);
       } else {
-        console.error("Expected an array but got:", response);
+        console.error("Unexpected response structure:", response);
         setData([]);
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching extra services:", error);
+      setData([]);
     }
   };
 
@@ -835,42 +739,38 @@ const UsersContent = () => {
 
   const columns = [
     {
-      accessorKey: "photo",
-      header: "Photo",
+      accessorKey: "image",
+      header: "Image",
       type: "image",
       cell: ({ row }) => (
         <Avatar
-          name={row.original.name}
-          src={row.original.photo?.url}
+          name={row.original.serviceName}
+          src={row.original.image}
           size="40"
           round
         />
       ),
     },
     {
-      accessorKey: "name",
-      header: "Name",
+      accessorKey: "serviceName",
+      header: "Service Name",
     },
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: "description",
+      header: "Description",
     },
     {
-      accessorKey: "mobile",
-      header: "Mobile",
+      accessorKey: "price",
+      header: "Price",
+      cell: ({ getValue }) => `$${getValue().toFixed(2)}`,
     },
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ getValue }) => (
-        <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-          {getValue()}
-        </span>
-      ),
+      accessorKey: "serviceType",
+      header: "Service Type",
     },
     {
-      accessorKey: "isVerified",
-      header: "Status",
+      accessorKey: "availability",
+      header: "Availability",
       cell: ({ getValue }) => (
         <span
           className={`px-3 py-1 text-xs font-medium rounded-full ${
@@ -879,14 +779,9 @@ const UsersContent = () => {
               : "bg-red-100 text-red-800"
           }`}
         >
-          {getValue() ? "Verified" : "Not Verified"}
+          {getValue() ? "Available" : "Unavailable"}
         </span>
       ),
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created On",
-      cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
     },
   ];
 
@@ -895,20 +790,20 @@ const UsersContent = () => {
   };
 
   const confirmDelete = async () => {
-    if (userIdToDelete) {
+    if (serviceIdToDelete) {
       try {
-        await deleteUser(userIdToDelete);
-        toast.success("User deleted successfully");
+        await deleteExtraService(serviceIdToDelete);
+        toast.success("Extra service deleted successfully");
         await fetchData();
-        setUserIdToDelete(null);
+        setServiceIdToDelete(null);
       } catch (error) {
-        console.error("Error deleting user:", error);
-        toast.error("Failed to delete user");
+        console.error("Error deleting extra service:", error);
+        toast.error("Failed to delete extra service");
       }
     }
   };
 
-  const renderRowActions = (user) => (
+  const renderRowActions = (service) => (
     <Menu as="div" className="relative inline-block text-left">
       {({ open }) => (
         <>
@@ -926,8 +821,8 @@ const UsersContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setSelectedViewUser(user);
-                        setShowViewUserModal(true);
+                        setSelectedViewService(service);
+                        setShowViewServiceModal(true);
                       }}
                       className={`${
                         active
@@ -936,7 +831,7 @@ const UsersContent = () => {
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
                       <EyeIcon className="mr-3 h-4 w-4" />
-                      View User
+                      View Service
                     </button>
                   )}
                 </Menu.Item>
@@ -945,8 +840,8 @@ const UsersContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setSelectedUser(user);
-                        setShowEditUserModal(true);
+                        setSelectedService(service);
+                        setShowEditServiceModal(true);
                       }}
                       className={`${
                         active
@@ -954,8 +849,8 @@ const UsersContent = () => {
                           : "text-gray-700 dark:text-gray-300"
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
-                      <PencilIcon className="mr-3 h-4 w-4" />
-                      Edit User
+                      <Edit2Icon className="mr-3 h-4 w-4" />
+                      Edit Service
                     </button>
                   )}
                 </Menu.Item>
@@ -964,7 +859,7 @@ const UsersContent = () => {
                   {({ active }) => (
                     <button
                       onClick={() => {
-                        setUserIdToDelete(user._id);
+                        setServiceIdToDelete(service._id);
                         setShowDeleteModal(true);
                       }}
                       className={`${
@@ -973,8 +868,8 @@ const UsersContent = () => {
                           : "text-gray-700 dark:text-gray-300"
                       } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
                     >
-                      <TrashIcon className="mr-3 h-4 w-4" />
-                      Delete User
+                      <Trash2Icon className="mr-3 h-4 w-4" />
+                      Delete Service
                     </button>
                   )}
                 </Menu.Item>
@@ -990,65 +885,63 @@ const UsersContent = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto px-6 py-8 dark:bg-gray-900"
+      className="container mx-auto px-6 py-8"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Users
+                Total Services
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
                 {data.length}
               </p>
             </div>
-            <Users className="h-10 w-10 text-blue-500" />
+            <Package className="h-10 w-10 text-blue-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Verified Users
+                Available Services
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((user) => user.isVerified).length}
+                {data.filter((service) => service.availability).length}
               </p>
             </div>
-            <UserCheck className="h-10 w-10 text-green-500" />
+            <CheckCircle className="h-10 w-10 text-green-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Unverified Users
+                Unavailable Services
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((user) => !user.isVerified).length}
+                {data.filter((service) => !service.availability).length}
               </p>
             </div>
-            <UserX className="h-10 w-10 text-red-500" />
+            <XCircle className="h-10 w-10 text-red-500" />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                New Users (Last 30 days)
+                Average Price
               </p>
               <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {
-                  data.filter((user) => {
-                    const thirtyDaysAgo = new Date();
-                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                    return new Date(user.createdAt) > thirtyDaysAgo;
-                  }).length
-                }
+                $
+                {(
+                  data.reduce((sum, service) => sum + service.price, 0) /
+                  data.length
+                ).toFixed(2)}
               </p>
             </div>
-            <UserPlus className="h-10 w-10 text-purple-500" />
+            <DollarSign className="h-10 w-10 text-purple-500" />
           </div>
         </div>
       </div>
@@ -1056,47 +949,47 @@ const UsersContent = () => {
         data={data}
         columns={columns}
         onRefresh={handleRefresh}
-        onAddNew={() => setShowAddUserModal(true)}
-        addNewText="Add User"
-        onTitle="Users' Records"
+        onAddNew={() => setShowAddServiceModal(true)}
+        addNewText="Add Service"
+        onTitle="Extra Services' Records"
         renderRowActions={renderRowActions}
       />
 
       {/* Modals */}
-      {showAddUserModal && (
+      {showAddServiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <AddUsersContent
-              onClose={() => setShowAddUserModal(false)}
-              onUserAdded={handleRefresh}
+            <AddExtraServicesContent
+              onClose={() => setShowAddServiceModal(false)}
+              onServiceAdded={handleRefresh}
             />
           </div>
         </div>
       )}
 
-      {showEditUserModal && selectedUser && (
+      {showEditServiceModal && selectedService && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
           <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <EditUsersContent
-              user={selectedUser}
+            <EditExtraServicesContent
+              service={selectedService}
               onClose={() => {
-                setShowEditUserModal(false);
-                setSelectedUser(null);
+                setShowEditServiceModal(false);
+                setSelectedService(null);
               }}
-              onUserUpdated={handleRefresh}
+              onServiceUpdated={handleRefresh}
             />
           </div>
         </div>
       )}
 
-      {showViewUserModal && selectedViewUser && (
+      {showViewServiceModal && selectedViewService && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto">
-            <ViewUserContent
-              user={selectedViewUser}
+          <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
+            <ViewExtraServicesContent
+              service={selectedViewService}
               onClose={() => {
-                setShowViewUserModal(false);
-                setSelectedViewUser(null);
+                setShowViewServiceModal(false);
+                setSelectedViewService(null);
               }}
             />
           </div>
@@ -1116,5 +1009,5 @@ const UsersContent = () => {
   );
 };
 
-export default UsersContent;
+export default ExtraServicesContent;
 

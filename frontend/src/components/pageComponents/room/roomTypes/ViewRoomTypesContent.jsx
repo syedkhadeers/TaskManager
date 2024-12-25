@@ -2,11 +2,11 @@ import React, { useContext } from "react";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { X, DollarSign, Users, Clock, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BasicCard1 } from "../../common/reusables/basicComponents/BasicCard1";
-import { BasicTag } from "../../common/reusables/basicComponents/BasicTag";
-import { BasicTable1 } from "../../common/table/BasicTable1";
-import { BasicImageGallery } from "../../common/reusables/basicComponents/BasicImageGallery";
-import { BasicStatusBadge } from "../../common/reusables/basicComponents/BasicStatusBadge";
+import { BasicCard1 } from "../../reusables/basicComponents/BasicCard1";
+import { BasicTag } from "../../reusables/basicComponents/BasicTag";
+import { BasicTable1 } from "../../table/BasicTable1";
+import { BasicImageGallery } from "../../reusables/basicComponents/BasicImageGallery";
+import { BasicStatusBadge } from "../../reusables/basicComponents/BasicStatusBadge";
 
 const ViewRoomTypesContent = ({ roomType, onClose }) => {
 

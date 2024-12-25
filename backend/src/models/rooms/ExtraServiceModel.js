@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const extraServiceSchema = new mongoose.Schema(
   {
-    serviceName: {
+    name: {
       type: String,
       required: [true, "Service name is required"],
       trim: true,
@@ -12,13 +12,12 @@ const extraServiceSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    image : {
-      type: String,
-      default: "",
-    },
-    price: {
+    basePrice: {
       type: Number,
-      required: [true, "Price is required"],
+      required: [true, "Base Price is required"],
+    },
+    icon: {
+      type: String,
     },
     availability: {
       type: Boolean,
@@ -38,6 +37,10 @@ const extraServiceSchema = new mongoose.Schema(
   }
 );
 
+// compound indexes
+extraServiceSchema.index({ serviceType: 1, availability: 1 });
+extraServiceSchema.index({ name: 1, serviceType: 1 });
 
 const ExtraServiceModel = mongoose.model("ExtraService", extraServiceSchema);
+
 export default ExtraServiceModel;
