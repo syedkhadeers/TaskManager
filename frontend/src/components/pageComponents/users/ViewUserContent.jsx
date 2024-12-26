@@ -1,30 +1,27 @@
 import React, { useState, useContext } from "react";
 import { ThemeContext } from "../../../context/ThemeContext";
 import {
-  ArrowLeftIcon,
   Search,
   Eye,
-  Edit2,
-  Trash2,
   BarChart2,
   Users,
   DollarSign,
   Home,
   X,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Calendar,
+  User,
 } from "lucide-react";
 import Avatar from "react-avatar";
 import { motion } from "framer-motion";
-import EditUsersContent from "./EditUsersContent";
-import DeleteModal from "../../reusables/modal/DeleteModal";
-import { toast } from "react-toastify";
-import { deleteUser } from "../../../services/user/userServices";
+import { PencilIcon, TrashIcon } from "lucide-react";
 
-const ViewUserContent = ({ user, onClose }) => {
+const ViewUserContent = ({ user, onClose, onEdit, onDelete }) => {
   const { isDarkMode } = useContext(ThemeContext);
-  const [activeTab, setActiveTab] = useState("bookings");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
 
   const [stats] = useState({
     totalBookings: 25,
@@ -32,16 +29,6 @@ const ViewUserContent = ({ user, onClose }) => {
     totalRooms: 10,
     totalGuests: 45,
   });
-
-  const handleDelete = async () => {
-    try {
-      await deleteUser(user._id);
-      toast.success("User deleted successfully");
-      onClose();
-    } catch (error) {
-      toast.error("Failed to delete user");
-    }
-  };
 
   const statCards = [
     {
@@ -69,6 +56,38 @@ const ViewUserContent = ({ user, onClose }) => {
       color: "from-orange-500 to-orange-600",
     },
   ];
+
+  const userDetails = {
+    personal: [
+      { label: "Title", value: user?.title, icon: User },
+      { label: "First Name", value: user?.firstName, icon: User },
+      { label: "Last Name", value: user?.lastName, icon: User },
+      { label: "Gender", value: user?.gender, icon: User },
+      {
+        label: "Date of Birth",
+        value: new Date(user?.dateOfBirth).toLocaleDateString(),
+        icon: Calendar,
+      },
+      { label: "Username", value: user?.userName, icon: User },
+    ],
+    contact: [
+      { label: "Email", value: user?.email, icon: Mail },
+      { label: "Mobile", value: user?.mobile, icon: Phone },
+      { label: "Alternate Mobile", value: user?.alternateMobile, icon: Phone },
+    ],
+    work: [
+      { label: "Department", value: user?.department, icon: Briefcase },
+      { label: "Branch", value: user?.branch, icon: Briefcase },
+      { label: "Role", value: user?.role, icon: Briefcase },
+    ],
+    address: [
+      { label: "Address", value: user?.address, icon: MapPin },
+      { label: "City", value: user?.city, icon: MapPin },
+      { label: "Pin Code", value: user?.pinCode, icon: MapPin },
+      { label: "State", value: user?.state, icon: MapPin },
+      { label: "Country", value: user?.country, icon: MapPin },
+    ],
+  };
 
   const bookings = [
     {
@@ -106,28 +125,60 @@ const ViewUserContent = ({ user, onClose }) => {
     },
   ];
 
+  const renderDetailsSection = (title, details) => (
+    <div
+      className={`p-6 rounded-xl shadow-lg ${
+        isDarkMode ? "bg-gray-800" : "bg-white"
+      }`}
+    >
+      <h3
+        className={`text-lg font-semibold mb-4 ${
+          isDarkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
+        {title}
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {details.map((item, index) => (
+          <div key={index} className="flex items-center space-x-3">
+            <div
+              className={`p-2 rounded-lg ${
+                isDarkMode ? "bg-gray-700" : "bg-gray-100"
+              }`}
+            >
+              <item.icon
+                className={`h-5 w-5 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              />
+            </div>
+            <div>
+              <p
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                {item.label}
+              </p>
+              <p
+                className={`font-medium ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {item.value || "N/A"}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div
       className={`container mx-auto p-4 space-y-6 ${isDarkMode ? "dark" : ""}`}
     >
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          View User
-        </h2>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          <X size={24} />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <StatCard key={index} {...stat} isDarkMode={isDarkMode} />
-        ))}
-      </div>
-
+      {/* Profile Header */}
       <div
         className={`rounded-xl shadow-lg overflow-hidden ${
           isDarkMode ? "bg-gray-800" : "bg-white"
@@ -136,14 +187,13 @@ const ViewUserContent = ({ user, onClose }) => {
         <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8">
           <div className="relative flex flex-col md:flex-row items-center gap-6">
             <Avatar
-              name={user?.name}
+              name={`${user?.fullName}`}
               src={user?.photo?.url}
               size="120"
-              round
-              className="border-4 border-white/30"
+              className="rounded-xl border-4 border-white/20 backdrop-blur-sm shadow-xl hover:scale-105 transition-all duration-300"
             />
-            <div className="text-center md:text-left text-white">
-              <h1 className="text-2xl font-bold mb-1">{user?.name}</h1>
+            <div className="text-center md:text-left text-white flex-grow">
+              <h1 className="text-2xl font-bold mb-1">{user?.fullName}</h1>
               <p className="text-blue-100">{user?.email}</p>
               <div className="flex gap-2 mt-2">
                 <span className="px-3 py-1 rounded-full text-xs bg-white/20">
@@ -153,48 +203,70 @@ const ViewUserContent = ({ user, onClose }) => {
                   {user?.isVerified ? "✓ Verified" : "Pending Verification"}
                 </span>
               </div>
+              <p className="mt-2 text-sm text-blue-100">{user?.bio}</p>
+            </div>
+
+            {/* Add action buttons */}
+            <div className="absolute top-0 right-0 flex items-center gap-3">
+              <button
+                onClick={() => onEdit(user)}
+                className="group relative p-2.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/20"
+              >
+                <PencilIcon className="h-5 w-5 text-white/90 group-hover:text-white transition-colors" />
+                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  Edit Profile
+                </span>
+              </button>
+
+              <button
+                onClick={() => onDelete(user)}
+                className="group relative p-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 backdrop-blur-sm border border-red-500/10 hover:border-red-500/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+              >
+                <TrashIcon className="h-5 w-5 text-red-500/90 group-hover:text-red-500 transition-colors" />
+                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  Delete User
+                </span>
+              </button>
             </div>
           </div>
-
-          <div className="absolute top-4 right-4 flex gap-2">
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Edit2 size={16} />
-              Edit
-            </button>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="bg-red-500/20 hover:bg-red-500/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Trash2 size={16} />
-              Delete
-            </button>
-          </div>
         </div>
+      </div>
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {statCards.map((stat, index) => (
+          <StatCard key={index} {...stat} isDarkMode={isDarkMode} />
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div
+        className={`rounded-xl shadow-lg overflow-hidden ${
+          isDarkMode ? "bg-gray-800" : "bg-white"
+        }`}
+      >
+        {/* Tabs */}
         <div
           className={`border-b ${
             isDarkMode ? "border-gray-700" : "border-gray-200"
           }`}
         >
-          <div className="flex">
-            {["Bookings", "Logs"].map((tab) => (
+          <div className="grid grid-cols-3 w-full">
+            {["Profile", "Bookings", "Logs"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab.toLowerCase())}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors
-                  ${
-                    activeTab === tab.toLowerCase()
-                      ? `border-blue-500 text-blue-600 dark:text-blue-400`
-                      : `border-transparent 
-                      ${
-                        isDarkMode
-                          ? "text-gray-400 hover:text-gray-300 hover:border-gray-600"
-                          : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`
-                  }`}
+                className={`py-3 text-sm font-medium border-b-2 transition-colors w-full
+          ${
+            activeTab === tab.toLowerCase()
+              ? `border-blue-500 text-blue-600 dark:text-blue-400`
+              : `border-transparent 
+            ${
+              isDarkMode
+                ? "text-gray-400 hover:text-gray-300 hover:border-gray-600"
+                : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`
+          }`}
               >
                 {tab}
               </button>
@@ -203,24 +275,17 @@ const ViewUserContent = ({ user, onClose }) => {
         </div>
 
         <div className="p-6">
-          <div className="mb-6 relative max-w-md">
-            <Search
-              className={`absolute left-3 top-1/2 transform -translate-y-1/2 
-              ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}
-            />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                ${
-                  isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-200 text-gray-900 placeholder-gray-500"
-                }`}
-            />
-          </div>
+          {activeTab === "profile" && (
+            <div className="space-y-6">
+              {renderDetailsSection(
+                "Personal Information",
+                userDetails.personal
+              )}
+              {renderDetailsSection("Contact Information", userDetails.contact)}
+              {renderDetailsSection("Work Information", userDetails.work)}
+              {renderDetailsSection("Address Information", userDetails.address)}
+            </div>
+          )}
 
           {activeTab === "bookings" && (
             <div className="overflow-x-auto">
@@ -367,33 +432,6 @@ const ViewUserContent = ({ user, onClose }) => {
           )}
         </div>
       </div>
-
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-          <div
-            className={`h-full w-full max-w-md overflow-y-auto ${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <EditUsersContent
-              user={user}
-              onClose={() => setShowEditModal(false)}
-              onUserUpdated={() => {
-                setShowEditModal(false);
-                // Implement a way to refresh user data here
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {showDeleteModal && (
-        <DeleteModal
-          onCancel={() => setShowDeleteModal(false)}
-          onConfirm={handleDelete}
-          isDarkMode={isDarkMode}
-        />
-      )}
     </div>
   );
 };
@@ -416,4 +454,3 @@ const StatCard = ({ title, value, icon, color, isDarkMode }) => (
 );
 
 export default ViewUserContent;
-

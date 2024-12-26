@@ -1,27 +1,29 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Login from "../../components/pageComponents/auth/Login";
 import LayoutAuth from "../../components/layout/LayoutAuth";
-import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 
 const LoginPage = () => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.from === "/logout") {
+      toast.info("You have been logged out");
+    }
+  }, [location]);
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
     <LayoutAuth>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md mx-auto"
-      >
+      <div className="w-full max-w-md mx-auto">
         <Login />
-      </motion.div>
+      </div>
     </LayoutAuth>
   );
 };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   EyeIcon,
   PencilIcon,
@@ -10,326 +10,472 @@ import {
   UserPlus,
   MoreVerticalIcon,
 } from "lucide-react";
-import { Menu } from "@headlessui/react";
+import { Menu, Transition } from "@headlessui/react";
 import Avatar from "react-avatar";
 import { toast } from "react-toastify";
 import DataTableOne from "../../reusables/table/DataTableOne";
 import { getAllUsers, deleteUser } from "../../../services/user/userServices";
-import AddUsersContent from "./AddUsersContent";
+import Modal from "../../reusables/modal/Modal";
+import StatsCard from "../../reusables/cards/StatsCard";
 import EditUsersContent from "./EditUsersContent";
+import AddUsersContent from "./AddUsersContent";
 import ViewUserContent from "./ViewUserContent";
 import DeleteModal from "../../reusables/modal/DeleteModal";
+import { useAuth } from "../../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+
+const roleOptions = [
+  { value: "admin", label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "creator", label: "Staff" },
+  { value: "user", label: "User" },
+  { value: "superadmin", label: "Super Admin" },
+];
 
 const UsersContent = () => {
-  const [data, setData] = useState([]);
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userIdToDelete, setUserIdToDelete] = useState(null);
-  const [showViewUserModal, setShowViewUserModal] = useState(false);
-  const [selectedViewUser, setSelectedViewUser] = useState(null);
+  const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
 
-  const fetchData = async () => {
+
+  const [state, setState] = useState({
+    data: [],
+    loading: false,
+    pagination: {
+      pageSize: 0, // Set a default value
+      currentPage: 1,
+      totalPages: 0,
+      totalRecords: 0,
+    },
+    modals: {
+      add: false,
+      edit: false,
+      view: false,
+      delete: false,
+    },
+    selectedUser: null,
+  });
+
+  const fetchUsers = useCallback(async () => {
+    setState((prev) => ({ ...prev, loading: true }));
     try {
-      const response = await getAllUsers();
-      if (Array.isArray(response)) {
-        setData(response);
-      } else {
-        console.error("Expected an array but got:", response);
-        setData([]);
-      }
+      const response = await getAllUsers({
+        page: state.pagination.currentPage,
+        limit: state.pagination.pageSize,
+      });
+
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        data: response.users,
+        pagination: {
+          ...prev.pagination,
+          totalPages: response.totalPages,
+          totalRecords: response.total,
+        },
+      }));
     } catch (error) {
-      console.error("Error fetching users:", error);
+      setState((prev) => ({ ...prev, loading: false }));
+      toast.error("Failed to fetch users");
     }
-  };
+  }, [state.pagination.currentPage, state.pagination.pageSize]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const currentPage = state.pagination.currentPage;
+    const totalPages = Math.ceil(
+      state.pagination.totalRecords / state.pagination.pageSize
+    );
 
-  const columns = [
-    {
-      accessorKey: "photo",
-      header: "Photo",
-      type: "image",
-      cell: ({ row }) => (
-        <Avatar
-          name={row.original.name}
-          src={row.original.photo?.url}
-          size="40"
-          round
-        />
-      ),
-    },
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-    },
-    {
-      accessorKey: "mobile",
-      header: "Mobile",
-    },
-    {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ getValue }) => (
-        <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-          {getValue()}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "isVerified",
-      header: "Status",
-      cell: ({ getValue }) => (
-        <span
-          className={`px-3 py-1 text-xs font-medium rounded-full ${
-            getValue()
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {getValue() ? "Verified" : "Not Verified"}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created On",
-      cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
-    },
-  ];
+    // If current page is greater than total pages and not the first page
+    if (currentPage > totalPages && currentPage > 1) {
+      setState((prev) => ({
+        ...prev,
+        pagination: {
+          ...prev.pagination,
+          currentPage: totalPages || 1,
+        },
+      }));
+    } else {
+      fetchUsers();
+    }
+  }, [state.pagination.currentPage, state.pagination.pageSize]);
 
-  const handleRefresh = () => {
-    fetchData();
-  };
+  const stats = useMemo(
+    () => ({
+      total: state.data.length,
+      verified: state.data.filter((user) => user.isVerified).length,
+      unverified: state.data.filter((user) => !user.isVerified).length,
+      newUsers: state.data.filter((user) => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return new Date(user.createdAt) > thirtyDaysAgo;
+      }).length,
+    }),
+    [state.data]
+  );
 
-  const confirmDelete = async () => {
-    if (userIdToDelete) {
-      try {
-        await deleteUser(userIdToDelete);
-        toast.success("User deleted successfully");
-        await fetchData();
-        setUserIdToDelete(null);
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        toast.error("Failed to delete user");
-      }
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: "photo.url",
+        header: "Photo",
+        type: "image",
+        cell: ({ row }) => (
+          <Avatar
+            name={`${row.original.firstName} ${row.original.lastName}`}
+            src={row.original.photo?.url}
+            size="40"
+            round
+          />
+        ),
+      },
+      {
+        accessorKey: "fullName",
+        header: "Name",
+      },
+      {
+        accessorKey: "userName",
+        header: "Username",
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+      },
+      {
+        accessorKey: "mobile",
+        header: "Mobile",
+      },
+      {
+        accessorKey: "department",
+        header: "Department",
+      },
+      {
+        accessorKey: "role",
+        header: "Role",
+        cell: ({ getValue }) => (
+          <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+            {getValue()}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "isVerified",
+        header: "Status",
+        cell: ({ getValue }) => (
+          <span
+            className={`px-3 py-1 text-xs font-medium rounded-full ${
+              getValue()
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {getValue() ? "Verified" : "Not Verified"}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const handleDelete = async () => {
+
+    if (!state.selectedUser?._id) {
+      toast.error("Invalid user selected");
+      return;
+    }
+
+    try {
+      // Ensure clean ID string
+      const userId = state.selectedUser._id.trim();
+      await deleteUser(userId);
+
+      toast.success("User deleted successfully");
+      setState((prev) => ({
+        ...prev,
+        modals: { ...prev.modals, delete: false },
+        selectedUser: null,
+      }));
+      fetchUsers();
+    } catch (error) {
+      console.error("Delete Error:", error);
+      toast.error("Failed to delete user");
     }
   };
 
-  const renderRowActions = (user) => (
-    <Menu as="div" className="relative inline-block text-left">
-      {({ open }) => (
-        <>
-          <Menu.Button className="inline-flex items-center justify-center w-8 h-8 text-gray-400 dark:text-gray-500 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 focus:outline-none">
-            <MoreVerticalIcon size={18} />
-          </Menu.Button>
+  const renderRowActions = useCallback(
+    (user, rowIndex, totalRows) => {
+      // First check if currentUser exists and has data
+      if (!currentUser?.data?._id || !user?._id) {
+        return null;
+      }
 
-          {open && (
+      const isCurrentUser = currentUser.data._id === user._id;
+
+      if (isCurrentUser) {
+        return (
+          <Menu as="div" className="relative inline-block text-left">
+            <Menu.Button className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-500">
+              <MoreVerticalIcon size={16} />
+            </Menu.Button>
+
             <Menu.Items
-              static
-              className="absolute right-0 w-48 mt-2 origin-top-right bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none divide-y divide-gray-100 dark:divide-gray-700 border border-gray-100 dark:border-gray-700"
+              className={`absolute ${
+                rowIndex >= totalRows - 2
+                  ? "bottom-full right-0 mb-2" // Position above for last two rows
+                  : "top-full right-0 mt-2" // Default positioning
+              } w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none`}
             >
               <div className="py-1">
                 <Menu.Item>
                   {({ active }) => (
                     <button
-                      onClick={() => {
-                        setSelectedViewUser(user);
-                        setShowViewUserModal(true);
-                      }}
+                      onClick={() => navigate("/me")}
                       className={`${
-                        active
-                          ? "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/50 dark:to-blue-800/50 text-blue-700 dark:text-blue-300"
-                          : "text-gray-700 dark:text-gray-300"
-                      } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
+                        active ? "bg-gray-100 dark:bg-gray-700" : ""
+                      } flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
                     >
                       <EyeIcon className="mr-3 h-4 w-4" />
-                      View User
-                    </button>
-                  )}
-                </Menu.Item>
-
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setShowEditUserModal(true);
-                      }}
-                      className={`${
-                        active
-                          ? "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/50 dark:to-blue-800/50 text-blue-700 dark:text-blue-300"
-                          : "text-gray-700 dark:text-gray-300"
-                      } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
-                    >
-                      <PencilIcon className="mr-3 h-4 w-4" />
-                      Edit User
-                    </button>
-                  )}
-                </Menu.Item>
-
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => {
-                        setUserIdToDelete(user._id);
-                        setShowDeleteModal(true);
-                      }}
-                      className={`${
-                        active
-                          ? "bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/50 dark:to-red-800/50 text-red-700 dark:text-red-300"
-                          : "text-gray-700 dark:text-gray-300"
-                      } flex items-center w-full px-4 py-2 text-sm font-medium transition-colors duration-150`}
-                    >
-                      <TrashIcon className="mr-3 h-4 w-4" />
-                      Delete User
+                      My Profile
                     </button>
                   )}
                 </Menu.Item>
               </div>
             </Menu.Items>
-          )}
-        </>
-      )}
-    </Menu>
+          </Menu>
+        );
+      }
+      const handleAction = (action) => {
+        setState((prev) => ({
+          ...prev,
+          selectedUser: user,
+          modals: { ...prev.modals, [action]: true },
+        }));
+      };
+
+      return (
+        <Menu as="div" className="relative inline-block text-left">
+          <Menu.Button className="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-500">
+            <MoreVerticalIcon size={16} />
+          </Menu.Button>
+
+          <Menu.Items
+            className={`absolute ${
+              rowIndex >= totalRows - 2
+                ? "bottom-full right-0 mb-2" // Position above for last two rows
+                : "top-full right-0 mt-2" // Default positioning
+            } w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none`}
+          >
+            <div className="py-1">
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={() => handleAction("view")}
+                    className={`${
+                      active ? "bg-gray-100 dark:bg-gray-700" : ""
+                    } flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                  >
+                    <EyeIcon className="mr-3 h-4 w-4" />
+                    View
+                  </button>
+                )}
+              </Menu.Item>
+
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={() => handleAction("edit")}
+                    className={`${
+                      active ? "bg-gray-100 dark:bg-gray-700" : ""
+                    } flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                  >
+                    <PencilIcon className="mr-3 h-4 w-4" />
+                    Edit
+                  </button>
+                )}
+              </Menu.Item>
+
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={() => handleAction("delete")}
+                    className={`${
+                      active ? "bg-gray-100 dark:bg-gray-700" : ""
+                    } flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                  >
+                    <TrashIcon className="mr-3 h-4 w-4" />
+                    Delete
+                  </button>
+                )}
+              </Menu.Item>
+            </div>
+          </Menu.Items>
+        </Menu>
+      );
+    },
+    [currentUser, navigate]
   );
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto px-6 py-8 dark:bg-gray-900"
+      className="container mx-auto px-6 py-8 "
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Users
-              </p>
-              <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.length}
-              </p>
-            </div>
-            <Users className="h-10 w-10 text-blue-500" />
-          </div>
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title="Total Users"
+            value={stats.total}
+            icon={<Users className="h-10 w-10" />}
+          />
+          <StatsCard
+            title="Verified Users"
+            value={stats.verified}
+            icon={<UserCheck className="h-10 w-10 text-green-500" />}
+          />
+          <StatsCard
+            title="Unverified Users"
+            value={stats.unverified}
+            icon={<UserX className="h-10 w-10 text-red-500" />}
+          />
+          <StatsCard
+            title="New Users (30 days)"
+            value={stats.newUsers}
+            icon={<UserPlus className="h-10 w-10 text-purple-500" />}
+          />
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Verified Users
-              </p>
-              <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((user) => user.isVerified).length}
-              </p>
-            </div>
-            <UserCheck className="h-10 w-10 text-green-500" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Unverified Users
-              </p>
-              <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {data.filter((user) => !user.isVerified).length}
-              </p>
-            </div>
-            <UserX className="h-10 w-10 text-red-500" />
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                New Users (Last 30 days)
-              </p>
-              <p className="text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                {
-                  data.filter((user) => {
-                    const thirtyDaysAgo = new Date();
-                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                    return new Date(user.createdAt) > thirtyDaysAgo;
-                  }).length
-                }
-              </p>
-            </div>
-            <UserPlus className="h-10 w-10 text-purple-500" />
-          </div>
-        </div>
-      </div>
-      <DataTableOne
-        data={data}
-        columns={columns}
-        onRefresh={handleRefresh}
-        onAddNew={() => setShowAddUserModal(true)}
-        addNewText="Add User"
-        onTitle="Users' Records"
-        renderRowActions={renderRowActions}
-      />
 
-      {/* Modals */}
-      {showAddUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <AddUsersContent
-              onClose={() => setShowAddUserModal(false)}
-              onUserAdded={handleRefresh}
-            />
-          </div>
-        </div>
-      )}
-
-      {showEditUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 h-full w-full max-w-md overflow-y-auto">
-            <EditUsersContent
-              user={selectedUser}
-              onClose={() => {
-                setShowEditUserModal(false);
-                setSelectedUser(null);
-              }}
-              onUserUpdated={handleRefresh}
-            />
-          </div>
-        </div>
-      )}
-
-      {showViewUserModal && selectedViewUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 h-full w-full md:w-2/3 lg:w-3/4 overflow-y-auto">
-            <ViewUserContent
-              user={selectedViewUser}
-              onClose={() => {
-                setShowViewUserModal(false);
-                setSelectedViewUser(null);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {showDeleteModal && (
-        <DeleteModal
-          onCancel={() => setShowDeleteModal(false)}
-          onConfirm={() => {
-            confirmDelete();
-            setShowDeleteModal(false);
-          }}
+        <DataTableOne
+          data={state.data}
+          columns={columns}
+          loading={state.loading}
+          pagination={state.pagination}
+          onPaginationChange={(newPagination) =>
+            setState((prev) => ({ ...prev, pagination: newPagination }))
+          }
+          onRefresh={fetchUsers}
+          renderRowActions={renderRowActions}
+          onTitle="Users' Records"
+          addNewText="Add User"
+          onAddNew={() =>
+            setState((prev) => ({
+              ...prev,
+              modals: { ...prev.modals, add: true },
+            }))
+          }
         />
-      )}
+      </div>
+
+      <AnimatePresence>
+        {/* Add User Modal */}
+        {state.modals.add && (
+          <Modal
+            isOpen={state.modals.add}
+            onClose={() =>
+              setState((prev) => ({
+                ...prev,
+                modals: { ...prev.modals, add: false },
+              }))
+            }
+            title="Add New User"
+            size="lg"
+          >
+            <AddUsersContent
+              onClose={() =>
+                setState((prev) => ({
+                  ...prev,
+                  modals: { ...prev.modals, add: false },
+                }))
+              }
+              onUserAdded={fetchUsers}
+            />
+          </Modal>
+        )}
+
+        {/* Edit User Modal */}
+        {state.modals.edit && state.selectedUser && (
+          <Modal
+            isOpen={state.modals.edit}
+            onClose={() =>
+              setState((prev) => ({
+                ...prev,
+                modals: { ...prev.modals, edit: false },
+                selectedUser: null,
+              }))
+            }
+            title="Edit User"
+            size="lg"
+          >
+            <EditUsersContent
+              user={state.selectedUser}
+              onClose={() =>
+                setState((prev) => ({
+                  ...prev,
+                  modals: { ...prev.modals, edit: false },
+                  selectedUser: null,
+                }))
+              }
+              onUserUpdated={fetchUsers}
+            />
+          </Modal>
+        )}
+
+        {/* View User Modal */}
+        {state.modals.view && state.selectedUser && (
+          <Modal
+            isOpen={state.modals.view}
+            onClose={() =>
+              setState((prev) => ({
+                ...prev,
+                modals: { ...prev.modals, view: false },
+                selectedUser: null,
+              }))
+            }
+            title="User Details"
+            size="xl"
+          >
+            <ViewUserContent
+              user={state.selectedUser}
+              onClose={() =>
+                setState((prev) => ({
+                  ...prev,
+                  modals: { ...prev.modals, view: false },
+                  selectedUser: null,
+                }))
+              }
+              onEdit={(user) => {
+                setState((prev) => ({
+                  ...prev,
+                  modals: { ...prev.modals, view: false, edit: true },
+                  selectedUser: user,
+                }));
+              }}
+              onDelete={(user) => {
+                setState((prev) => ({
+                  ...prev,
+                  modals: { ...prev.modals, view: false, delete: true },
+                  selectedUser: user,
+                }));
+              }}
+            />
+          </Modal>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {state.modals.delete && (
+          <DeleteModal
+            onCancel={() =>
+              setState((prev) => ({
+                ...prev,
+                modals: { ...prev.modals, delete: false },
+                selectedUser: null,
+              }))
+            }
+            onConfirm={handleDelete}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
 export default UsersContent;
-

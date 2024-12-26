@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
         <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="flex-1 overflow-y-auto">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
             className="container mx-auto p-6"
           >

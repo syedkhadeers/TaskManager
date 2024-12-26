@@ -31,6 +31,7 @@ const DataTableOne = ({
   addNewText,
   onTitle,
   renderRowActions,
+  loading, 
 }) => {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -227,34 +228,47 @@ const DataTableOne = ({
               </Transition>
             </Menu>
 
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
-                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
-              >
+            <Menu as="div" className="relative">
+              <Menu.Button className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none">
                 <LayoutGridIcon className="text-white" size={20} />
-              </button>
-              {columnsDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 overflow-hidden">
+              </Menu.Button>
+
+              <Transition
+                enter="transition duration-100 ease-out"
+                enterFrom="transform scale-95 opacity-0"
+                enterTo="transform scale-100 opacity-100"
+                leave="transition duration-75 ease-in"
+                leaveFrom="transform scale-100 opacity-100"
+                leaveTo="transform scale-95 opacity-0"
+              >
+                <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   {table.getAllLeafColumns().map((column) => (
-                    <label
-                      key={column.id}
-                      className="flex items-center px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={column.getIsVisible()}
-                        onChange={column.getToggleVisibilityHandler()}
-                        className="mr-3 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {column.id}
-                      </span>
-                    </label>
+                    <Menu.Item key={column.id} as="div">
+                      {({ active }) => (
+                        <label
+                          className={`${
+                            active
+                              ? "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/50 dark:to-blue-800/50"
+                              : ""
+                          } flex items-center px-4 py-3 cursor-pointer`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={column.getIsVisible()}
+                            onChange={column.getToggleVisibilityHandler()}
+                            className="mr-3 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {column.columnDef.header}
+                          </span>
+                        </label>
+                      )}
+                    </Menu.Item>
                   ))}
-                </div>
-              )}
-            </div>
+                </Menu.Items>
+              </Transition>
+            </Menu>
           </div>
         </div>
       </div>
@@ -300,28 +314,56 @@ const DataTableOne = ({
             ))}
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300"
+            {loading
+              ? // Loading skeleton
+                [...Array(5)].map((_, index) => (
+                  <tr key={index}>
+                    {columns.map((column, colIndex) => (
+                      <td
+                        key={colIndex}
+                        className="px-6 py-4 whitespace-nowrap"
+                      >
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                        </div>
+                      </td>
+                    ))}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              : table.getRowModel().rows.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    {cell.column.columnDef.cell ? (
-                      flexRender(cell.column.columnDef.cell, cell.getContext())
-                    ) : (
-                      <span>{cell.getValue()}</span>
-                    )}
-                  </td>
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300"
+                      >
+                        {cell.column.columnDef.cell ? (
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )
+                        ) : (
+                          <span>{cell.getValue()}</span>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {renderRowActions(
+                        row.original,
+                        index,
+                        table.getRowModel().rows.length
+                      )}
+                    </td>
+                  </tr>
                 ))}
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {renderRowActions(row.original)}
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>

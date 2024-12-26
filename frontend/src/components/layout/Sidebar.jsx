@@ -89,8 +89,9 @@ const Sidebar = ({ isOpen }) => {
     <div className="h-full flex flex-col text-white">
       <div className="p-6">
         <motion.img
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ opacity: 0, scale: 0.8 }} // Start with opacity 0 and slightly scaled down
+          animate={{ opacity: 1, scale: 1 }} // Animate to full opacity and normal scale
+          transition={{ duration: 0.5, ease: "easeInOut" }} // Smooth transition
           src="/logo_white.png"
           alt="Logo"
           className="h-12 mx-auto filter drop-shadow-lg"

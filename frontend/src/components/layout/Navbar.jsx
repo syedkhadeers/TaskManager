@@ -9,6 +9,7 @@ import {
   Eye,
   Settings,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useAuth } from "../../hooks/useAuth";
@@ -16,25 +17,31 @@ import { motion } from "framer-motion";
 import LogoutModal from "../reusables/modal/LogoutModal";
 import { logoutUser, getCurrentUser } from "../../services/auth/authServices";
 import { toast } from "react-toastify";
+import ChangeMePasswordModal from "../reusables/modal/ChangeMePasswordModal";
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const { isDarkMode, toggleTheme } = useContext(ThemeContext);
   const { user, handleLogout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
+      setIsLoading(true);
       try {
-        const userData = await getCurrentUser();
-        if (userData) {
-          setCurrentUser(userData);
+        const response = await getCurrentUser();
+        if (response?.data) {
+          setCurrentUser(response.data);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        toast.error("Failed to load user data");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -58,7 +65,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
     try {
       await logoutUser();
       await handleLogout();
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to logout. Please try again.");
@@ -68,7 +75,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   return (
     <>
       <motion.nav
-        initial={{ y: -20, opacity: 0 }}
+        initial={{ y: 0, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="sticky top-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700"
       >
@@ -112,24 +119,39 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               </button>
 
               <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <img
-                    src={displayUser?.photo?.url || "/default-avatar.png"}
-                    alt=""
-                    className="h-8 w-8 rounded-lg object-cover"
-                  />
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                      {displayUser?.name || "User"}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {displayUser?.role || "User"}
-                    </p>
+                {isLoading ? (
+                  <div className="flex items-center space-x-3 p-2 rounded-lg min-w-[200px]">
+                    <div className="h-8 w-8 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse shrink-0" />
+                    <div className="hidden md:flex flex-col flex-1">
+                      <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+                      <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
                   </div>
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[200px] transition-colors duration-200 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+                  >
+                    <img
+                      src={displayUser?.photo?.url || "/default-avatar.png"}
+                      alt={displayUser?.fullName || "User"}
+                      className="h-8 w-8 rounded-lg object-cover shrink-0"
+                    />
+                    <div className="hidden md:block text-left flex-1">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                        {displayUser?.fullName || "User"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {displayUser?.role === "user" && "User"}
+                        {displayUser?.role === "admin" && "Admin"}
+                        {displayUser?.role === "creator" && "Creator"}
+                        {displayUser?.role === "superadmin" && "Super Admin"}
+                        {displayUser?.role === "manager" && "Manager"}
+                      </p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  </button>
+                )}
 
                 {showDropdown && (
                   <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
@@ -146,6 +168,16 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                     >
                       <Settings className="mr-3 h-4 w-4" />
                       Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPasswordModal(true);
+                        setShowDropdown(false);
+                      }}
+                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Settings className="mr-3 h-4 w-4" />
+                      Change Password
                     </button>
                     <button
                       onClick={() => {
@@ -175,6 +207,11 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               setShowLogoutModal(false);
             }}
           />
+        </div>
+      )}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <ChangeMePasswordModal onClose={() => setShowPasswordModal(false)} />
         </div>
       )}
     </>

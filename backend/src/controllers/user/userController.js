@@ -31,11 +31,17 @@ export const addUser = asyncHandler(async (req, res) => {
     isVerified,
   } = req.body;
 
+  // Generate username from email
+  const userName = email.split("@")[0];
+
+  // Generate fullName from title, firstName and lastName
+  const fullName = `${title || "Mr."} ${firstName} ${lastName}`;
+
   // Enhanced validation
   const validationErrors = [];
-  if (!firstName?.trim()) validationErrors.push("First name is required");
-  if (!lastName?.trim()) validationErrors.push("Last name is required");
-  if (!email?.trim()) validationErrors.push("Email is required");
+  if (!firstName) validationErrors.push("First name is required");
+  if (!lastName) validationErrors.push("Last name is required");
+  if (!email) validationErrors.push("Email is required");
   if (!password || password.length < 6)
     validationErrors.push("Password must be at least 6 characters");
 
@@ -48,7 +54,7 @@ export const addUser = asyncHandler(async (req, res) => {
   }
 
   // Check for existing user
-  const userExists = await User.findOne({ email: email.trim() });
+  const userExists = await User.findOne({ email });
   if (userExists) {
     return res.status(409).json({
       success: false,
@@ -58,7 +64,7 @@ export const addUser = asyncHandler(async (req, res) => {
 
   // Handle photo upload
   let photo = {
-    url: "https://drive.google.com/file/d/1s9LUGejbrY3HwuDqxQbdhv0ri1kdZu5l/view?usp=sharing",
+    url: "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
     publicId: "",
   };
 
@@ -67,12 +73,17 @@ export const addUser = asyncHandler(async (req, res) => {
     photo = { url: uploadResult.url, publicId: uploadResult.publicId };
   }
 
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
   const user = await User.create({
     title: title || "Mr.",
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
-    email: email.trim(),
-    password,
+    firstName: firstName,
+    lastName: lastName,
+    email: email,
+    userName, 
+    fullName, 
+    password: hashedPassword,
     photo,
     gender,
     dateOfBirth,
@@ -323,7 +334,7 @@ export const updateUserById = asyncHandler(async (req, res) => {
   // Check email uniqueness if being updated
   if (email && email !== user.email) {
     const existingUser = await User.findOne({
-      email: email.trim(),
+      email: email,
       _id: { $ne: id },
     });
     if (existingUser) {
@@ -350,9 +361,9 @@ export const updateUserById = asyncHandler(async (req, res) => {
 
   const updates = {
     ...(title && { title }),
-    ...(firstName && { firstName: firstName.trim() }),
+    ...(firstName && { firstName: firstName }),
     ...(lastName && { lastName: lastName.trim() }),
-    ...(email && { email: email.trim() }),
+    ...(email && { email: email.trim(), userName: email.split("@")[0], }),
     ...(gender && { gender }),
     ...(dateOfBirth && { dateOfBirth }),
     ...(department && { department }),
@@ -370,6 +381,13 @@ export const updateUserById = asyncHandler(async (req, res) => {
     ...photoUpdate,
   };
 
+  if (title || firstName || lastName) {
+    const user = await User.findById(id);
+    updates.fullName = `${title || user.title} ${firstName || user.firstName} ${
+      lastName || user.lastName
+    }`;
+  }
+
   const updatedUser = await User.findByIdAndUpdate(
     id,
     { $set: updates },
@@ -380,5 +398,93 @@ export const updateUserById = asyncHandler(async (req, res) => {
     success: true,
     message: "User updated successfully",
     data: updatedUser,
+  });
+});
+
+
+// change Me password
+export const changeMePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const validationErrors = [];
+  if (!oldPassword) validationErrors.push("Old password is required");
+  if (!newPassword) validationErrors.push("New password is required");
+  if (newPassword?.length < 6) validationErrors.push("New password must be at least 6 characters");
+
+  if (validationErrors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: validationErrors,
+    });
+  }
+
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  //check the req.user is the logged in user
+  if (req.user.id !== user.id) {
+    return res.status(401).json({
+      success: false,
+      message: "You can only change your own password here",
+    });
+  }
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) {
+    return res.status(400).json({
+      success: false,
+      message: "Old password is incorrect",
+    });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  user.password = hashedPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully",
+  });
+});
+
+// change other user's password without checking the old password
+
+export const changeUserPassword = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+
+  const validationErrors = [];
+  if (!newPassword) validationErrors.push("New password is required");
+  if (newPassword?.length < 6) validationErrors.push("New password must be at least 6 characters");
+
+  if (validationErrors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: validationErrors,
+    });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    { $set: { password: hashedPassword } },
+    { new: true, runValidators: true }
+  ).select("-password");
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully",
+    data: user,
   });
 });

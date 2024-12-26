@@ -9,13 +9,43 @@ import { commonRoutes } from "./routes/commonRoutes";
 import { roomRoutes } from "./routes/roomRoutes";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const App = () => {
   const toastOptions = {
-    success: { style: { background: "var(--color-accent)", color: "var(--color-primary)", fontWeight: "bold", }, duration: 3000, },
-    error: { style: { background: "#ef4444", color: "var(--color-primary)", fontWeight: "bold", }, duration: 3000, },
-    warning: { style: { background: "#f59e0b", color: "var(--color-primary)", fontWeight: "bold", }, duration: 3000, },
-    info: { style: { background: "var(--color-accent)", color: "var(--color-primary)", fontWeight: "bold", }, duration: 3000, },
+    success: {
+      style: {
+        background: "#10B981",
+        color: "#FFFFFF",
+        fontWeight: "500",
+      },
+      duration: 3000,
+    },
+    error: {
+      style: {
+        background: "#EF4444",
+        color: "#FFFFFF",
+        fontWeight: "500",
+      },
+      duration: 3000,
+    },
+    warning: {
+      style: {
+        background: "#F59E0B",
+        color: "#FFFFFF",
+        fontWeight: "500",
+      },
+      duration: 3000,
+    },
+    info: {
+      style: {
+        background: "#3B82F6",
+        color: "#FFFFFF",
+        fontWeight: "500",
+      },
+      duration: 3000,
+    },
   };
 
   const renderRoutes = (routes) => {
@@ -53,6 +83,18 @@ const App = () => {
                   top: 40,
                 }}
               />
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+              />
             </Router>
           </ThemeProvider>
         </AuthProvider>
@@ -62,3 +104,26 @@ const App = () => {
 };
 
 export default App;
+
+// import { Routes, Route } from "react-router-dom";
+// import Forbidden from "./pages/Forbidden";
+
+// // // Inside your Routes component
+// // <Routes>
+// //   {/* Your other routes */}
+// //   <Route path="/forbidden" element={<Forbidden />} />
+// // </Routes>;
+
+// const renderRoutes = (routes) => {
+//   return routes.map((route) => (
+//     <Route
+//       key={route.path}
+//       path={route.path}
+//       element={
+//         <ErrorBoundary>
+//           <Suspense fallback={<LoadingSpinner />}>{route.element}</Suspense>
+//         </ErrorBoundary>
+//       }
+//     />
+//   ));
+// };

@@ -4,8 +4,8 @@ const prepareFormData = (userData) => {
   const formData = new FormData();
   Object.entries(userData).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      if (value instanceof File) {
-        formData.append(key, value, value.name);
+      if (key === "photo" && value instanceof File) {
+        formData.append("photo", value); // Ensure photo is appended as a file
       } else if (typeof value === "object") {
         formData.append(key, JSON.stringify(value));
       } else {
@@ -54,6 +54,7 @@ export const addUser = async (userData) => {
     throw handleApiError(error, "Failed to add user");
   }
 };
+
 
 
 export const deleteUser = async (userId) => {
@@ -112,5 +113,33 @@ export const exportUsers = async (filters = {}) => {
     return response.data;
   } catch (error) {
     throw handleApiError(error, "Failed to export users");
+  }
+};
+
+
+// change-me-password 
+export const changeMePassword = async (passwordData) => {
+  try {
+    const response = await api.patch("/change-me-password", {
+      oldPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to change password");
+  }
+};
+
+
+// change-user-password
+export const changeUserPassword = async (userId, passwordData) => {
+  try {
+    if (!userId) throw new Error("User ID is required");
+    const response = await api.patch(`/change-user-password/${userId}`, {
+      newPassword: passwordData.newPassword,
+    });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to change user's password");
   }
 };

@@ -1,79 +1,105 @@
 import React, { useState, useContext } from "react";
 import { ThemeContext } from "../../../context/ThemeContext";
-import { FiUser, FiMail, FiPhone, FiLock, FiGlobe } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
-import { addUser } from "../../../services/user/userServices";
-import { toast } from "react-toastify";
-import ImageEditor from "../../reusables/editors/ImageEditor";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
+import { addUser } from "../../../services/user/userServices";
+import { toast } from "react-toastify";
+import  MultiImageEditor  from "../../reusables/editors/MultiImageEditor";
+import LoadingSpinner from "../../common/LoadingSpinner";
+import InputField from "../../reusables/inputs/InputField";
 
 const AddUsersContent = ({ onClose, onUserAdded }) => {
   const { isDarkMode } = useContext(ThemeContext);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    mobile: "",
-    country: "",
+    title: "Mr.",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     photo: null,
-    bio: "",
+    gender: "male",
+    dateOfBirth: "",
+    department: "",
+    branch: "",
+    address: "",
+    city: "",
+    pinCode: "",
+    state: "",
+    country: "India",
+    mobile: "",
+    bio: "I am a new user",
     role: "user",
+    alternateMobile: "",
+    isVerified: false,
   });
-  const [imagePreview, setImagePreview] = useState(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleCropComplete = (croppedImageUrl) => {
-    setImagePreview(croppedImageUrl);
-    setFormData((prev) => ({
-      ...prev,
-      photo: croppedImageUrl,
-    }));
-  };
 
-  const handleCropCancel = () => {
-    setFormData((prev) => ({
-      ...prev,
-      photo: null,
-    }));
-    setImagePreview(null);
-  };
+const handleImageChange = (processedImages) => {
+  if (processedImages && processedImages.length > 0) {
+    // Convert the cropped canvas to a file
+    fetch(processedImages[0].cropped)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const croppedFile = new File([blob], "profile-photo.jpg", {
+          type: "image/jpeg",
+        });
+        setFormData((prevData) => ({
+          ...prevData,
+          photo: croppedFile,
+        }));
+      });
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+
+    // Create a copy of form data to send
+    const userDataToSubmit = {
+      ...formData,
+      // Ensure proper data formatting
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim(),
+      userName: formData.email.split("@")[0], // Auto-generate username from email
+    };
+
+    // Handle photo if present in images array
+    if (formData.images && formData.images.length > 0) {
+      userDataToSubmit.photo = formData.images[0];
+    }
+
 
     try {
-      const dataToSend = { ...formData };
-
-      if (formData.photo) {
-        const response = await fetch(formData.photo);
-        const blob = await response.blob();
-        dataToSend.photo = new File([blob], "profile.jpg", {
-          type: "image/jpeg",
-        });
-      }
-
-      const response = await addUser(dataToSend);
-      if (response) {
-        toast.success("User added successfully!");
-        onUserAdded();
-        onClose();
-        navigate("/users");
-      }
+      const response = await addUser(userDataToSubmit);
+      toast.success("User added successfully!");
+      onUserAdded(response.data);
+      onClose();
     } catch (error) {
-      toast.error("Failed to add user.");
+      const errorMessage = error.message || "Failed to add user";
+      toast.error(errorMessage);
       console.error("Error adding user:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <motion.div
@@ -82,131 +108,229 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
       exit={{ x: 300 }}
       className={`h-full ${isDarkMode ? "dark" : ""}`}
     >
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">Add New User</h2>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors"
-          >
-            <X size={24} />
-          </button>
-        </div>
-      </div>
 
-      <div className="p-6 overflow-y-auto max-h-[calc(100vh-80px)]">
+      <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputField
-              label="Name"
-              icon={<FiUser />}
+              label="Title"
+              type="select"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              options={["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."]}
+            />
+
+            <InputField
+              label="First Name"
               type="text"
-              name="name"
-              placeholder="Enter full name"
-              value={formData.name}
-              onChange={handleChange}
+              name="firstName"
+              placeholder="Enter first name"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              required
+            />
+
+            <InputField
+              label="Last Name"
+              type="text"
+              name="lastName"
+              placeholder="Enter last name"
+              value={formData.lastName}
+              onChange={handleInputChange}
               required
             />
 
             <InputField
               label="Email"
-              icon={<FiMail />}
               type="email"
               name="email"
               placeholder="Enter email"
               value={formData.email}
-              onChange={handleChange}
+              onChange={handleInputChange}
               required
-            />
-
-            <InputField
-              label="Mobile"
-              icon={<FiPhone />}
-              type="text"
-              name="mobile"
-              placeholder="Enter mobile number"
-              value={formData.mobile}
-              onChange={handleChange}
-            />
-
-            <InputField
-              label="Country"
-              icon={<FiGlobe />}
-              type="text"
-              name="country"
-              placeholder="Enter country"
-              value={formData.country}
-              onChange={handleChange}
             />
 
             <InputField
               label="Password"
-              icon={<FiLock />}
               type="password"
               name="password"
               placeholder="Enter password"
               value={formData.password}
-              onChange={handleChange}
+              onChange={handleInputChange}
               required
             />
 
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-                Role
-              </label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-                <option value="creator">Creator</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-              Bio
-            </label>
-            <textarea
-              name="bio"
-              placeholder="Enter bio"
-              value={formData.bio}
-              onChange={handleChange}
-              rows="4"
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <InputField
+              label="Role"
+              type="select"
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              options={["user", "admin", "creator", "superadmin", "manager"]}
             />
+
+            {/* Gender */}
+            <InputField
+              label="Gender"
+              type="select"
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              options={["male", "female", "other"]}
+            />
+
+            {/* Date of Birth */}
+            <InputField
+              label="Date of Birth"
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleInputChange}
+            />
+
+            {/* Department */}
+            <InputField
+              label="Department"
+              type="text"
+              name="department"
+              placeholder="Enter department"
+              value={formData.department}
+              onChange={handleInputChange}
+            />
+
+            {/* Branch */}
+            <InputField
+              label="Branch"
+              type="text"
+              name="branch"
+              placeholder="Enter branch"
+              value={formData.branch}
+              onChange={handleInputChange}
+            />
+
+            {/* Address */}
+            <InputField
+              label="Address"
+              type="text"
+              name="address"
+              placeholder="Enter address"
+              value={formData.address}
+              onChange={handleInputChange}
+            />
+
+            {/* City */}
+            <InputField
+              label="City"
+              type="text"
+              name="city"
+              placeholder="Enter city"
+              value={formData.city}
+              onChange={handleInputChange}
+            />
+
+            {/* Pin Code */}
+            <InputField
+              label="Pin Code"
+              type="text"
+              name="pinCode"
+              placeholder="Enter pin code"
+              value={formData.pinCode}
+              onChange={handleInputChange}
+            />
+
+            {/* State */}
+            <InputField
+              label="State"
+              type="text"
+              name="state"
+              placeholder="Enter state"
+              value={formData.state}
+              onChange={handleInputChange}
+            />
+
+            {/* Country */}
+            <InputField
+              label="Country"
+              type="text"
+              name="country"
+              placeholder="Enter country"
+              value={formData.country}
+              onChange={handleInputChange}
+            />
+
+            {/* Mobile */}
+            <InputField
+              label="Mobile"
+              type="tel"
+              name="mobile"
+              placeholder="Enter mobile number"
+              value={formData.mobile}
+              onChange={handleInputChange}
+            />
+
+            {/* Alternate Mobile */}
+            <InputField
+              label="Alternate Mobile"
+              type="tel"
+              name="alternateMobile"
+              placeholder="Enter alternate mobile number"
+              value={formData.alternateMobile}
+              onChange={handleInputChange}
+            />
+
+            {/* Bio */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
+                Bio
+              </label>
+              <textarea
+                name="bio"
+                placeholder="Enter bio"
+                value={formData.bio}
+                onChange={handleInputChange}
+                rows="4"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Is Verified */}
+            <div className="col-span-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isVerified"
+                  name="isVerified"
+                  checked={formData.isVerified}
+                  onChange={handleInputChange}
+                  className="mr-2 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400"
+                />
+                <label
+                  htmlFor="isVerified"
+                  className="text-sm text-gray-700 dark:text-gray-200"
+                >
+                  Is Verified
+                </label>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
               Profile Photo
             </label>
-            <ImageEditor
-              onCropComplete={handleCropComplete}
-              onCancel={handleCropCancel}
-              aspectRatios={[{ label: "Square", value: 1 }]}
-              modalTitle="Crop Profile Photo"
+            <MultiImageEditor
+              onImagesChange={handleImageChange}
+              maxImages={1}
             />
-            {imagePreview && (
-              <div className="mt-4">
-                <img
-                  src={imagePreview}
-                  alt="Profile Preview"
-                  className="h-24 w-24 rounded-lg object-cover"
-                />
-              </div>
-            )}
           </div>
 
           <button
             type="submit"
-            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+            disabled={isLoading}
+            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors disabled:opacity-50"
           >
-            Add User
+            {isLoading ? "Adding..." : "Add User"}
           </button>
         </form>
       </div>
@@ -214,35 +338,5 @@ const AddUsersContent = ({ onClose, onUserAdded }) => {
   );
 };
 
-const InputField = ({
-  label,
-  icon,
-  type,
-  name,
-  placeholder,
-  value,
-  onChange,
-  required,
-}) => (
-  <div>
-    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-      {label}
-    </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-        {icon}
-      </div>
-      <input
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        required={required}
-        className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
-    </div>
-  </div>
-);
 
 export default AddUsersContent;

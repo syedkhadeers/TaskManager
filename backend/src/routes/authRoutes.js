@@ -1,3 +1,4 @@
+
 import express from "express";
 import {
   registerUser,
@@ -10,7 +11,7 @@ import {
   resetPassword,
   changePassword,
 } from "../controllers/auth/authController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { loggedInUsersOnly } from "../middleware/authMiddleware.js";
 import { uploadUserPhoto } from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
@@ -18,16 +19,16 @@ const router = express.Router();
 // Authentication routes
 router.post("/register", uploadUserPhoto.single("photo"), registerUser);
 router.post("/login", loginUser);
-router.post("/logout", protect, logoutUser);
-router.get("/login-status", protect, userLoginStatus);
+router.get("/login-status", loggedInUsersOnly, userLoginStatus);
+router.post("/logout", loggedInUsersOnly, logoutUser);
 
 // Email verification routes
-router.post("/verify-email", protect, verifyEmail);
+router.post("/verify-email", loggedInUsersOnly, verifyEmail);
 router.post("/verify-user/:verificationToken", verifyUser);
 
 // Password management routes
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:resetPasswordToken", resetPassword);
-router.patch("/change-password", protect, changePassword);
+router.patch("/change-password", loggedInUsersOnly, changePassword);
 
 export default router;

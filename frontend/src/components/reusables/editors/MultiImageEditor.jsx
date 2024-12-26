@@ -169,7 +169,7 @@ const MultiImageEditor = ({
       className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
         selectedAspectRatio === value
           ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
-          : "bg-white border border-gray-200 text-gray-700 hover:border-blue-400 hover:text-blue-500"
+          : "bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:border-blue-400 hover:text-blue-500"
       }`}
     >
       {label}
@@ -221,26 +221,26 @@ const MultiImageEditor = ({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={processedImages.length >= maxImages}
-          className={`w-full px-8 py-6 border-3 border-dashed 
+          className={`w-full px-8 py-6 border-3 border-dashed rounded-lg 
             ${
               processedImages.length >= maxImages
-                ? "border-gray-300 bg-gray-100 cursor-not-allowed"
-                : "border-gray-200 bg-gradient-to-b from-gray-50 to-white hover:from-blue-50 hover:to-white"
+                ? "border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700"
             }
-            rounded-2xl transition-all duration-300 ease-out flex items-center justify-center gap-4 group`}
+            transition-all duration-300 ease-out flex items-center justify-center gap-4 group`}
         >
           <div
             className={`w-12 h-12 rounded-xl ${
               processedImages.length >= maxImages
-                ? "bg-gray-200"
-                : "bg-blue-100 group-hover:bg-blue-500"
+                ? "bg-gray-200 dark:bg-gray-700"
+                : "bg-blue-100 dark:bg-blue-900 group-hover:bg-blue-500"
             } flex items-center justify-center transition-colors duration-300`}
           >
             <FiUpload
               className={`w-6 h-6 ${
                 processedImages.length >= maxImages
-                  ? "text-gray-400"
-                  : "text-blue-500 group-hover:text-white"
+                  ? "text-gray-400 dark:text-gray-500"
+                  : "text-blue-500 dark:text-blue-400 group-hover:text-white"
               }`}
             />
           </div>
@@ -248,21 +248,22 @@ const MultiImageEditor = ({
             <span
               className={`text-xl font-semibold ${
                 processedImages.length >= maxImages
-                  ? "text-gray-400"
-                  : "text-gray-700 group-hover:text-blue-500"
+                  ? "text-gray-400 dark:text-gray-500"
+                  : "text-gray-700 dark:text-gray-200 group-hover:text-blue-500"
               }`}
             >
               {processedImages.length >= maxImages
                 ? "Maximum Images Reached"
                 : "Select Images to Upload"}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               {processedImages.length} of {maxImages} images used
             </span>
           </div>
         </button>
       </div>
 
+      {/* Image preview grid */}
       {processedImages.length > 0 && (
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {processedImages.map((image, index) => (
@@ -290,20 +291,21 @@ const MultiImageEditor = ({
         </div>
       )}
 
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl max-w-4xl w-full mx-4 shadow-2xl transform transition-all duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl max-w-4xl w-full mx-4 shadow-2xl">
             <div className="p-8">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-semibold text-gray-900">
+                <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                   Edit Image ({currentImageIndex + 1}/{selectedFiles.length})
                 </h3>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors dark:hover:bg-gray-700"
                 >
-                  <FiX className="w-6 h-6" />
+                  <FiX className="w-6 h-6 text-gray-900 dark:text-gray-100" />
                 </button>
               </div>
 

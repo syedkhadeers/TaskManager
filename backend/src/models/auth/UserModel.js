@@ -6,25 +6,20 @@ const UserSchema = new mongoose.Schema(
     title: {
       type: String,
       enum: ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."],
-      default: "Mr",
+      default: "Mr.",
     },
     firstName: {
       type: String,
-      required: [true, "Please add a name"],
     },
     lastName: {
       type: String,
-      required: [true, "Please add a name"],
+    },
+    fullName: {
+      type: String,
     },
     email: {
       type: String,
-      required: [true, "Please add an email"],
       unique: true,
-      trim: true,
-      match: [
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-        "Please add a valid email",
-      ],
     },
     userName: {
       type: String,
@@ -32,13 +27,12 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Please add a password"],
       minLength: 6,
     },
     photo: {
       url: {
         type: String,
-        default: "https://drive.google.com/file/d/1s9LUGejbrY3HwuDqxQbdhv0ri1kdZu5l/view?usp=sharing",
+        default: "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
       },
       publicId: {
         type: String,
@@ -100,25 +94,6 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return next();
-  }
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(this.password, salt);
-  this.password = hashedPassword;
-
-  next();
-});
-
-// Update username from email 
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("userName") && !this.isModified("email")) {
-    return next();
-  }
-  this.userName = this.email.split("@")[0];
-  next();
-});
 
 // Add compound indexes
 UserSchema.index({ email: 1, userName: 1 });
