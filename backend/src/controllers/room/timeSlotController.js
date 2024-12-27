@@ -7,8 +7,8 @@ export const createTimeSlot = asyncHandler(async (req, res) => {
     name,
     checkInTime,
     checkOutTime,
-    priceMultiplier,
     sameDay,
+    priceMultiplier,
     isActive,
   } = req.body;
 
@@ -30,8 +30,8 @@ export const createTimeSlot = asyncHandler(async (req, res) => {
   }
 
   // Check for existing time slot with same name
-  const existingTimeSlot = await TimeSlotModel.findOne({ name });
-  if (existingTimeSlot) {
+  const timeSlotExists = await TimeSlotModel.findOne({ name: name.trim() });
+  if (timeSlotExists) {
     return res.status(409).json({
       success: false,
       message: "Time slot with this name already exists",
@@ -42,9 +42,9 @@ export const createTimeSlot = asyncHandler(async (req, res) => {
     name: name.trim(),
     checkInTime: checkInTime.trim(),
     checkOutTime: checkOutTime.trim(),
-    priceMultiplier,
-    sameDay,
-    isActive,
+    sameDay: sameDay || "Same Day",
+    priceMultiplier: priceMultiplier || 1,
+    isActive: isActive ?? true,
   });
 
   res.status(201).json({
@@ -56,22 +56,39 @@ export const createTimeSlot = asyncHandler(async (req, res) => {
 
 // Get all time slots with filtering and pagination
 export const getTimeSlots = asyncHandler(async (req, res) => {
-  const { isActive, sameDay, page = 1, limit = 10 } = req.query;
+  const {
+    isActive,
+    sameDay,
+    search,
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = req.query;
 
   const query = {};
+
   if (typeof isActive !== "undefined") query.isActive = isActive === "true";
   if (sameDay) query.sameDay = sameDay;
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { checkInTime: { $regex: search, $options: "i" } },
+      { checkOutTime: { $regex: search, $options: "i" } },
+    ];
+  }
 
   const options = {
     page: parseInt(page),
     limit: parseInt(limit),
-    sort: { createdAt: -1 },
+    sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 },
   };
 
   const timeSlots = await TimeSlotModel.find(query)
+    .sort(options.sort)
     .skip((options.page - 1) * options.limit)
-    .limit(options.limit)
-    .sort(options.sort);
+    .limit(options.limit);
 
   const total = await TimeSlotModel.countDocuments(query);
 
@@ -90,8 +107,8 @@ export const getTimeSlots = asyncHandler(async (req, res) => {
   });
 });
 
-// Get single time slot with enhanced error handling
-export const getTimeSlot = asyncHandler(async (req, res) => {
+// Get time slot by ID
+export const getTimeSlotById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -117,8 +134,8 @@ export const getTimeSlot = asyncHandler(async (req, res) => {
   });
 });
 
-// Update time slot with enhanced validation
-export const updateTimeSlot = asyncHandler(async (req, res) => {
+// Update time slot by ID
+export const updateTimeSlotById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 
@@ -132,7 +149,7 @@ export const updateTimeSlot = asyncHandler(async (req, res) => {
   // Check if name is being updated and is unique
   if (updates.name) {
     const existingTimeSlot = await TimeSlotModel.findOne({
-      name: updates.name,
+      name: updates.name.trim(),
       _id: { $ne: id },
     });
     if (existingTimeSlot) {
@@ -163,8 +180,8 @@ export const updateTimeSlot = asyncHandler(async (req, res) => {
   });
 });
 
-// Delete time slot with enhanced safety checks
-export const deleteTimeSlot = asyncHandler(async (req, res) => {
+// Delete time slot by ID
+export const deleteTimeSlotById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -183,42 +200,11 @@ export const deleteTimeSlot = asyncHandler(async (req, res) => {
     });
   }
 
-  // hard delete option
   await TimeSlotModel.findByIdAndDelete(id);
 
   res.status(200).json({
     success: true,
-    message: "Time slot deactivated successfully",
+    message: "Time slot deleted successfully",
+    data: { id },
   });
 });
-
-// New endpoint to bulk update time slots
-export const bulkUpdateTimeSlots = asyncHandler(async (req, res) => {
-  const { timeSlots } = req.body;
-
-  if (!Array.isArray(timeSlots) || timeSlots.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Please provide an array of time slots to update",
-    });
-  }
-
-  const updates = await Promise.all(
-    timeSlots.map(async (slot) => {
-      if (!slot._id) return null;
-      return TimeSlotModel.findByIdAndUpdate(
-        slot._id,
-        { $set: slot },
-        { new: true, runValidators: true }
-      );
-    })
-  );
-
-  res.status(200).json({
-    success: true,
-    message: "Time slots updated successfully",
-    data: updates.filter(Boolean),
-  });
-});
-
-

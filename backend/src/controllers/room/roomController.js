@@ -34,10 +34,8 @@ export const createRoom = asyncHandler(async (req, res) => {
   }
 
   // Check for existing room with same number
-  const existingRoom = await RoomModel.findOne({
-    roomNumber: roomNumber.trim(),
-  });
-  if (existingRoom) {
+  const roomExists = await RoomModel.findOne({ roomNumber: roomNumber.trim() });
+  if (roomExists) {
     return res.status(409).json({
       success: false,
       message: "Room with this number already exists",
@@ -47,8 +45,12 @@ export const createRoom = asyncHandler(async (req, res) => {
   // Handle image uploads
   let images = [];
   if (req.files?.length > 0) {
-    const uploadedImages = await uploadMultipleImages(req.files, "room_images");
-    images = uploadedImages.map((img) => img.url);
+    const uploadedImages = await uploadMultipleImages(req.files, "room_photos");
+    images = uploadedImages.map((img, index) => ({
+      url: img.url,
+      publicId: img.publicId,
+      order: index,
+    }));
   }
 
   // Parse arrays if they're strings
@@ -59,7 +61,7 @@ export const createRoom = asyncHandler(async (req, res) => {
     roomNumber: roomNumber.trim(),
     roomType,
     floor: floor.trim(),
-    description: description?.trim(),
+    description: description?.trim() || "",
     amenities: parsedAmenities,
     smokingAllowed: smokingAllowed ?? false,
     petsAllowed: petsAllowed ?? false,
@@ -68,7 +70,10 @@ export const createRoom = asyncHandler(async (req, res) => {
     images,
   });
 
-  const populatedRoom = await RoomModel.findById(room._id).populate("roomType");
+  const populatedRoom = await RoomModel.findById(room._id).populate({
+    path: "roomType",
+    populate: ["timeSlotPricing.timeSlot", "extraServices.extraServices"],
+  });
 
   res.status(201).json({
     success: true,
@@ -77,96 +82,7 @@ export const createRoom = asyncHandler(async (req, res) => {
   });
 });
 
-// Update room with enhanced validation and image handling
-export const updateRoom = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const {
-    roomNumber,
-    roomType,
-    floor,
-    description,
-    amenities,
-    smokingAllowed,
-    petsAllowed,
-    status,
-    isActive,
-    removeImages,
-  } = req.body;
-
-  const room = await RoomModel.findById(id);
-  if (!room) {
-    return res.status(404).json({
-      success: false,
-      message: "Room not found",
-    });
-  }
-
-  // Check room number uniqueness if being updated
-  if (roomNumber && roomNumber !== room.roomNumber) {
-    const existingRoom = await RoomModel.findOne({
-      roomNumber: roomNumber.trim(),
-      _id: { $ne: id },
-    });
-    if (existingRoom) {
-      return res.status(409).json({
-        success: false,
-        message: "Room with this number already exists",
-      });
-    }
-  }
-
-  // Handle image updates
-  let updatedImages = [...room.images];
-
-  // Remove specified images if any
-  if (removeImages) {
-    const imagesToRemove =
-      typeof removeImages === "string"
-        ? JSON.parse(removeImages)
-        : removeImages;
-    updatedImages = updatedImages.filter(
-      (img) => !imagesToRemove.includes(img)
-    );
-  }
-
-  // Add new images if any
-  if (req.files?.length > 0) {
-    const newImages = await uploadMultipleImages(req.files, "room_images");
-    const newImageUrls = newImages.map((img) => img.url);
-    updatedImages = [...updatedImages, ...newImageUrls];
-  }
-
-  // Parse arrays if they're strings
-  const parsedAmenities =
-    typeof amenities === "string" ? JSON.parse(amenities) : amenities;
-
-  const updates = {
-    ...(roomNumber && { roomNumber: roomNumber.trim() }),
-    ...(roomType && { roomType }),
-    ...(floor && { floor: floor.trim() }),
-    ...(description && { description: description.trim() }),
-    ...(parsedAmenities && { amenities: parsedAmenities }),
-    ...(typeof smokingAllowed !== "undefined" && { smokingAllowed }),
-    ...(typeof petsAllowed !== "undefined" && { petsAllowed }),
-    ...(status && { status }),
-    ...(typeof isActive !== "undefined" && { isActive }),
-    images: updatedImages,
-  };
-
-  const updatedRoom = await RoomModel.findByIdAndUpdate(
-    id,
-    { $set: updates },
-    { new: true, runValidators: true }
-  ).populate("roomType");
-
-  res.status(200).json({
-    success: true,
-    message: "Room updated successfully",
-    data: updatedRoom,
-  });
-});
-
-// Get all rooms with filtering and pagination
+// Get all rooms with advanced filtering and pagination
 export const getRooms = asyncHandler(async (req, res) => {
   const {
     status,
@@ -180,10 +96,13 @@ export const getRooms = asyncHandler(async (req, res) => {
     limit = 10,
     sortBy = "createdAt",
     sortOrder = "desc",
+    priceMin,
+    priceMax,
   } = req.query;
 
   const query = {};
 
+  // Advanced filtering
   if (status) query.status = status;
   if (floor) query.floor = floor;
   if (roomType) query.roomType = roomType;
@@ -197,6 +116,7 @@ export const getRooms = asyncHandler(async (req, res) => {
     query.$or = [
       { roomNumber: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
+      { floor: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -207,10 +127,13 @@ export const getRooms = asyncHandler(async (req, res) => {
   };
 
   const rooms = await RoomModel.find(query)
+    .populate({
+      path: "roomType",
+      populate: ["timeSlotPricing.timeSlot", "extraServices.extraServices"],
+    })
     .sort(options.sort)
     .skip((options.page - 1) * options.limit)
-    .limit(options.limit)
-    .populate("roomType");
+    .limit(options.limit);
 
   const total = await RoomModel.countDocuments(query);
 
@@ -229,11 +152,21 @@ export const getRooms = asyncHandler(async (req, res) => {
   });
 });
 
-// Get single room
-export const getRoom = asyncHandler(async (req, res) => {
+// Get room by ID with full population
+export const getRoomById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const room = await RoomModel.findById(id).populate("roomType");
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid room ID format",
+    });
+  }
+
+  const room = await RoomModel.findById(id).populate({
+    path: "roomType",
+    populate: ["timeSlotPricing.timeSlot", "extraServices.extraServices"],
+  });
 
   if (!room) {
     return res.status(404).json({
@@ -249,17 +182,131 @@ export const getRoom = asyncHandler(async (req, res) => {
   });
 });
 
-// Delete room
-export const deleteRoom = asyncHandler(async (req, res) => {
+// Update room with enhanced validation and image handling
+export const updateRoomById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const updates = req.body;
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid room ID format",
+    });
+  }
 
   const room = await RoomModel.findById(id);
-
   if (!room) {
     return res.status(404).json({
       success: false,
       message: "Room not found",
     });
+  }
+
+  // Handle room number uniqueness
+  if (updates.roomNumber && updates.roomNumber !== room.roomNumber) {
+    const existingRoom = await RoomModel.findOne({
+      roomNumber: updates.roomNumber.trim(),
+      _id: { $ne: id },
+    });
+    if (existingRoom) {
+      return res.status(409).json({
+        success: false,
+        message: "Room number already in use",
+      });
+    }
+  }
+
+  // Handle image updates
+  let updatedImages = [...room.images];
+  if (updates.removeImages) {
+    const imagesToRemove =
+      typeof updates.removeImages === "string"
+        ? JSON.parse(updates.removeImages)
+        : updates.removeImages;
+
+    const publicIdsToRemove = imagesToRemove.map((img) => img.publicId);
+    await deleteMultipleImages(publicIdsToRemove);
+    updatedImages = updatedImages.filter(
+      (img) => !publicIdsToRemove.includes(img.publicId)
+    );
+  }
+
+  if (req.files?.length > 0) {
+    const newImages = await uploadMultipleImages(req.files, "room_photos");
+    updatedImages = [
+      ...updatedImages,
+      ...newImages.map((img, index) => ({
+        url: img.url,
+        publicId: img.publicId,
+        order: updatedImages.length + index,
+      })),
+    ];
+  }
+
+  // Parse arrays if needed
+  const parsedAmenities =
+    updates.amenities &&
+    (typeof updates.amenities === "string"
+      ? JSON.parse(updates.amenities)
+      : updates.amenities);
+
+  const finalUpdates = {
+    ...(updates.roomNumber && { roomNumber: updates.roomNumber.trim() }),
+    ...(updates.roomType && { roomType: updates.roomType }),
+    ...(updates.floor && { floor: updates.floor.trim() }),
+    ...(updates.description && { description: updates.description.trim() }),
+    ...(parsedAmenities && { amenities: parsedAmenities }),
+    ...(typeof updates.smokingAllowed !== "undefined" && {
+      smokingAllowed: updates.smokingAllowed,
+    }),
+    ...(typeof updates.petsAllowed !== "undefined" && {
+      petsAllowed: updates.petsAllowed,
+    }),
+    ...(updates.status && { status: updates.status }),
+    ...(typeof updates.isActive !== "undefined" && {
+      isActive: updates.isActive,
+    }),
+    images: updatedImages,
+  };
+
+  const updatedRoom = await RoomModel.findByIdAndUpdate(
+    id,
+    { $set: finalUpdates },
+    { new: true, runValidators: true }
+  ).populate({
+    path: "roomType",
+    populate: ["timeSlotPricing.timeSlot", "extraServices.extraServices"],
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Room updated successfully",
+    data: updatedRoom,
+  });
+});
+
+// Delete room with cleanup
+export const deleteRoomById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid room ID format",
+    });
+  }
+
+  const room = await RoomModel.findById(id);
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
+
+  // Cleanup associated images
+  if (room.images.length > 0) {
+    await deleteMultipleImages(room.images.map((img) => img.publicId));
   }
 
   await RoomModel.findByIdAndDelete(id);

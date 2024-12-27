@@ -23,7 +23,19 @@ const roomSchema = new mongoose.Schema(
     },
     images: [
       {
-        type: String, // allowed 10 images
+        url: {
+          type: String,
+          default:
+            "https://drive.google.com/file/d/1s9LUGejbrY3HwuDqxQbdhv0ri1kdZu5l/view?usp=sharing",
+        },
+        publicId: {
+          type: String,
+          default: "",
+        },
+        order: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
     description: {
@@ -31,7 +43,7 @@ const roomSchema = new mongoose.Schema(
     },
     amenities: [
       {
-        type: String,
+        type: String, // multiple with comma separated
       },
     ],
     smokingAllowed: {

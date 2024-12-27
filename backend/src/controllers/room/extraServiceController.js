@@ -57,23 +57,40 @@ export const createExtraService = asyncHandler(async (req, res) => {
 
 // Get all extra services with filtering and pagination
 export const getExtraServices = asyncHandler(async (req, res) => {
-  const { availability, serviceType, page = 1, limit = 10 } = req.query;
+  const {
+    availability,
+    serviceType,
+    search,
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = req.query;
 
   const query = {};
-  if (typeof availability !== "undefined")
+
+  if (typeof availability !== "undefined") {
     query.availability = availability === "true";
+  }
   if (serviceType) query.serviceType = serviceType;
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
 
   const options = {
     page: parseInt(page),
     limit: parseInt(limit),
-    sort: { createdAt: -1 },
+    sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 },
   };
 
   const extraServices = await ExtraServiceModel.find(query)
+    .sort(options.sort)
     .skip((options.page - 1) * options.limit)
-    .limit(options.limit)
-    .sort(options.sort);
+    .limit(options.limit);
 
   const total = await ExtraServiceModel.countDocuments(query);
 
@@ -92,8 +109,8 @@ export const getExtraServices = asyncHandler(async (req, res) => {
   });
 });
 
-// Get single extra service with enhanced error handling
-export const getExtraService = asyncHandler(async (req, res) => {
+// Get single extra service by ID
+export const getExtraServiceById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -119,10 +136,18 @@ export const getExtraService = asyncHandler(async (req, res) => {
   });
 });
 
-// Update extra service with enhanced validation
-export const updateExtraService = asyncHandler(async (req, res) => {
+// Update extra service by ID
+export const updateExtraServiceById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const {
+    name,
+    description,
+    basePrice,
+    icon,
+    serviceType,
+    additionalInfo,
+    availability,
+  } = req.body;
 
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
     return res.status(400).json({
@@ -131,10 +156,19 @@ export const updateExtraService = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if name is being updated and is unique
-  if (updates.name) {
+  const extraService = await ExtraServiceModel.findById(id);
+
+  if (!extraService) {
+    return res.status(404).json({
+      success: false,
+      message: "Extra service not found",
+    });
+  }
+
+  // Check name uniqueness if being updated
+  if (name && name !== extraService.name) {
     const existingService = await ExtraServiceModel.findOne({
-      name: updates.name,
+      name: name.trim(),
       _id: { $ne: id },
     });
     if (existingService) {
@@ -145,28 +179,31 @@ export const updateExtraService = asyncHandler(async (req, res) => {
     }
   }
 
-  const extraService = await ExtraServiceModel.findByIdAndUpdate(
+  const updates = {
+    ...(name && { name: name.trim() }),
+    ...(description && { description: description.trim() }),
+    ...(basePrice && { basePrice }),
+    ...(icon && { icon: icon.trim() }),
+    ...(serviceType && { serviceType: serviceType.trim() }),
+    ...(additionalInfo && { additionalInfo: additionalInfo.trim() }),
+    ...(typeof availability !== "undefined" && { availability }),
+  };
+
+  const updatedService = await ExtraServiceModel.findByIdAndUpdate(
     id,
     { $set: updates },
     { new: true, runValidators: true }
   );
 
-  if (!extraService) {
-    return res.status(404).json({
-      success: false,
-      message: "Extra service not found",
-    });
-  }
-
   res.status(200).json({
     success: true,
     message: "Extra service updated successfully",
-    data: extraService,
+    data: updatedService,
   });
 });
 
-// Delete extra service with enhanced safety checks
-export const deleteExtraService = asyncHandler(async (req, res) => {
+// Delete extra service by ID
+export const deleteExtraServiceById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -190,10 +227,11 @@ export const deleteExtraService = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Extra service deleted successfully",
+    data: { id },
   });
 });
 
-// New endpoint to bulk update extra services
+// Bulk update extra services
 export const bulkUpdateExtraServices = asyncHandler(async (req, res) => {
   const { services } = req.body;
 
