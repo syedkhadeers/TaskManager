@@ -14,7 +14,8 @@ import { Menu, Transition } from "@headlessui/react";
 import Avatar from "react-avatar";
 import { toast } from "react-toastify";
 import DataTableOne from "../../reusables/table/DataTableOne";
-import { getAllUsers, deleteUser } from "../../../services/user/userServices";
+import { getAllUsers, deleteUser  } from "../../../services/user/userServices";
+import { getCurrentUser } from "../../../services/auth/authServices";
 import Modal from "../../reusables/modal/Modal";
 import StatsCard from "../../reusables/cards/StatsCard";
 import EditUsersContent from "./EditUsersContent";
@@ -23,6 +24,7 @@ import ViewUserContent from "./ViewUserContent";
 import DeleteModal from "../../reusables/modal/DeleteModal";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import ChangeUserPasswordModal from "../../reusables/modal/ChangeUserPasswordModal";
 
 const roleOptions = [
   { value: "admin", label: "Admin" },
@@ -33,7 +35,8 @@ const roleOptions = [
 ];
 
 const UsersContent = () => {
-  const { user: currentUser } = useAuth();
+  const { user } = useAuth();
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
 
@@ -51,33 +54,35 @@ const UsersContent = () => {
       edit: false,
       view: false,
       delete: false,
+      changePassword: false,
     },
     selectedUser: null,
   });
 
-  const fetchUsers = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true }));
-    try {
-      const response = await getAllUsers({
-        page: state.pagination.currentPage,
-        limit: state.pagination.pageSize,
-      });
+const fetchUsers = useCallback(async () => {
+  setState((prev) => ({ ...prev, loading: true }));
+  try {
+    const response = await getAllUsers({
+      page: state.pagination.currentPage,
+      limit: state.pagination.pageSize,
+    });
 
-      setState((prev) => ({
-        ...prev,
-        loading: false,
-        data: response.users,
-        pagination: {
-          ...prev.pagination,
-          totalPages: response.totalPages,
-          totalRecords: response.total,
-        },
-      }));
-    } catch (error) {
-      setState((prev) => ({ ...prev, loading: false }));
-      toast.error("Failed to fetch users");
-    }
-  }, [state.pagination.currentPage, state.pagination.pageSize]);
+    setState((prev) => ({
+      ...prev,
+      loading: false,
+      data: response.users,
+      pagination: {
+        ...prev.pagination,
+        totalPages: response.totalPages,
+        totalRecords: response.total,
+      },
+    }));
+  } catch (error) {
+    console.error("Users fetch error:", error);
+    setState((prev) => ({ ...prev, loading: false }));
+    toast.error("Failed to fetch users");
+  }
+}, [state.pagination.currentPage, state.pagination.pageSize]);
 
   useEffect(() => {
     const currentPage = state.pagination.currentPage;
@@ -98,6 +103,23 @@ const UsersContent = () => {
       fetchUsers();
     }
   }, [state.pagination.currentPage, state.pagination.pageSize]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await getCurrentUser();
+        if (response?.data) {
+          setCurrentUser(response.data);
+        }
+      } catch (error) {
+        toast.error("Failed to load user data");
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const displayUser = currentUser || user;
 
   const stats = useMemo(
     () => ({
@@ -204,11 +226,11 @@ const UsersContent = () => {
   const renderRowActions = useCallback(
     (user, rowIndex, totalRows) => {
       // First check if currentUser exists and has data
-      if (!currentUser?.data?._id || !user?._id) {
+      if (!displayUser?._id || !user?._id) {
         return null;
       }
 
-      const isCurrentUser = currentUser.data._id === user._id;
+       const isCurrentUser = displayUser._id === user._id;
 
       if (isCurrentUser) {
         return (
@@ -311,17 +333,17 @@ const UsersContent = () => {
         </Menu>
       );
     },
-    [currentUser, navigate]
+    [displayUser, navigate]
   );
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto px-6 py-8 "
+      className=" "
     >
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="space-y-8 w-full max-w-full overflow-hidden flex-grow">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-grow">
           <StatsCard
             title="Total Users"
             value={stats.total}
@@ -344,25 +366,27 @@ const UsersContent = () => {
           />
         </div>
 
-        <DataTableOne
-          data={state.data}
-          columns={columns}
-          loading={state.loading}
-          pagination={state.pagination}
-          onPaginationChange={(newPagination) =>
-            setState((prev) => ({ ...prev, pagination: newPagination }))
-          }
-          onRefresh={fetchUsers}
-          renderRowActions={renderRowActions}
-          onTitle="Users' Records"
-          addNewText="Add User"
-          onAddNew={() =>
-            setState((prev) => ({
-              ...prev,
-              modals: { ...prev.modals, add: true },
-            }))
-          }
-        />
+        <div className="flex flex-col flex-grow">
+          <DataTableOne
+            data={state.data}
+            columns={columns}
+            loading={state.loading}
+            pagination={state.pagination}
+            onPaginationChange={(newPagination) =>
+              setState((prev) => ({ ...prev, pagination: newPagination }))
+            }
+            onRefresh={fetchUsers}
+            renderRowActions={renderRowActions}
+            onTitle="Users' Records"
+            addNewText="Add User"
+            onAddNew={() =>
+              setState((prev) => ({
+                ...prev,
+                modals: { ...prev.modals, add: true },
+              }))
+            }
+          />
+        </div>
       </div>
 
       <AnimatePresence>
@@ -456,6 +480,7 @@ const UsersContent = () => {
                   selectedUser: user,
                 }));
               }}
+              onRefresh={fetchUsers}
             />
           </Modal>
         )}
@@ -471,6 +496,20 @@ const UsersContent = () => {
               }))
             }
             onConfirm={handleDelete}
+          />
+        )}
+
+        {/* Change Password Modal */}
+        {state.modals.changePassword && (
+          <ChangeUserPasswordModal
+            onClose={() =>
+              setState((prev) => ({
+                ...prev,
+                modals: { ...prev.modals, changePassword: false },
+                selectedUser: null,
+              }))
+            }
+            userId={state.selectedUser?._id}
           />
         )}
       </AnimatePresence>

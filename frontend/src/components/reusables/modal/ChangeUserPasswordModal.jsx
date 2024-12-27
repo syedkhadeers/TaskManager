@@ -2,13 +2,15 @@ import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import { X, Key } from "lucide-react";
 import { ThemeContext } from "../../../context/ThemeContext";
+import { changeUserPassword } from "../../../services/user/userServices";
+import { toast } from "react-toastify";
 import LoadingSpinner from "../../common/LoadingSpinner";
+import InputField from "../inputs/InputField";
 
-const ChangeUserPasswordModal = ({ onClose }) => {
+const ChangeUserPasswordModal = ({ onClose, userId }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -20,7 +22,6 @@ const ChangeUserPasswordModal = ({ onClose }) => {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -32,10 +33,6 @@ const ChangeUserPasswordModal = ({ onClose }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = "Current password is required";
-    }
-
     if (!formData.newPassword) {
       newErrors.newPassword = "New password is required";
     } else if (formData.newPassword.length < 6) {
@@ -43,7 +40,7 @@ const ChangeUserPasswordModal = ({ onClose }) => {
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your new password";
+      newErrors.confirmPassword = "Please confirm the new password";
     } else if (formData.newPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
@@ -57,8 +54,17 @@ const ChangeUserPasswordModal = ({ onClose }) => {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    // Add your password change logic here
-    setIsLoading(false);
+    try {
+      await changeUserPassword(userId, {
+        newPassword: formData.newPassword,
+      });
+      toast.success("Password changed successfully!");
+      onClose();
+    } catch (error) {
+      toast.error(error.message || "Failed to change password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -78,13 +84,12 @@ const ChangeUserPasswordModal = ({ onClose }) => {
           isDarkMode ? "bg-gray-800" : "bg-white"
         }`}
       >
-        {/* Header */}
         <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Key className="h-6 w-6 text-white" />
               <h2 className="text-xl font-semibold text-white">
-                Change Password
+                Change User Password
               </h2>
             </div>
             <button
@@ -96,19 +101,7 @@ const ChangeUserPasswordModal = ({ onClose }) => {
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <InputField
-            label="Current Password"
-            type="password"
-            name="currentPassword"
-            placeholder="Enter current password"
-            value={formData.currentPassword}
-            onChange={handleInputChange}
-            error={errors.currentPassword}
-            isDarkMode={isDarkMode}
-          />
-
           <InputField
             label="New Password"
             type="password"
@@ -156,43 +149,5 @@ const ChangeUserPasswordModal = ({ onClose }) => {
     </motion.div>
   );
 };
-
-const InputField = ({
-  label,
-  type,
-  name,
-  placeholder,
-  value,
-  onChange,
-  error,
-  isDarkMode,
-}) => (
-  <div>
-    <label
-      className={`block text-sm font-medium mb-2 ${
-        isDarkMode ? "text-gray-200" : "text-gray-700"
-      }`}
-    >
-      {label}
-    </label>
-    <input
-      type={type}
-      name={name}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className={`w-full px-4 py-2.5 rounded-lg border ${
-        error
-          ? "border-red-500"
-          : isDarkMode
-          ? "border-gray-600"
-          : "border-gray-300"
-      } ${
-        isDarkMode ? "bg-gray-700 text-white" : "bg-white text-gray-900"
-      } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
-    />
-    {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-  </div>
-);
 
 export default ChangeUserPasswordModal;

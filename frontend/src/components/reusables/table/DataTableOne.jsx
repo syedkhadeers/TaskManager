@@ -21,7 +21,8 @@ import {
 import { Menu, Transition } from "@headlessui/react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import Avatar from "react-avatar";
+//import css
+import "../../../styles/common.css";
 
 const DataTableOne = ({
   data,
@@ -143,8 +144,8 @@ const DataTableOne = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-      <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full flex flex-col h-full">
+      <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-2xl flex-none">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <h2 className="text-2xl font-semibold text-white">{onTitle}</h2>
           <div className="flex flex-wrap items-center gap-3">
@@ -273,103 +274,118 @@ const DataTableOne = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    {header.isPlaceholder ? null : (
-                      <div
-                        className={`flex items-center ${
-                          header.column.getCanSort()
-                            ? "cursor-pointer select-none"
-                            : ""
-                        }`}
-                        onClick={header.column.getToggleSortingHandler()}
+      <div className="relative w-full overflow-hidden flex-1">
+        <div className="flex-1 overflow-x-auto custom-scrollbar2">
+          <div className="inline-block min-w-full align-middle">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider first:pl-4 last:pr-4"
+                        style={{
+                          minWidth: header.column.columnDef.minWidth || "auto",
+                        }}
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                        {header.isPlaceholder ? null : (
+                          <div
+                            className={`flex items-center ${
+                              header.column.getCanSort()
+                                ? "cursor-pointer select-none"
+                                : ""
+                            }`}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {{
+                              asc: <FaSortUp className="ml-2" />,
+                              desc: <FaSortDown className="ml-2" />,
+                            }[header.column.getIsSorted()] ??
+                              (header.column.getCanSort() ? (
+                                <FaSort className="ml-2" />
+                              ) : null)}
+                          </div>
                         )}
-                        {{
-                          asc: <FaSortUp className="ml-2" />,
-                          desc: <FaSortDown className="ml-2" />,
-                        }[header.column.getIsSorted()] ??
-                          (header.column.getCanSort() ? (
-                            <FaSort className="ml-2" />
-                          ) : null)}
-                      </div>
-                    )}
-                  </th>
-                ))}
-                <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            ))}
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {loading
-              ? // Loading skeleton
-                [...Array(5)].map((_, index) => (
-                  <tr key={index}>
-                    {columns.map((column, colIndex) => (
-                      <td
-                        key={colIndex}
-                        className="px-6 py-4 whitespace-nowrap"
-                      >
-                        <div className="animate-pulse">
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                        </div>
-                      </td>
+                      </th>
                     ))}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="animate-pulse">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              : table.getRowModel().rows.map((row, index) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300"
-                      >
-                        {cell.column.columnDef.cell ? (
-                          flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )
-                        ) : (
-                          <span>{cell.getValue()}</span>
-                        )}
-                      </td>
-                    ))}
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {renderRowActions(
-                        row.original,
-                        index,
-                        table.getRowModel().rows.length
-                      )}
-                    </td>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 ))}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {loading
+                  ? // Loading skeleton
+                    [...Array(5)].map((_, index) => (
+                      <tr key={index}>
+                        {columns.map((column, colIndex) => (
+                          <td
+                            key={colIndex}
+                            className="px-6 py-4 whitespace-nowrap"
+                          >
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                            </div>
+                          </td>
+                        ))}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="animate-pulse">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  : table.getRowModel().rows.map((row, index) => (
+                      <tr
+                        key={row.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td
+                            key={cell.id}
+                            className="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 first:pl-4 last:pr-4"
+                            style={{
+                              minWidth:
+                                cell.column.columnDef.minWidth || "auto",
+                            }}
+                          >
+                            <div className="flex items-center">
+                              {cell.column.columnDef.cell ? (
+                                flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )
+                              ) : (
+                                <span className="truncate">
+                                  {cell.getValue()}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        ))}
+                        <td className="px-6 py-4 text-right text-sm font-medium">
+                          {renderRowActions(
+                            row.original,
+                            index,
+                            table.getRowModel().rows.length
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-center mt-6 space-y-4 md:space-y-0 px-8 pb-6">
-        <div className="flex items-center space-x-2">
+      <div className="flex-none justify-between items-center gap-4 mt-6 px-8 pb-6">
+        <div className="flex items-center space-x-2 w-full md:w-auto">
           <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
           <select
             value={table.getState().pagination.pageSize}
@@ -388,7 +404,7 @@ const DataTableOne = ({
             entries
           </span>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 w-full md:w-auto justify-end">
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}

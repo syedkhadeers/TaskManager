@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { AiOutlineMail } from "react-icons/ai";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { FiUser } from "react-icons/fi";
+import { BiErrorCircle } from "react-icons/bi";
+import { motion } from "framer-motion";
 
 const Login = () => {
   const { handleLogin, isAuthenticated } = useAuth();
@@ -61,31 +63,16 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error("Please check your input fields", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
     try {
       await handleLogin(formData);
-      toast.success("Login successful! Welcome back.", {
-        position: "top-right",
-        autoClose: 2000,
-      });
+      toast.success("Login successful! Welcome back.");
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message;
-      toast.error(errorMessage || "Invalid credentials", {
-        position: "top-right",
-        autoClose: 4000,
-      });
       setErrors({
         ...errors,
-        general: errorMessage || "Login failed. Please check your credentials.",
+        general: error.message || "Invalid credentials. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -93,28 +80,36 @@ const Login = () => {
   };
 
   return (
-    <div className="max-w-md w-full space-y-8 dark:bg-gray-800 p-8 rounded-xl ">
+    <div className="max-w-md w-full space-y-8  p-8 rounded-xl ">
       <div className="text-center">
         <div className="inline-block p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 mb-4">
           <FiUser className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
+        <h2 className="text-3xl font-bold  text-white">
           Welcome Back
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-gray-300 mt-2">
           Sign in to continue to your dashboard
         </p>
       </div>
 
       {errors.general && (
-        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm">
-          {errors.general}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/40 dark:to-red-800/40 border border-red-200 dark:border-red-800/40 shadow-lg shadow-red-500/5 text-red-600 dark:text-red-400 p-4 rounded-xl backdrop-blur-sm"
+        >
+          <div className="flex-shrink-0">
+            <BiErrorCircle className="h-5 w-5 text-red-500" />
+          </div>
+          <p className="text-sm font-medium tracking-wide">{errors.general}</p>
+        </motion.div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-gray-300">
             Email Address
           </label>
           <div className="relative mt-1">
@@ -139,7 +134,7 @@ const Login = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-gray-300">
             Password
           </label>
           <div className="relative mt-1">
@@ -169,7 +164,7 @@ const Login = () => {
               type="checkbox"
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+            <label className="ml-2 block text-sm text-gray-300">
               Remember me
             </label>
           </div>
@@ -189,7 +184,7 @@ const Login = () => {
           {isSubmitting ? "Signing in..." : "Sign In"}
         </button>
 
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-center text-sm text-gray-300">
           Don't have an account?{" "}
           <Link
             to="/register"

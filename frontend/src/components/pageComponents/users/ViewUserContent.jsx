@@ -14,14 +14,18 @@ import {
   Briefcase,
   Calendar,
   User,
+  KeyIcon,
 } from "lucide-react";
 import Avatar from "react-avatar";
 import { motion } from "framer-motion";
 import { PencilIcon, TrashIcon } from "lucide-react";
+import ColorStatCard from "../../reusables/cards/ColorStatsCard";
+import ChangeUserPasswordModal from "../../reusables/modal/ChangeUserPasswordModal";
 
-const ViewUserContent = ({ user, onClose, onEdit, onDelete }) => {
+const ViewUserContent = ({ user, onClose, onEdit, onDelete, onRefresh }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [activeTab, setActiveTab] = useState("profile");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const [stats] = useState({
     totalBookings: 25,
@@ -30,7 +34,7 @@ const ViewUserContent = ({ user, onClose, onEdit, onDelete }) => {
     totalGuests: 45,
   });
 
-  const statCards = [
+  const colorStatCards = [
     {
       title: "Total Bookings",
       value: stats.totalBookings,
@@ -210,20 +214,30 @@ const ViewUserContent = ({ user, onClose, onEdit, onDelete }) => {
             <div className="absolute top-0 right-0 flex items-center gap-3">
               <button
                 onClick={() => onEdit(user)}
-                className="group relative p-2.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="group relative p-2.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 backdrop-blur-sm border border-blue-500/10 hover:border-blue-500/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               >
-                <PencilIcon className="h-5 w-5 text-white/90 group-hover:text-white transition-colors" />
-                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <PencilIcon className="h-5 w-5 text-blue-500/90 group-hover:text-blue-500 transition-colors" />
+                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/90 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   Edit Profile
                 </span>
               </button>
 
               <button
-                onClick={() => onDelete(user)}
-                className="group relative p-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 backdrop-blur-sm border border-red-500/10 hover:border-red-500/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                onClick={() => setShowPasswordModal(true)}
+                className="group relative p-2.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 backdrop-blur-sm border border-purple-500/10 hover:border-purple-500/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
               >
-                <TrashIcon className="h-5 w-5 text-red-500/90 group-hover:text-red-500 transition-colors" />
-                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <KeyIcon className="h-5 w-5 text-purple-500/90 group-hover:text-purple-500 transition-colors" />
+                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/90 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  Change Password
+                </span>
+              </button>
+
+              <button
+                onClick={() => onDelete(user)}
+                className="group relative p-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 backdrop-blur-sm border border-rose-500/10 hover:border-rose-500/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+              >
+                <TrashIcon className="h-5 w-5 text-rose-500/90 group-hover:text-rose-500 transition-colors" />
+                <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/90 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   Delete User
                 </span>
               </button>
@@ -234,8 +248,8 @@ const ViewUserContent = ({ user, onClose, onEdit, onDelete }) => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <StatCard key={index} {...stat} isDarkMode={isDarkMode} />
+        {colorStatCards.map((stat, index) => (
+          <ColorStatCard key={index} {...stat} isDarkMode={isDarkMode} />
         ))}
       </div>
 
@@ -432,25 +446,21 @@ const ViewUserContent = ({ user, onClose, onEdit, onDelete }) => {
           )}
         </div>
       </div>
+
+      {showPasswordModal && (
+        <ChangeUserPasswordModal
+          userId={user._id}
+          onClose={() => {
+            setShowPasswordModal(false);
+            if (onRefresh) {
+              onRefresh();
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
 
-const StatCard = ({ title, value, icon, color, isDarkMode }) => (
-  <motion.div
-    initial={{ y: 20, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    className={`bg-gradient-to-br ${color} rounded-xl p-6 text-white
-      ${isDarkMode ? "shadow-lg shadow-gray-900/50" : "shadow-md"}`}
-  >
-    <div className="flex justify-between items-center">
-      <div>
-        <p className="text-sm opacity-80">{title}</p>
-        <h3 className="text-2xl font-bold mt-1">{value}</h3>
-      </div>
-      <div className="bg-white/20 p-3 rounded-lg">{icon}</div>
-    </div>
-  </motion.div>
-);
 
 export default ViewUserContent;

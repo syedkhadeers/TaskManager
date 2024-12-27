@@ -48,7 +48,7 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await retryRequest(() => api.post("/login", credentials));
+    const response = await api.post("/login", credentials);
     saveUserData(response.data);
     return response;
   } catch (error) {

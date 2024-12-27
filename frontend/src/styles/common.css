@@ -9,3 +9,26 @@
   outline: none;
   border-radius: 2px;
 }
+
+
+.custom-scrollbar2 {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+.custom-scrollbar2::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar2::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar2::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+}
+
+.custom-scrollbar2::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}

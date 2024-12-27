@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { updateUserById } from "../../../services/user/userServices";
 import { toast } from "react-toastify";
 import MultiImageEditor from "../../reusables/editors/MultiImageEditor";
+import SingleImageEditor from "../../reusables/editors/SingleImageEditor";
 import LoadingSpinner from "../../common/LoadingSpinner";
 import InputField from "../../reusables/inputs/InputField"
 
@@ -276,11 +277,10 @@ const handleImageChange = (processedImages) => {
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
               Profile Photo
             </label>
-            <MultiImageEditor
+            <SingleImageEditor
               onImagesChange={handleImageChange}
-              maxImages={1}
-              initialImages={
-                user?.photo?.url ? [{ preview: user.photo.url }] : []
+              initialImage={
+                user?.photo?.url ? { preview: user.photo.url } : null
               }
             />
           </div>

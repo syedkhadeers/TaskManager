@@ -20,7 +20,7 @@ const router = express.Router();
 router.post("/register", uploadUserPhoto.single("photo"), registerUser);
 router.post("/login", loginUser);
 router.get("/login-status", loggedInUsersOnly, userLoginStatus);
-router.post("/logout", loggedInUsersOnly, logoutUser);
+router.post("/logout", logoutUser);
 
 // Email verification routes
 router.post("/verify-email", loggedInUsersOnly, verifyEmail);
@@ -29,6 +29,6 @@ router.post("/verify-user/:verificationToken", verifyUser);
 // Password management routes
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:resetPasswordToken", resetPassword);
-router.patch("/change-password", loggedInUsersOnly, changePassword);
+router.patch("/change-password",  changePassword);
 
 export default router;

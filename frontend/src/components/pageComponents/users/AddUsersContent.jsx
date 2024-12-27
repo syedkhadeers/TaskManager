@@ -4,9 +4,9 @@ import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import { addUser } from "../../../services/user/userServices";
 import { toast } from "react-toastify";
-import  MultiImageEditor  from "../../reusables/editors/MultiImageEditor";
 import LoadingSpinner from "../../common/LoadingSpinner";
 import InputField from "../../reusables/inputs/InputField";
+import SingleImageEditor from "../../reusables/editors/SingleImageEditor";
 
 const AddUsersContent = ({ onClose, onUserAdded }) => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -319,7 +319,7 @@ const handleImageChange = (processedImages) => {
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
               Profile Photo
             </label>
-            <MultiImageEditor
+            <SingleImageEditor
               onImagesChange={handleImageChange}
               maxImages={1}
             />

@@ -1,10 +1,13 @@
 import axios from "axios";
 
+// Custom event for auth errors
+export const createAuthErrorEvent = () => new CustomEvent("auth-error");
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: "http://localhost:8000/api/v1",
   withCredentials: true,
-  timeout: 10000, // 10 second timeout
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -14,55 +17,41 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
     const token = localStorage.getItem("token");
-
-    // Add authorization header if token exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
-    // Add timestamp to prevent caching
     config.params = {
       ...config.params,
       _t: Date.now(),
     };
-
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle token expiration
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
-      // Clear user session
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-
-      // Redirect to login
-      window.location.href = "/login";
-      return Promise.reject(error);
+      window.dispatchEvent(createAuthErrorEvent());
+      return Promise.reject(handleApiError(error));
     }
 
-    // Handle other error cases
     if (error.response?.status === 403) {
-      window.location.href = "/forbidden";
+      const forbiddenEvent = new CustomEvent("forbidden-error");
+      window.dispatchEvent(forbiddenEvent);
     }
 
     if (error.response?.status === 404) {
-      window.location.href = "/not-found";
+      const notFoundEvent = new CustomEvent("not-found-error");
+      window.dispatchEvent(notFoundEvent);
     }
 
     return Promise.reject(handleApiError(error));
@@ -72,21 +61,15 @@ api.interceptors.response.use(
 // Enhanced error handler
 export const handleApiError = (error) => {
   if (error.response) {
-    // Server responded with error
-    const message = error.response.data.message || "An error occurred";
-    const status = error.response.status;
-    const data = error.response.data;
-
     return {
-      message,
-      status,
-      data,
+      message: error.response.data.message || "An error occurred",
+      status: error.response.status,
+      data: error.response.data,
       type: "API_ERROR",
     };
   }
 
   if (error.request) {
-    // Request made but no response
     return {
       message: "No response received from server",
       status: 0,
@@ -94,17 +77,16 @@ export const handleApiError = (error) => {
     };
   }
 
-  // Error in request setup
   return {
     message: error.message || "Error setting up the request",
     type: "REQUEST_ERROR",
   };
 };
 
-// API status checker
+// API status checker with retry mechanism
 export const checkApiHealth = async () => {
   try {
-    const response = await api.get("/health");
+    const response = await retryRequest(() => api.get("/health"));
     return response.status === "ok";
   } catch {
     return false;
