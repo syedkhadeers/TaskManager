@@ -1,21 +1,14 @@
 import asyncHandler from "express-async-handler";
 import User from "../../models/users/UserModel.js";
-import generateToken, {
-  generateRefreshToken,
-} from "../../services/generateToken.js";
+import generateToken, {generateRefreshToken,} from "../../services/generateToken.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Token from "../../models/auth/Token.js";
 import crypto from "node:crypto";
 import hashToken, { verifyHash } from "../../services/hashToken.js";
 import sendEmail from "../../services/sendEmail.js";
-import {
-  uploadImage
-} from "../../services/imageUpload.js";
+import { uploadImage} from "../../services/imageUpload.js";
 
-
-
-// Register new user
 export const registerUser = asyncHandler(async (req, res) => {
   const {
     title,
@@ -117,7 +110,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
     sameSite: "none",
     secure: true,
-    secure: true,
   });
 
   if (user) {
@@ -130,8 +122,10 @@ export const registerUser = asyncHandler(async (req, res) => {
       photo: photo.url,
       isVerified,
       token,
-    },
-  });
+    });
+  } else {
+    res.status(400).json({ message: "Invalid user data" });
+  }
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -183,7 +177,6 @@ export const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
-// Logout user
 export const logoutUser = asyncHandler(async (req, res) => {
   res.cookie("token", "", {
     path: "/",
@@ -219,7 +212,6 @@ export const userLoginStatus = asyncHandler(async (req, res) => {
   }
 });
 
-// Email Verification
 export const verifyEmail = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
@@ -259,7 +251,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Verification email sent" });
 });
 
-// Verify User Email
 export const verifyUser = asyncHandler(async (req, res) => {
   const { token } = req.params;
 
@@ -284,18 +275,15 @@ export const verifyUser = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Email verified successfully" });
 });
 
-// Forgot Password
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
-  if (!email?.trim()) {
-    return res.status(400).json({
-      success: false,
-      message: "Email is required",
-    });
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
   }
 
-  const user = await User.findOne({ email: email.trim() });
+  const user = await User.findOne({ email });
+
   if (!user) {
     return res
       .status(404)
@@ -332,7 +320,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     .json({ message: "Password reset instructions sent to email" });
 });
 
-// Reset Password
 export const resetPassword = asyncHandler(async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -361,14 +348,12 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const user = await User.findById(storedToken.userId);
   user.password = password;
   await user.save();
-  await Token.deleteOne({ _id: userToken._id });
 
   await Token.deleteMany({ userId: user._id, type: "passwordReset" });
 
   res.status(200).json({ message: "Password reset successful" });
 });
 
-// Change Password
 export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user._id;
@@ -386,10 +371,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   const user = await User.findById(userId).select("+password");
 
   if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
+    return res.status(404).json({ message: "User not found" });
   }
 
   const isMatch = await bcrypt.compare(currentPassword, user.password);
@@ -424,3 +406,5 @@ export default {
   resetPassword,
   changePassword,
 };
+
+

@@ -1,12 +1,12 @@
 import asyncHandler from "express-async-handler";
-import RoomTypeModel from "../../models/rooms/RoomTypeModel.js";
+import RoomType from "../../models/rooms/RoomTypeModel.js";
 import {
   uploadMultipleImages,
-  deleteMultipleImages
-} from "../../helpers/imageUpload.js";
+  updateMultipleImages,
+  deleteMultipleImages,
+} from "../../services/imageUpload.js";
 
-// Create new room type with enhanced validation
-export const createRoomType = asyncHandler(async (req, res) => {
+export const addRoomType = asyncHandler(async (req, res) => {
   const {
     name,
     description,
@@ -18,164 +18,99 @@ export const createRoomType = asyncHandler(async (req, res) => {
     extraServices,
   } = req.body;
 
-  // Enhanced validation
-  const validationErrors = [];
-  if (!name?.trim()) validationErrors.push("Room type name is required");
-  if (!description?.trim()) validationErrors.push("Description is required");
-  if (!basePrice || basePrice <= 0)
-    validationErrors.push("Valid base price is required");
-  if (maxOccupancy && maxOccupancy < 1)
-    validationErrors.push("Maximum occupancy must be at least 1");
-
-  if (validationErrors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: validationErrors,
-    });
+  if (!name || !basePrice) {
+    return res.status(400).json({ message: "Required fields missing" });
   }
 
-  // Check for existing room type
-  const roomTypeExists = await RoomTypeModel.findOne({ name: name.trim() });
+  const roomTypeExists = await RoomType.findOne({ name });
   if (roomTypeExists) {
-    return res.status(409).json({
-      success: false,
-      message: "Room type with this name already exists",
-    });
+    return res.status(400).json({ message: "Room type name already exists" });
   }
 
-  // Handle image uploads
-  let images = [];
+  let imagesData = [];
   if (req.files?.length > 0) {
-    const uploadedImages = await uploadMultipleImages(
+    const uploadResults = await uploadMultipleImages(
       req.files,
       "room_type_photos"
     );
-    images = uploadedImages.map((img, index) => ({
-      url: img.url,
-      publicId: img.publicId,
+    imagesData = uploadResults.map((result, index) => ({
+      url: result.url,
+      publicId: result.publicId,
       order: index,
     }));
   }
 
-  // Parse and validate arrays
-  const parsedTimeSlotPricing =
-    typeof timeSlotPricing === "string"
-      ? JSON.parse(timeSlotPricing)
-      : timeSlotPricing || [];
-
-  const parsedExtraServices =
-    typeof extraServices === "string"
-      ? JSON.parse(extraServices)
-      : extraServices || [];
-
-  const roomType = await RoomTypeModel.create({
-    name: name.trim(),
-    description: description.trim(),
+  const roomType = await RoomType.create({
+    name,
+    description,
     basePrice,
     specialPrice: specialPrice || basePrice,
     offerPrice: offerPrice || basePrice,
     maxOccupancy: maxOccupancy || 1,
-    timeSlotPricing: parsedTimeSlotPricing,
-    extraServices: parsedExtraServices,
-    images,
-    isActive: isActive ?? true,
+    timeSlotPricing: timeSlotPricing || [],
+    extraServices: extraServices || [],
+    images: imagesData,
   });
 
-  const populatedRoomType = await RoomTypeModel.findById(roomType._id)
+  const populatedRoomType = await RoomType.findById(roomType._id)
     .populate("timeSlotPricing.timeSlot")
     .populate("extraServices.extraServices");
 
   res.status(201).json({
-    success: true,
     message: "Room type created successfully",
-    data: populatedRoomType,
+    roomType: populatedRoomType,
   });
 });
 
-// Get all room types with advanced filtering and pagination
-export const getRoomTypes = asyncHandler(async (req, res) => {
-  const {
-    isActive,
-    priceMin,
-    priceMax,
-    search,
-    page = 1,
-    limit = 10,
-    sortBy = "createdAt",
-    sortOrder = "desc",
-  } = req.query;
+export const updateRoomType = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updateData = { ...req.body };
 
-  const query = {};
-
-  // Advanced filtering
-  if (typeof isActive !== "undefined") {
-    query.isActive = isActive === "true";
+  const roomType = await RoomType.findById(id);
+  if (!roomType) {
+    return res.status(404).json({ message: "Room type not found" });
   }
 
-  if (priceMin || priceMax) {
-    query.basePrice = {};
-    if (priceMin) query.basePrice.$gte = Number(priceMin);
-    if (priceMax) query.basePrice.$lte = Number(priceMax);
+  if (req.files?.length > 0) {
+    const existingPublicIds = roomType.images
+      .map((img) => img.publicId)
+      .filter((id) => id);
+    if (existingPublicIds.length > 0) {
+      await deleteMultipleImages(existingPublicIds);
+    }
+
+    const uploadResults = await uploadMultipleImages(
+      req.files,
+      "room_type_photos"
+    );
+    updateData.images = uploadResults.map((result, index) => ({
+      url: result.url,
+      publicId: result.publicId,
+      order: index,
+    }));
   }
 
-  if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-    ];
-  }
-
-  const options = {
-    page: parseInt(page),
-    limit: parseInt(limit),
-    sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 },
-  };
-
-  const roomTypes = await RoomTypeModel.find(query)
+  const updatedRoomType = await RoomType.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true }
+  )
     .populate("timeSlotPricing.timeSlot")
-    .populate("extraServices.extraServices")
-    .sort(options.sort)
-    .skip((options.page - 1) * options.limit)
-    .limit(options.limit);
-
-  const total = await RoomTypeModel.countDocuments(query);
+    .populate("extraServices.extraServices");
 
   res.status(200).json({
-    success: true,
-    message: "Room types fetched successfully",
-    data: {
-      roomTypes,
-      pagination: {
-        currentPage: options.page,
-        totalPages: Math.ceil(total / options.limit),
-        totalItems: total,
-        itemsPerPage: options.limit,
-      },
-    },
+    message: "Room type updated successfully",
+    roomType: updatedRoomType,
   });
 });
 
-// Get room type by ID with full population
-export const getRoomTypeById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
-  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid room type ID format",
-    });
-  }
-
-  const roomType = await RoomTypeModel.findById(id)
+export const getRoomType = asyncHandler(async (req, res) => {
+  const roomType = await RoomType.findById(req.params.id)
     .populate("timeSlotPricing.timeSlot")
     .populate("extraServices.extraServices");
 
   if (!roomType) {
-    return res.status(404).json({
-      success: false,
-      message: "Room type not found",
-    });
+    return res.status(404).json({ message: "Room type not found" });
   }
 
   res.status(200).json(roomType);
@@ -187,229 +122,165 @@ export const getAllRoomTypes = asyncHandler(async (req, res) => {
     .populate("extraServices.extraServices");
 
   res.status(200).json({
-    success: true,
-    message: "Room type fetched successfully",
-    data: roomType,
+    count: roomTypes.length,
+    roomTypes,
   });
 });
 
-// Update room type with enhanced validation and image handling
-export const updateRoomTypeById = asyncHandler(async (req, res) => {
+export const deleteRoomType = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const roomType = await RoomType.findById(id);
 
-  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid room type ID format",
-    });
-  }
-
-  const roomType = await RoomTypeModel.findById(id);
   if (!roomType) {
-    return res.status(404).json({
-      success: false,
-      message: "Room type not found",
-    });
+    return res.status(404).json({ message: "Room type not found" });
   }
 
-  // Handle name uniqueness
-  if (updates.name && updates.name !== roomType.name) {
-    const existingRoomType = await RoomTypeModel.findOne({
-      name: updates.name.trim(),
-      _id: { $ne: id },
-    });
-    if (existingRoomType) {
-      return res.status(409).json({
-        success: false,
-        message: "Room type with this name already exists",
-      });
-    }
+  const publicIds = roomType.images
+    .map((img) => img.publicId)
+    .filter((id) => id);
+
+  if (publicIds.length > 0) {
+    await deleteMultipleImages(publicIds);
   }
 
-  // Handle image updates
-  let updatedImages = [...roomType.images];
-  if (updates.removeImages) {
-    const imagesToRemove = typeof updates.removeImages === "string"
-      ? JSON.parse(updates.removeImages)
-      : updates.removeImages;
-
-    const publicIdsToRemove = imagesToRemove.map((img) => img.publicId);
-    await deleteMultipleImages(publicIdsToRemove);
-    updatedImages = updatedImages.filter(
-      (img) => !publicIdsToRemove.includes(img.publicId)
-    );
-  }
-
-  if (req.files?.length > 0) {
-    const newImages = await uploadMultipleImages(req.files, "room_type_photos");
-    updatedImages = [
-      ...updatedImages,
-      ...newImages.map((img, index) => ({
-        url: img.url,
-        publicId: img.publicId,
-        order: updatedImages.length + index,
-      })),
-    ];
-  }
-
-  // Prepare updates object
-  const finalUpdates = {
-    ...(updates.name && { name: updates.name.trim() }),
-    ...(updates.description && { description: updates.description.trim() }),
-    ...(updates.basePrice && { basePrice: updates.basePrice }),
-    ...(updates.specialPrice && { specialPrice: updates.specialPrice }),
-    ...(updates.offerPrice && { offerPrice: updates.offerPrice }),
-    ...(updates.maxOccupancy && { maxOccupancy: updates.maxOccupancy }),
-    ...(typeof updates.isActive !== "undefined" && { isActive: updates.isActive }),
-    images: updatedImages,
-  };
-
-  // Handle arrays
-  if (updates.timeSlotPricing) {
-    finalUpdates.timeSlotPricing = typeof updates.timeSlotPricing === "string"
-      ? JSON.parse(updates.timeSlotPricing)
-      : updates.timeSlotPricing;
-  }
-
-  if (updates.extraServices) {
-    finalUpdates.extraServices = typeof updates.extraServices === "string"
-      ? JSON.parse(updates.extraServices)
-      : updates.extraServices;
-  }
-
-  const updatedRoomType = await RoomTypeModel.findByIdAndUpdate(
-    id,
-    { $set: finalUpdates },
-    { new: true, runValidators: true }
-  )
-    .populate("timeSlotPricing.timeSlot")
-    .populate("extraServices.extraServices");
-
-  res.status(200).json({
-    success: true,
-    message: "Room type updated successfully",
-    data: updatedRoomType,
-  });
+  await RoomType.findByIdAndDelete(id);
+  res.status(200).json({ message: "Room type deleted successfully" });
 });
 
-// Delete room type with cleanup
-export const deleteRoomTypeById = asyncHandler(async (req, res) => {
+export const addTimeSlot = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { timeSlotId, price, order } = req.body;
 
-  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid room type ID format",
-    });
-  }
-
-  const roomType = await RoomTypeModel.findById(id);
+  const roomType = await RoomType.findById(id);
   if (!roomType) {
-    return res.status(404).json({
-      success: false,
-      message: "Room type not found",
-    });
+    return res.status(404).json({ message: "Room type not found" });
   }
 
-  // Cleanup associated images
-  if (roomType.images.length > 0) {
-    await deleteMultipleImages(roomType.images.map(img => img.publicId));
+  const timeSlotExists = roomType.timeSlotPricing.find(
+    (slot) => slot.timeSlot.toString() === timeSlotId
+  );
+
+  if (timeSlotExists) {
+    return res.status(400).json({ message: "Time slot already exists" });
   }
 
-  await RoomTypeModel.findByIdAndDelete(id);
+  roomType.timeSlotPricing.push({
+    timeSlot: timeSlotId,
+    price: price || roomType.basePrice,
+    order: order || roomType.timeSlotPricing.length,
+  });
+
+  await roomType.save();
 
   const updatedRoomType = await RoomType.findById(id)
     .populate("timeSlotPricing.timeSlot")
     .populate("extraServices.extraServices");
 
   res.status(200).json({
-    success: true,
-    message: "Room type deleted successfully",
-    data: { id },
+    message: "Time slot added successfully",
+    roomType: updatedRoomType,
   });
 });
 
-// Manage time slots and extra services
-export const manageTimeSlot = asyncHandler(async (req, res) => {
+export const removeTimeSlot = asyncHandler(async (req, res) => {
   const { id, timeSlotId } = req.params;
-  const { action, price } = req.body;
 
-  const roomType = await RoomTypeModel.findById(id);
+  const roomType = await RoomType.findById(id);
   if (!roomType) {
-    return res.status(404).json({
-      success: false,
-      message: "Room type not found",
-    });
+    return res.status(404).json({ message: "Room type not found" });
   }
 
-  if (action === "add") {
-    if (roomType.timeSlotPricing.some(slot => slot.timeSlot.toString() === timeSlotId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Time slot already exists for this room type",
-      });
-    }
-    roomType.timeSlotPricing.push({
-      timeSlot: timeSlotId,
-      price: price || roomType.basePrice,
-    });
-  } else if (action === "remove") {
-    roomType.timeSlotPricing = roomType.timeSlotPricing.filter(
-      slot => slot.timeSlot.toString() !== timeSlotId
-    );
-  }
+  roomType.timeSlotPricing = roomType.timeSlotPricing.filter(
+    (slot) => slot.timeSlot.toString() !== timeSlotId
+  );
 
   await roomType.save();
-  const updatedRoomType = await RoomTypeModel.findById(id)
+
+  const updatedRoomType = await RoomType.findById(id)
     .populate("timeSlotPricing.timeSlot")
     .populate("extraServices.extraServices");
 
   res.status(200).json({
-    success: true,
-    message: `Time slot ${action}ed successfully`,
-    data: updatedRoomType,
+    message: "Time slot removed successfully",
+    roomType: updatedRoomType,
   });
 });
 
-export const manageExtraService = asyncHandler(async (req, res) => {
-  const { id, serviceId } = req.params;
-  const { action, price } = req.body;
+export const addExtraService = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { serviceId, price, order } = req.body;
 
-  const roomType = await RoomTypeModel.findById(id);
+  const roomType = await RoomType.findById(id);
   if (!roomType) {
-    return res.status(404).json({
-      success: false,
-      message: "Room type not found",
-    });
+    return res.status(404).json({ message: "Room type not found" });
   }
 
-  if (action === "add") {
-    if (roomType.extraServices.some(service => service.extraServices.toString() === serviceId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Service already exists for this room type",
-      });
-    }
-    roomType.extraServices.push({
-      extraServices: serviceId,
-      price: price || 0,
-    });
-  } else if (action === "remove") {
-    roomType.extraServices = roomType.extraServices.filter(
-      service => service.extraServices.toString() !== serviceId
-    );
+  const serviceExists = roomType.extraServices.find(
+    (service) => service.extraServices.toString() === serviceId
+  );
+
+  if (serviceExists) {
+    return res.status(400).json({ message: "Service already exists" });
   }
+
+  roomType.extraServices.push({
+    extraServices: serviceId,
+    price: price || roomType.basePrice,
+    order: order || roomType.extraServices.length,
+  });
 
   await roomType.save();
-  const updatedRoomType = await RoomTypeModel.findById(id)
+
+  const updatedRoomType = await RoomType.findById(id)
     .populate("timeSlotPricing.timeSlot")
     .populate("extraServices.extraServices");
 
   res.status(200).json({
-    success: true,
-    message: `Extra service ${action}ed successfully`,
-    data: updatedRoomType,
+    message: "Extra service added successfully",
+    roomType: updatedRoomType,
+  });
+});
+
+export const removeExtraService = asyncHandler(async (req, res) => {
+  const { id, serviceId } = req.params;
+
+  const roomType = await RoomType.findById(id);
+  if (!roomType) {
+    return res.status(404).json({ message: "Room type not found" });
+  }
+
+  roomType.extraServices = roomType.extraServices.filter(
+    (service) => service.extraServices.toString() !== serviceId
+  );
+
+  await roomType.save();
+
+  const updatedRoomType = await RoomType.findById(id)
+    .populate("timeSlotPricing.timeSlot")
+    .populate("extraServices.extraServices");
+
+  res.status(200).json({
+    message: "Extra service removed successfully",
+    roomType: updatedRoomType,
+  });
+});
+
+export const toggleRoomType = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const roomType = await RoomType.findById(id);
+
+  if (!roomType) {
+    return res.status(404).json({ message: "Room type not found" });
+  }
+
+  roomType.isActive = !roomType.isActive;
+  await roomType.save();
+
+  res.status(200).json({
+    message: `Room type ${
+      roomType.isActive ? "activated" : "deactivated"
+    } successfully`,
+    roomType,
   });
 });
 

@@ -1,31 +1,22 @@
 import express from "express";
-import { 
-  loggedInUsersOnly, 
-  managersOnly, 
-  adminsOnly 
-} from "../middleware/authMiddleware.js";
-
-import {uploadUserPhoto} from "../middleware/uploadMiddleware.js";
-import { changePassword, forgotPassword, loginUser, logoutUser, registerUser, resetPassword, userLoginStatus, verifyEmail, verifyUser } from "../controllers/auth/authController.js";
-import { addUser, getOtherUser, getUser, updateUser } from "../controllers/user/userController.js";
-import { deleteUser, getAllUsers, updateOtherUser } from "../controllers/auth/adminController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
+import { uploadUserPhoto } from "../middleware/uploadMiddleware.js";
+import {
+  addUser,  updateUserById,  deleteUserById,  getUserById,  getAllUsers,  getUserByRole,  getMe,  updateMe
+} from "../controllers/user/userController.js";
 
 const router = express.Router();
 
-// User management routes
-router.post("/add-user", managersOnly, uploadUserPhoto.single("photo"), addUser);
-router.get("/users", managersOnly, getUsers);
+// Protected Routes - Basic User Access
+router.get("/me", protect, getMe);
+router.patch("/me", protect, uploadUserPhoto.single("photo"), updateMe);
 
-// Individual user routes
-router.get("/user", loggedInUsersOnly, getUser);
-router.get("/user/:id", managersOnly, getUserById);
-router.patch("/user", loggedInUsersOnly, uploadUserPhoto.single("photo"), updateUser);
-router.patch("/update-user/:id", managersOnly, uploadUserPhoto.single("photo"), updateUserById);
-router.delete("/admin/users/:id", adminsOnly, deleteUserById);
-
-// Password management routes
-router.patch("/change-me-password", loggedInUsersOnly, changeMePassword);
-router.patch("/change-user-password/:id", managersOnly, changeUserPassword);
+// Protected Routes - Admin Access
+router.post("/users", protect, authorize("admin,manager,creator"), uploadUserPhoto.single("photo"), addUser);
+router.get("/users", protect, authorize("admin,manager,creator"), getAllUsers);
+router.get("/users/role/:role", protect, authorize("admin,manager,creator"), getUserByRole);
+router.get("/users/:id", protect, authorize("admin,manager,creator"), getUserById);
+router.patch("/users/:id", protect, authorize("admin,manager,creator"), uploadUserPhoto.single("photo"), updateUserById);
+router.delete("/users/:id", protect, authorize("admin,manager,creator"), deleteUserById);
 
 export default router;
-

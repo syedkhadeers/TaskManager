@@ -1,6 +1,10 @@
 import asyncHandler from "express-async-handler";
 import User from "../../models/users/UserModel.js";
-import {uploadImage,  updateImage,  deleteImage,} from "../../services/imageUpload.js";
+import {
+  uploadImage,
+  updateImage,
+  deleteImage,
+} from "../../services/imageUpload.js";
 import bcrypt from "bcryptjs";
 
 export const addUser = asyncHandler(async (req, res) => {
@@ -142,12 +146,6 @@ export const deleteUserById = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
-  // if user = req.user, throw error
-  if (user._id.toString() === req.user._id.toString()) {
-    return res
-      .status(400)
-      .json({ message: "You cannot delete yourself" });
-  }
 
   if (user.photo.publicId) {
     await deleteImage(user.photo.publicId);
@@ -235,20 +233,6 @@ export const updateMe = asyncHandler(async (req, res) => {
   });
 });
 
-export const deleteMe = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  if (user.photo.publicId) {
-    await deleteImage(user.photo.publicId, "user_photos");
-  }
-
-  await User.findByIdAndDelete(req.user._id);
-  res.status(200).json({ message: "User deleted successfully" });
-});
 
 export default {
   addUser,
@@ -258,6 +242,5 @@ export default {
   getAllUsers,
   getUserByRole,
   getMe,
-  updateMe,
-  deleteMe,
-};
+  updateMe
+}

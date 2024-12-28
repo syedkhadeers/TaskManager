@@ -1,56 +1,51 @@
 import express from "express";
-import { 
-    loggedInUsersOnly, managersOnly, adminsOnly 
-  } from "../middleware/authMiddleware.js";
-import { 
-    createExtraService, deleteExtraServiceById, getExtraServiceById, getExtraServices, updateExtraServiceById 
-  } from "../controllers/room/extraServiceController.js";
-import {   
-    createTimeSlot, deleteTimeSlotById, getTimeSlotById, getTimeSlots, updateTimeSlotById 
-  } from "../controllers/room/timeSlotController.js";
-import { 
-    createRoomType, deleteRoomTypeById, getRoomTypeById, getRoomTypes, updateRoomTypeById, manageTimeSlot, manageExtraService
-  } from "../controllers/room/roomTypeController.js";
-import { 
-    uploadRoomImages, uploadRoomTypeImages 
-  } from "../middleware/uploadMiddleware.js";
-import { 
-    createRoom, deleteRoomById, getRoomById, getRooms, updateRoomById 
-  } from "../controllers/room/roomController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
+import { uploadRoomTypeImages, uploadRoomImages } from "../middleware/uploadMiddleware.js";
+
+import { addExtraService,  getExtraServiceById,  updateExtraServiceById,   deleteExtraServiceById,  getAllExtraServices,  toggleExtraService } from "../controllers/room/extraServiceController.js";
+import { addTimeSlot,  getTimeSlotById,  updateTimeSlotById,  deleteTimeSlotById,   getAllTimeSlots,  toggleTimeSlot } from "../controllers/room/timeSlotController.js";
+import { addRoomType,  updateRoomType,  getRoomType,  getAllRoomTypes,  deleteRoomType,  addTimeSlot as addRoomTypeTimeSlot,  removeTimeSlot,  addExtraService as addRoomTypeExtraService,  removeExtraService,  toggleRoomType } from "../controllers/room/roomTypeController.js";
+import { addRoom,  updateRoom,  getRoom,  getAllRooms,  deleteRoom,  toggleRoom,  updateRoomStatus } from "../controllers/room/roomController.js";
 
 const router = express.Router();
 
 // Extra Service Routes
-router.post("/extraservice/create", adminsOnly, createExtraService);
-router.get("/extraservices", loggedInUsersOnly, getExtraServices);
-router.get("/extraservice/:id", loggedInUsersOnly, getExtraServiceById);
-router.patch("/extraservice/:id", managersOnly, updateExtraServiceById);
-router.delete("/extraservice/:id", adminsOnly, deleteExtraServiceById);
-router.patch("/extraservices/bulk", managersOnly, bulkUpdateExtraServices);
+router.post("/extra-services", protect, authorize("admin,manager,creator"), addExtraService);
+router.get("/extra-services", protect, getAllExtraServices);
+router.get("/extra-services/:id", protect, getExtraServiceById);
+router.patch("/extra-services/:id", protect, authorize("admin,manager,creator"), updateExtraServiceById);
+router.delete("/extra-services/:id", protect, authorize("admin,manager,creator"), deleteExtraServiceById);
+router.patch("/extra-services/:id/toggle", protect, authorize("admin,manager,creator"), toggleExtraService);
 
 // Time Slot Routes
-router.post("/timeslot/create", adminsOnly, createTimeSlot);
-router.get("/timeslots", loggedInUsersOnly, getTimeSlots);
-router.get("/timeslot/:id", loggedInUsersOnly, getTimeSlotById);
-router.patch("/timeslot/:id", managersOnly, updateTimeSlotById);
-router.delete("/timeslot/:id", adminsOnly, deleteTimeSlotById);
+router.post("/time-slots", protect, authorize("admin,manager,creator"), addTimeSlot);
+router.get("/time-slots", protect, getAllTimeSlots);
+router.get("/time-slots/:id", protect, getTimeSlotById);
+router.patch("/time-slots/:id", protect, authorize("admin,manager,creator"), updateTimeSlotById);
+router.delete("/time-slots/:id", protect, authorize("admin,manager,creator"), deleteTimeSlotById);
+router.patch("/time-slots/:id/toggle", protect, authorize("admin,manager,creator"), toggleTimeSlot);
 
 // Room Type Routes
-router.post("/roomtype/create", adminsOnly, uploadRoomTypeImages.array("images", 10), createRoomType);
-router.get("/roomtypes", loggedInUsersOnly, getRoomTypes);
-router.get("/roomtype/:id", loggedInUsersOnly, getRoomTypeById);
-router.patch("/roomtype/:id", managersOnly, uploadRoomTypeImages.array("images", 10), updateRoomTypeById);
-router.delete("/roomtype/:id", adminsOnly, deleteRoomTypeById);
+router.post("/room-types", protect, authorize("admin,manager,creator"), uploadRoomTypeImages.array("images", 10), addRoomType);
+router.get("/room-types", protect, getAllRoomTypes);
+router.get("/room-types/:id", protect, getRoomType);
+router.patch("/room-types/:id", protect, authorize("admin,manager,creator"), uploadRoomTypeImages.array("images", 10), updateRoomType);
+router.delete("/room-types/:id", protect, authorize("admin,manager,creator"), deleteRoomType);
+router.patch("/room-types/:id/toggle", protect, authorize("admin,manager,creator"), toggleRoomType);
 
-// Room Type Service Management Routes
-router.patch("/roomtype/:id/timeslot/:timeSlotId", managersOnly, manageTimeSlot);
-router.patch("/roomtype/:id/extraservice/:serviceId", managersOnly, manageExtraService);
+// Room Type Service Management
+router.post("/room-types/:id/time-slots", protect, authorize("admin,manager,creator"), addRoomTypeTimeSlot);
+router.delete("/room-types/:id/time-slots/:timeSlotId", protect, authorize("admin,manager,creator"), removeTimeSlot);
+router.post("/room-types/:id/extra-services", protect, authorize("admin,manager,creator"), addRoomTypeExtraService);
+router.delete("/room-types/:id/extra-services/:serviceId", protect, authorize("admin,manager,creator"), removeExtraService);
 
 // Room Routes
-router.post("/room/create", adminsOnly, uploadRoomImages.array("images", 10), createRoom);
-router.get("/rooms", loggedInUsersOnly, getRooms);
-router.get("/room/:id", loggedInUsersOnly, getRoomById);
-router.patch("/room/:id", managersOnly, uploadRoomImages.array("images", 10), updateRoomById);
-router.delete("/room/:id", adminsOnly, deleteRoomById);
+router.post("/rooms", protect, authorize("admin,manager,creator"), uploadRoomImages.array("images", 10), addRoom);
+router.get("/rooms", protect, getAllRooms);
+router.get("/rooms/:id", protect, getRoom);
+router.patch("/rooms/:id", protect, authorize("admin,manager,creator"), uploadRoomImages.array("images", 10), updateRoom);
+router.delete("/rooms/:id", protect, authorize("admin,manager,creator"), deleteRoom);
+router.patch("/rooms/:id/toggle", protect, authorize("admin,manager,creator"), toggleRoom);
+router.patch("/rooms/:id/status", protect, authorize("admin,manager,creator"), updateRoomStatus);
 
 export default router;

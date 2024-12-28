@@ -2,6 +2,11 @@ import cloudinary from "../config/cloudinaryConfig.js";
 import { format } from "date-fns";
 import fs from "fs/promises";
 
+const generateUniqueFileName = (folder) => {
+  const timestamp = format(new Date(), "yyyyMMddHHmmss");
+  return `${folder}${timestamp}`;
+};
+
 const deleteTemporaryFile = async (filePath) => {
   try {
     await fs.unlink(filePath);
@@ -13,28 +18,61 @@ const deleteTemporaryFile = async (filePath) => {
 
 export const uploadImage = async (file, folder = "") => {
   try {
-    const uploadDate = format(new Date(), "yyyyMMdd_HHmmss");
-    const fileName = file.originalname.split(".")[0];
-    const uniqueFileName = `${fileName}_${uploadDate}`;
+    const uniqueFileName = generateUniqueFileName(folder);
 
     const result = await cloudinary.uploader.upload(file.path, {
       public_id: uniqueFileName,
       folder: folder,
+      resource_type: "auto",
+      quality: "auto:best",
+      fetch_format: "auto",
     });
 
-    console.log(
-      `Image uploaded - ID: ${result.public_id}, Name: ${result.original_filename}`
-    );
+    console.log(`Image uploaded successfully - ID: ${result.public_id}`);
 
     return {
       url: result.secure_url,
       publicId: result.public_id,
+      format: result.format,
+      size: result.bytes,
+      createdAt: result.created_at,
     };
   } catch (error) {
     console.error("Error uploading image:", error);
-    throw new Error("Image upload failed");
+    throw new Error(`Image upload failed: ${error.message}`);
   } finally {
     await deleteTemporaryFile(file.path);
+  }
+};
+
+export const deleteImage = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      invalidate: true,
+    });
+
+    console.log(`Image deleted successfully - ID: ${publicId}`);
+    return result;
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    throw new Error(`Image deletion failed: ${error.message}`);
+  }
+};
+
+export const updateImage = async (file, publicId, folder = "") => {
+  try {
+    // Delete existing image
+    await deleteImage(publicId);
+
+    // Upload new image
+    const newImage = await uploadImage(file, folder);
+
+    console.log(`Image updated successfully - New ID: ${newImage.publicId}`);
+
+    return newImage;
+  } catch (error) {
+    console.error("Error updating image:", error);
+    throw new Error(`Image update failed: ${error.message}`);
   }
 };
 
@@ -42,21 +80,14 @@ export const uploadMultipleImages = async (files, folder = "") => {
   try {
     const uploadPromises = files.map((file) => uploadImage(file, folder));
     const results = await Promise.all(uploadPromises);
+
+    console.log(
+      `Multiple images uploaded successfully - Count: ${results.length}`
+    );
     return results;
   } catch (error) {
     console.error("Error uploading multiple images:", error);
-    throw new Error("Multiple images upload failed");
-  }
-};
-
-export const deleteImage = async (publicId) => {
-  try {
-    const result = await cloudinary.uploader.destroy(publicId);
-    console.log(`Image deleted - ID: ${publicId}`);
-    return result;
-  } catch (error) {
-    console.error("Error deleting image:", error);
-    throw new Error("Image deletion failed");
+    throw new Error(`Multiple images upload failed: ${error.message}`);
   }
 };
 
@@ -64,67 +95,40 @@ export const deleteMultipleImages = async (publicIds) => {
   try {
     const deletePromises = publicIds.map((publicId) => deleteImage(publicId));
     const results = await Promise.all(deletePromises);
+
+    console.log(
+      `Multiple images deleted successfully - Count: ${results.length}`
+    );
     return results;
   } catch (error) {
     console.error("Error deleting multiple images:", error);
-    throw new Error("Multiple images deletion failed");
+    throw new Error(`Multiple images deletion failed: ${error.message}`);
   }
 };
 
-export const updateImage = async (file, oldPublicId, folder = "") => {
+export const updateMultipleImages = async (files, publicIds, folder = "") => {
   try {
-    if (oldPublicId) {
-      await deleteImage(oldPublicId);
-    }
-    const newImage = await uploadImage(file, folder);
-    return newImage;
-  } catch (error) {
-    console.error("Error updating image:", error);
-    throw new Error("Image update failed");
-  }
-};
-
-export const updateMultipleImages = async (
-  files,
-  oldPublicIds = [],
-  folder = ""
-) => {
-  try {
-    // Delete old images if provided
-    if (oldPublicIds.length > 0) {
-      await deleteMultipleImages(oldPublicIds);
-    }
+    // Delete existing images
+    await deleteMultipleImages(publicIds);
 
     // Upload new images
     const newImages = await uploadMultipleImages(files, folder);
+
+    console.log(
+      `Multiple images updated successfully - Count: ${newImages.length}`
+    );
     return newImages;
   } catch (error) {
     console.error("Error updating multiple images:", error);
-    throw new Error("Multiple images update failed");
+    throw new Error(`Multiple images update failed: ${error.message}`);
   }
 };
 
-
-// Usage : 
-
-// // Single image upload
-// const singleImageResult = await uploadImage(fileObject, 'products');
-
-// // Multiple images upload
-// const multipleImageResults = await uploadMultipleImages([file1, file2, file3], 'products');
-
-// // Single image delete
-// await deleteImage('public_id_1');
-
-// // Multiple images delete
-// await deleteMultipleImages(['public_id_1', 'public_id_2']);
-
-// // Single image update
-// const updatedImage = await updateImage(newFile, oldPublicId, 'products');
-
-// // Multiple images update
-// const updatedImages = await updateMultipleImages(
-//   [newFile1, newFile2], 
-//   ['old_public_id_1', 'old_public_id_2'], 
-//   'products'
-// );
+export default {
+  uploadImage,
+  deleteImage,
+  updateImage,
+  uploadMultipleImages,
+  deleteMultipleImages,
+  updateMultipleImages,
+};

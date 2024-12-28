@@ -29,18 +29,6 @@ const storage = multer.diskStorage({
 
 // Enhanced file filter with detailed error messages
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "image/svg+xml",
-    "image/bmp",
-    "image/tiff",
-    "image/heic",
-    "image/avif",
-  ];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -95,33 +83,9 @@ export const validateUpload = (req, res, next) => {
 };
 
 
-// Enhanced upload configurations with specific settings
+// Enhanced upload configurations with specific settings (size , count)
 export const uploadUserPhoto = multer(createMulterConfig(2));
 
+export const uploadRoomTypeImages = multer(createMulterConfig(5, 10));
 
-export const uploadServicePhoto = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB file size limit for room images
-    files: 10, // Maximum 10 files
-  },
-});
-
-export const uploadRoomTypeImages = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB file siz
-    files: 10, // Maximum 10 files
-  },
-});
-
-export const uploadRoomImages = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 10, // Max 10 files
-  },
-});
+export const uploadRoomImages = multer(createMulterConfig(5, 10));

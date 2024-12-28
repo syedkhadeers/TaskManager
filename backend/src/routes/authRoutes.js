@@ -13,11 +13,12 @@ router.post("/login", loginUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 router.post("/verify/:token", verifyUser);
-router.post("/verify-email", verifyEmail);
 
 // Protected Routes
+
+router.post("/verify-email", protect,  verifyEmail);
 router.get("/status", protect, userLoginStatus);
 router.post("/logout", protect, logoutUser);
-router.patch("/change-password", protect, changePassword);
+router.patch("/change-password", protect,  changePassword);
 
 export default router;
