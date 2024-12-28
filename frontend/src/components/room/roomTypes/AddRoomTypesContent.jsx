@@ -8,6 +8,8 @@ import { getAllTimeSlotsExport } from "../../../services/rooms/timeSlotServices"
 import { toast } from "react-toastify";
 import MultiImageEditor from "../../editors/MultiImageEditor";
 import Select from "react-select";
+import LoadingSpinner from "../../common/LoadingSpinner";
+
 
 const AddRoomTypesContent = ({ onClose, onRoomTypeAdded }) => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -29,7 +31,7 @@ const AddRoomTypesContent = ({ onClose, onRoomTypeAdded }) => {
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [timeSlotPrice, setTimeSlotPrice] = useState("");
-
+  const [isLoading, setIsLoading] = useState(false);
   const [editingSlotIndex, setEditingSlotIndex] = useState(null);
   const [editingPrice, setEditingPrice] = useState("");
 
@@ -61,6 +63,28 @@ const AddRoomTypesContent = ({ onClose, onRoomTypeAdded }) => {
       setTimeSlots([]);
     }
   };
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      try {
+        const [services, slots] = await Promise.all([
+          getAllExtraServices(),
+          getAllTimeSlotsExport(),
+        ]);
+        setExtraServices(services);
+        setTimeSlots(slots);
+      } catch (error) {
+        toast.error("Error loading initial data");
+        console.error("Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -135,6 +159,7 @@ const handleConfirmEdit = (index) => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  setIsLoading(true);
 
   const formDataToSend = new FormData();
 
@@ -167,9 +192,7 @@ const handleSubmit = async (e) => {
   });
 
   try {
-    // Wait for all images to be processed
     await Promise.all(imagePromises);
-
     const response = await createRoomType(formDataToSend);
     if (response) {
       toast.success("Room type added successfully!");
@@ -177,10 +200,16 @@ const handleSubmit = async (e) => {
       onClose();
     }
   } catch (error) {
-    toast.error(error.message || "Failed to add room type.");
+    toast.error(error.message || "Failed to add room type");
     console.error("Error adding room type:", error);
+  } finally {
+    setIsLoading(false);
   }
 };
+
+if (isLoading) {
+  return <LoadingSpinner />;
+}
 
 
   return (
@@ -282,11 +311,12 @@ const handleSubmit = async (e) => {
             />
           </div>
 
-          <div>
+          <div className="space-y-4">
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
               Time Slot Pricing
             </label>
-            <div className="flex space-x-2 mb-2">
+
+            <div className="flex gap-3 mb-4">
               <Select
                 options={
                   Array.isArray(timeSlots)
@@ -318,91 +348,104 @@ const handleSubmit = async (e) => {
                 onChange={(selected) => setSelectedTimeSlot(selected?.value)}
                 className="react-select-container flex-grow"
                 classNamePrefix="react-select"
+                placeholder="Select time slot..."
               />
               <input
                 type="number"
                 value={timeSlotPrice}
                 onChange={(e) => setTimeSlotPrice(e.target.value)}
                 placeholder="Price"
-                className="w-24 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-32 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 type="button"
                 onClick={handleAddTimeSlot}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
               >
                 <Plus size={20} />
               </button>
             </div>
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">
-                    Time Slot
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Price
-                  </th>
-                  <th scope="col" className="px-6 py-3">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.timeSlotPricing.map((slot, index) => (
-                  <tr
-                    key={index}
-                    className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
-                  >
-                    <td className="px-6 py-4">
-                      {timeSlots.find((ts) => ts._id === slot.timeSlot)?.name}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingSlotIndex === index ? (
-                        <input
-                          type="number"
-                          value={editingPrice}
-                          onChange={(e) => setEditingPrice(e.target.value)}
-                          className="w-24 px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-                        />
-                      ) : (
-                        `$${slot.price}`
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingSlotIndex === index ? (
-                        <button
-                          type="button"
-                          onClick={() => handleConfirmEdit(index)}
-                          className="text-green-500 hover:text-green-700"
-                        >
-                          <Check size={16} />
-                        </button>
-                      ) : (
-                        <div className="flex space-x-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleEditTimeSlot(index, slot.price)
-                            }
-                            className="text-blue-500 hover:text-blue-700"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveTimeSlot(index)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-gray-700 dark:text-gray-200"
+                    >
+                      Time Slot
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-gray-700 dark:text-gray-200"
+                    >
+                      Price
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-gray-700 dark:text-gray-200"
+                    >
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {formData.timeSlotPricing.map((slot, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-200">
+                        {timeSlots.find((ts) => ts._id === slot.timeSlot)?.name}
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-200">
+                        {editingSlotIndex === index ? (
+                          <input
+                            type="number"
+                            value={editingPrice}
+                            onChange={(e) => setEditingPrice(e.target.value)}
+                            className="w-28 px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        ) : (
+                          `$${slot.price}`
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {editingSlotIndex === index ? (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmEdit(index)}
+                            className="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                          >
+                            <Check size={16} />
+                          </button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleEditTimeSlot(index, slot.price)
+                              }
+                              className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTimeSlot(index)}
+                              className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div>
@@ -434,9 +477,10 @@ const handleSubmit = async (e) => {
 
           <button
             type="submit"
-            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+            disabled={isLoading}
+            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors disabled:opacity-50"
           >
-            Add Room Type
+            {isLoading ? "Adding..." : "Add Room Type"}
           </button>
         </form>
       </div>

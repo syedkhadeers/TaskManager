@@ -23,22 +23,26 @@ const roomSchema = new mongoose.Schema(
     },
     images: [
       {
-        type: String, // allowed 10 images
-      },
-    ],
-    extraServices: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "ExtraService",
+        url: {
+          type: String,
+          default:
+            "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
+        },
+        publicId: {
+          type: String,
+          default: "",
+        },
+        order: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
     description: {
       type: String,
     },
-    allowedPeople: {
-      type: Number,
-    },
     amenities: [
+      // multiple with comma separated
       {
         type: String,
       },
@@ -61,6 +65,11 @@ const roomSchema = new mongoose.Schema(
   }
 );
 
+// compound indexes
+roomSchema.index({ floor: 1, roomNumber: 1 }); // For searching rooms by floor and room number
+roomSchema.index({ status: 1, roomType: 1 }); // For filtering available rooms by type
+roomSchema.index({ isActive: 1, status: 1 }); // For querying active rooms with specific status
+roomSchema.index({ smokingAllowed: 1, petsAllowed: 1, status: 1 }); // For filtering rooms by preferences
 
 const RoomModel = mongoose.model("Room", roomSchema);
 export default RoomModel;

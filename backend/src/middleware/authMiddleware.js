@@ -1,75 +1,60 @@
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
-import User from "../models/auth/UserModel.js";
+import User from "../models/users/UserModel.js";
 
-// Protect middleware to check if the user is logged in
+// Base protect middleware
 export const protect = asyncHandler(async (req, res, next) => {
   try {
-    // Check if user is logged in
     const token = req.cookies.token;
-
     if (!token) {
-      // 401 Unauthorized
       return res
         .status(401)
-        .json({ message: "Token not received at protect, please login!" });
+        .json({ message: "Please login to access this resource" });
     }
 
-    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Get user details from the token ----> exclude password
     const user = await User.findById(decoded.id).select("-password");
 
-    // Check if user exists
     if (!user) {
-      return res.status(404).json({ message: "User  not found at protect!" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Set user details in the request object
     req.user = user;
-
     next();
   } catch (error) {
-    // 401 Unauthorized
-    return res
-      .status(401)
-      .json({ message: "Token failed at protect, token failed!" });
+    return res.status(401).json({ message: "Authentication failed" });
   }
 });
 
-// Admin middleware to check if the user is an admin
-export const adminMiddleware = asyncHandler(async (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    return next();
-  }
+// Role-based middleware generator
+export const authorize = (...allowedRoles) => {
+  return asyncHandler(async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Please login first" });
+    }
 
-  return res
-    .status(403)
-    .json({ message: "Unauthorized access at adminMiddleware!" });
+    if (allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+
+    return res.status(403).json({
+      message: `Role ${req.user.role} is not authorized to access this resource`,
+    });
+  });
+};
+
+// Verified user middleware
+export const isVerified = asyncHandler(async (req, res, next) => {
+  if (!req.user.isVerified) {
+    return res.status(403).json({ message: "Please verify your email first" });
+  }
+  next();
 });
 
-// Creator middleware to check if the user is a creator or admin
-export const creatorMiddleware = asyncHandler(async (req, res, next) => {
-  if (
-    (req.user && req.user.role === "creator") ||
-    (req.user && req.user.role === "admin")
-  ) {
-    return next();
-  }
 
-  return res
-    .status(403)
-    .json({ message: "Unauthorized access at creatorMiddleware!" });
-});
+// // how to use it : 
 
-// Verified middleware to check if the user is verified
-export const verifiedMiddleware = asyncHandler(async (req, res, next) => {
-  if (req.user && req.user.isVerified) {
-    return next();
-  }
-
-  return res
-    .status(403)
-    .json({ message: "Please Verify Your Email at verifiedMiddleware!" });
-});
+// router.get("/users", protect, authorize("admin", "creator"), getAllUsers);
+// router.post("/tasks", protect, authorize("manager", "admin"), isVerified, createTask);
+// router.get("/reports", protect, authorize("manager", "admin", "creator"), getReports);
+// router.patch("/settings", protect, authorize("admin"), updateSettings);

@@ -1,72 +1,129 @@
 import asyncHandler from "express-async-handler";
-import User from "../../models/auth/UserModel.js";
-import generateToken from "../../helpers/generateToken.js";
+import User from "../../models/users/UserModel.js";
+import generateToken, {
+  generateRefreshToken,
+} from "../../services/generateToken.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Token from "../../models/auth/Token.js";
 import crypto from "node:crypto";
-import hashToken from "../../helpers/hashToken.js";
-import sendEmail from "../../helpers/sendEmail.js";
-import { uploadImage, updateImage } from "../../helpers/imageUpload.js";
+import hashToken, { verifyHash } from "../../services/hashToken.js";
+import sendEmail from "../../services/sendEmail.js";
+import {
+  uploadImage
+} from "../../services/imageUpload.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const {
+    title,
+    firstName,
+    lastName,
+    email,
+    password,
+    userName,
+    gender,
+    dateOfBirth,
+    department,
+    branch,
+    address,
+    city,
+    pinCode,
+    state,
+    country,
+    mobile,
+    alternateMobile,
+    bio,
+  } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "Please enter all the fields" });
+  if (!firstName || !email || !password) {
+    return res.status(400).json({ message: "Required fields missing" });
   }
 
   if (password.length < 6) {
     return res
       .status(400)
-      .json({ message: "Password must be up to 6 characters" });
+      .json({ message: "Password must be at least 6 characters" });
   }
 
-  const userExists = await User.findOne({ email });
+  const userExists = await User.findOne({
+    $or: [{ email }, { userName }],
+  });
 
   if (userExists) {
-    return res.status(400).json({ message: "User already exists" });
+    return res.status(400).json({
+      message:
+        userExists.email === email
+          ? "Email already registered"
+          : "Username taken",
+    });
   }
 
-  let photoUrl = "https://avatars.githubusercontent.com/u/19819005?v=4";
-  let photoPublicId = "";
+  let photoData = {
+    url: "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
+    publicId: "",
+  };
 
   if (req.file) {
     const uploadResult = await uploadImage(req.file, "user_photos");
-    photoUrl = uploadResult.url;
-    photoPublicId = uploadResult.publicId;
+    photoData = {
+      url: uploadResult.url,
+      publicId: uploadResult.publicId,
+    };
   }
 
+  const fullName = `${firstName} ${lastName}`.trim();
+
   const user = await User.create({
-    name,
+    title: title || "Mr.",
+    firstName,
+    lastName,
+    fullName,
     email,
+    userName: userName || email.split("@")[0],
     password,
-    photo: {
-      url: photoUrl,
-      publicId: photoPublicId,
-    },
+    photo: photoData,
+    gender,
+    dateOfBirth,
+    department,
+    branch,
+    address,
+    city,
+    pinCode,
+    state,
+    country,
+    mobile,
+    alternateMobile,
+    bio: bio || "I am a new user",
   });
 
   const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
 
+  // Set cookies
   res.cookie("token", token, {
     path: "/",
-    maxAge: 1000 * 60 * 60 * 24 * 30,
     httpOnly: true,
-    secure: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: "none",
+    secure: true,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    path: "/",
+    httpOnly: true,
+    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+    sameSite: "none",
+    secure: true,
   });
 
   if (user) {
-    const { _id, name, email, role, photo, bio, isVerified } = user;
-
+    const { _id, fullName, email, role, photo, isVerified } = user;
     res.status(201).json({
       _id,
-      name,
+      fullName,
       email,
       role,
       photo: photo.url,
-      bio,
       isVerified,
       token,
     });
@@ -75,85 +132,87 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-// user login
 export const loginUser = asyncHandler(async (req, res) => {
-  // get email and password from req.body
   const { email, password } = req.body;
 
-  // validation
   if (!email || !password) {
-    // 400 Bad Request
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "Email and password required" });
   }
 
-  // check if user exists
-  const userExists = await User.findOne({ email });
+  const user = await User.findOne({ email })
+    .select("+password")
+    .lean()
+    .exec();
 
-  if (!userExists) {
-    return res.status(404).json({ message: "User not found, sign up!" });
+  if (!user) {
+    return res.status(404).json({ message: "Account not found" });
   }
 
-  // check id the password match the hashed password in the database
-  const isMatch = await bcrypt.compare(password, userExists.password);
+  const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    // 400 Bad Request
-    return res.status(400).json({ message: "Invalid credentials" });
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  // generate token with user id
-  const token = generateToken(userExists._id);
+  const token = generateToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
 
-  if (userExists && isMatch) {
-    const { _id, name, email, role, photo, bio, isVerified } = userExists;
+  res.cookie("token", token, {
+    path: "/",
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: "none",
+    secure: true,
+  });
 
-    // set the token in the cookie
-    res.cookie("token", token, {
-      path: "/",
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: "none", // cross-site access --> allow all third-party cookies
-      secure: true,
-    });
+  res.cookie("refreshToken", refreshToken, {
+    path: "/",
+    httpOnly: true,
+    maxAge: 90 * 24 * 60 * 60 * 1000,
+    sameSite: "none",
+    secure: true,
+  });
 
-    // send back the user and token in the response to the client
-    res.status(200).json({
-      _id,
-      name,
-      email,
-      role,
-      photo,
-      bio,
-      isVerified,
-      token,
-    });
-  } else {
-    res.status(400).json({ message: "Invalid email or password" });
-  }
+  const { password: _, ...userWithoutPassword } = user;
+  
+  res.status(200).json({
+    ...userWithoutPassword,
+    token
+  });
 });
 
 export const logoutUser = asyncHandler(async (req, res) => {
-  res.clearCookie("token");
+  res.cookie("token", "", {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "none",
+    secure: true,
+  });
 
-  res.status(200).json({ message: "User logged out" });
+  res.cookie("refreshToken", "", {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "none",
+    secure: true,
+  });
+
+  res.status(200).json({ message: "Logout successful" });
 });
-
 
 export const userLoginStatus = asyncHandler(async (req, res) => {
   const token = req.cookies.token;
-
+  
   if (!token) {
-    res.status(401).json({
-      message: "Token not received at userLoginStatus, please login!",
-    });
+    return res.status(401).json({ isLoggedIn: false });
   }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-  if (decoded) {
-    res.status(200).json(true);
-  } else {
-    res.status(401).json(false);
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    return res.status(200).json({ isLoggedIn: true, user: verified });
+  } catch (error) {
+    return res.status(401).json({ isLoggedIn: false });
   }
 });
 
@@ -161,89 +220,63 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (!user) {
-    res.status(404).json({ message: "User not found" });
+    return res.status(404).json({ message: "User not found" });
   }
 
   if (user.isVerified) {
-    res.status(400).json({ message: "User already verified" });
+    return res.status(400).json({ message: "Email already verified" });
   }
 
-  const token = await Token.findOne({ userId: user._id });
+  await Token.deleteMany({ userId: user._id, type: "emailVerification" });
 
-  if (token) {
-    await token.deleteOne();
-  }
+  const verificationToken = crypto.randomBytes(64).toString("hex");
+  const { hash, salt } = hashToken(verificationToken);
 
-  const verificationToken = crypto.randomBytes(64).toString("hex") + user._id;
-
-  const hashedToken = await hashToken(verificationToken);
-
-  await new Token({
+  await Token.create({
     userId: user._id,
-    verificationToken: hashedToken,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-  }).save();
+    type: "emailVerification",
+    token: hash,
+    salt,
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000
+  });
 
-  const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+  const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
-  //send email
+  await sendEmail({
+    subject: "Email Verification",
+    to: user.email,
+    template: "emailVerification",
+    data: {
+      name: user.fullName,
+      url: verificationUrl
+    }
+  });
 
-  const subject = "Email Verification - AuthKit";
-  const send_to = user.email;
-  const sent_from = process.env.EMAIL_USER;
-  const reply_to = process.env.EMAIL_REPLY_USER;
-  const template = "emailVerification";
-  const name = user.name;
-  const url = verificationLink;
-
-  try {
-    await sendEmail(subject, send_to, sent_from, reply_to, template, name, url);
-    res
-      .status(200)
-      .json({ message: "Email verification link sent to your email" });
-  } catch (error) {
-    console.log(`Error sending email: ${error}`);
-    res
-      .status(500)
-      .json({ message: "Email verification link could not be sent" });
-  }
+  res.status(200).json({ message: "Verification email sent" });
 });
 
 export const verifyUser = asyncHandler(async (req, res) => {
-  const { verificationToken } = req?.params;
+  const { token } = req.params;
 
-  if (!verificationToken) {
-    return res.status(400).json({ message: "Invalid verification token" });
-  }
-  // hash the verification token --> because it was hashed before saving
-  const hashedToken = await hashToken(verificationToken);
-
-  // find user with the verification token
-  const userToken = await Token.findOne({
-    verificationToken: hashedToken,
-    // check if the token has not expired
-    expiresAt: { $gt: Date.now() },
+  const storedToken = await Token.findOne({ 
+    type: "emailVerification",
+    expiresAt: { $gt: Date.now() }
   });
 
-  if (!userToken) {
-    return res
-      .status(400)
-      .json({ message: "Invalid or expired verification token" });
+  if (!storedToken) {
+    return res.status(400).json({ message: "Invalid or expired verification link" });
   }
 
-  //find user with the user id in the token
-  const user = await User.findById(userToken.userId);
+  const isValid = verifyHash(token, storedToken.salt, storedToken.token);
 
-  if (user.isVerified) {
-    // 400 Bad Request
-    return res.status(400).json({ message: "User is already verified" });
+  if (!isValid) {
+    return res.status(400).json({ message: "Invalid verification token" });
   }
 
-  // update user to verified
-  user.isVerified = true;
-  await user.save();
-  res.status(200).json({ message: "User verified" });
+  await User.findByIdAndUpdate(storedToken.userId, { isVerified: true });
+  await Token.deleteMany({ userId: storedToken.userId, type: "emailVerification" });
+
+  res.status(200).json({ message: "Email verified successfully" });
 });
 
 export const forgotPassword = asyncHandler(async (req, res) => {
@@ -256,108 +289,124 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(404).json({ message: "User not found in Database" });
+    return res
+      .status(404)
+      .json({ message: "No account found with this email" });
   }
 
-  let token = await Token.findOne({ userId: user._id });
+  await Token.deleteMany({ userId: user._id, type: "passwordReset" });
 
-  if (token) {
-    await token.deleteOne();
-  }
+  const resetToken = crypto.randomBytes(64).toString("hex");
+  const { hash, salt } = hashToken(resetToken);
 
-  const passwordResetToken = crypto.randomBytes(64).toString("hex") + user._id;
-
-  const hashedToken = await hashToken(passwordResetToken);
-
-  await new Token({
+  await Token.create({
     userId: user._id,
-    passwordResetToken: hashedToken,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + 1 * 60 * 60 * 1000, // 24 hours
-  }).save();
+    type: "passwordReset",
+    token: hash,
+    salt,
+    expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
+  });
 
-  const resetLink = `${process.env.CLIENT_URL}/reset-password/${passwordResetToken}`;
+  const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-  //send email
+  await sendEmail({
+    subject: "Password Reset Request",
+    to: user.email,
+    template: "forgotPassword",
+    data: {
+      name: user.fullName,
+      url: resetUrl,
+    },
+  });
 
-  const subject = "Password Reset - AuthKit";
-  const send_to = user.email;
-  const sent_from = process.env.EMAIL_USER;
-  const reply_to = process.env.EMAIL_REPLY_USER;
-  const template = "forgotPassword";
-  const name = user.name;
-  const url = resetLink;
-
-  try {
-    await sendEmail(subject, send_to, sent_from, reply_to, template, name, url);
-    res.status(200).json({ message: "Password reset link sent to your email" });
-  } catch (error) {
-    console.log(`Error sending email: ${error}`);
-    res.status(500).json({ message: "Password reset link could not be sent" });
-  }
+  res
+    .status(200)
+    .json({ message: "Password reset instructions sent to email" });
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
-  const { resetPasswordToken } = req?.params;
-
+  const { token } = req.params;
   const { password } = req.body;
 
-  if (!password) {
-    return res.status(400).json({ message: "Password is required" });
+  if (!password || password.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters" });
   }
 
-  //hash reset token
-  const hashedToken = await hashToken(resetPasswordToken);
-
-  //toxen exists
-  const userToken = await Token.findOne({
-    passwordResetToken: hashedToken,
+  const storedToken = await Token.findOne({
+    type: "passwordReset",
     expiresAt: { $gt: Date.now() },
   });
 
-  if (!userToken) {
-    return res
-      .status(400)
-      .json({ message: "Invalid or expired password reset token" });
+  if (!storedToken) {
+    return res.status(400).json({ message: "Invalid or expired reset link" });
   }
 
-  //find user with the user id in the token
-  const user = await User.findById(userToken.userId);
+  const isValid = verifyHash(token, storedToken.salt, storedToken.token);
 
-  //update password
+  if (!isValid) {
+    return res.status(400).json({ message: "Invalid reset token" });
+  }
+
+  const user = await User.findById(storedToken.userId);
   user.password = password;
   await user.save();
 
-  res.status(200).json({ message: "Password reset successfully" });
+  await Token.deleteMany({ userId: user._id, type: "passwordReset" });
+
+  res.status(200).json({ message: "Password reset successful" });
 });
 
 export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
+  const userId = req.user._id;
 
   if (!currentPassword || !newPassword) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  //find user by id
-  const user = await User.findById(req.user._id);
+  if (newPassword.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "New password must be at least 6 characters" });
+  }
+
+  const user = await User.findById(userId).select("+password");
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  //check if the password match the hashed password in the database
   const isMatch = await bcrypt.compare(currentPassword, user.password);
 
   if (!isMatch) {
-    // 400 Bad Request
-    return res.status(400).json({ message: "Current password is incorrect" });
+    return res.status(401).json({ message: "Current password is incorrect" });
   }
 
-  if (isMatch) {
-    user.password = newPassword;
-    await user.save();
-    res.status(200).json({ message: "Password changed successfully" });
-  } else {
-    res.status(400).json({ message: "Password could not be changed" });
-  }
+  user.password = newPassword;
+  await user.save();
+
+  // Optionally force re-login by clearing tokens
+  res.cookie("token", "", {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "none",
+    secure: true,
+  });
+
+  res.status(200).json({ message: "Password updated successfully" });
 });
+
+export default {
+  registerUser,
+  loginUser,
+  logoutUser,
+  userLoginStatus,
+  verifyEmail,
+  verifyUser,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+};

@@ -13,35 +13,72 @@ const roomTypeSchema = new mongoose.Schema(
     basePrice: {
       type: Number,
       required: true,
+      default: 0,
     },
     specialPrice: {
       type: Number,
+      default: 0,
     },
     offerPrice: {
       type: Number,
+      default: 0,
     },
     maxOccupancy: {
       type: Number,
+      required: true,
       min: [1, "Minimum occupancy is 1"],
+      default: 1,
     },
     timeSlotPricing: [
       {
         timeSlot: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "TimeSlot",
+          unique: true,
+          required: true,
         },
-        price: Number,
+        price: {
+          type: Number,
+          required: true,
+        },
+        order: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
     extraServices: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "ExtraService",
+        extraServices: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "ExtraService",
+          unique: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+        order: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
     images: [
       {
-        type: String, 
+        url: {
+          type: String,
+          default:
+            "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
+        },
+        publicId: {
+          type: String,
+          default: "",
+        },
+        order: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
     isActive: {
@@ -54,6 +91,10 @@ const roomTypeSchema = new mongoose.Schema(
   }
 );
 
+// Compound indexes
+roomTypeSchema.index({ name: "text", description: "text" }); // Text index for search functionality
+roomTypeSchema.index({ name: 1, isActive: 1 }); // Compound index for queries combining name and status
+roomTypeSchema.index({ basePrice: 1, specialPrice: 1, offerPrice: 1 }); // Index for price-based queries
 
 const RoomTypeModel = mongoose.model("RoomType", roomTypeSchema);
 export default RoomTypeModel;

@@ -1,130 +1,108 @@
 import asyncHandler from "express-async-handler";
-import TimeSlotModel from "../../models/rooms/TimeSlotModel.js";
+import TimeSlot from "../../models/rooms/TimeSlotModel.js";
 
-export const createTimeSlot = asyncHandler(async (req, res) => {
-  try {
-    const {
-      name,
-      checkInTime,
-      checkOutTime,
-      priceMultiplier,
-      sameDay,
-      isActive,
-    } = req.body;
+export const addTimeSlot = asyncHandler(async (req, res) => {
+  const { name, checkInTime, checkOutTime, sameDay, priceMultiplier } =
+    req.body;
 
-    if (!name || !checkInTime || !checkOutTime || !priceMultiplier) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Name, check-in time, check-out time, and price multiplier are required",
-        });
-    }
-
-    const timeSlot = new TimeSlotModel({
-      name,
-      checkInTime,
-      checkOutTime,
-      priceMultiplier,
-      sameDay,
-      isActive,
-    });
-
-    await timeSlot.save();
-
-    res
-      .status(201)
-      .json({ message: "Time slot created successfully", timeSlot });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating time slot" });
+  if (!name || !checkInTime || !checkOutTime) {
+    return res.status(400).json({ message: "Required fields missing" });
   }
+
+  const timeSlotExists = await TimeSlot.findOne({ name });
+  if (timeSlotExists) {
+    return res.status(400).json({ message: "Time slot name already exists" });
+  }
+
+  const timeSlot = await TimeSlot.create({
+    name,
+    checkInTime,
+    checkOutTime,
+    sameDay: sameDay || "SameDay",
+    priceMultiplier: priceMultiplier || 1,
+  });
+
+  res.status(201).json({
+    message: "Time slot created successfully",
+    timeSlot,
+  });
 });
 
-export const getTimeSlots = asyncHandler(async (req, res) => {
-  try {
-    const timeSlots = await TimeSlotModel.find();
-    res
-      .status(200)
-      .json({
-        message: "Time slots fetched successfully",
-        timeSlots,
-        count: timeSlots.length,
-      });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting time slots" });
+export const getTimeSlotById = asyncHandler(async (req, res) => {
+  const timeSlot = await TimeSlot.findById(req.params.id);
+
+  if (!timeSlot) {
+    return res.status(404).json({ message: "Time slot not found" });
   }
+
+  res.status(200).json(timeSlot);
 });
 
-export const getTimeSlot = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const timeSlot = await TimeSlotModel.findById(id);
+export const updateTimeSlotById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updateData = { ...req.body };
 
-    if (!timeSlot) {
-      return res.status(404).json({ message: "Time slot not found" });
-    }
-
-    res
-      .status(200)
-      .json({ message: "Time slot fetched successfully", timeSlot });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting time slot" });
+  const timeSlot = await TimeSlot.findById(id);
+  if (!timeSlot) {
+    return res.status(404).json({ message: "Time slot not found" });
   }
+
+  const updatedTimeSlot = await TimeSlot.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true }
+  );
+
+  res.status(200).json({
+    message: "Time slot updated successfully",
+    timeSlot: updatedTimeSlot,
+  });
 });
 
-export const updateTimeSlot = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      name,
-      checkInTime,
-      checkOutTime,
-      priceMultiplier,
-      sameDay,
-      isActive,
-    } = req.body;
+export const deleteTimeSlotById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const timeSlot = await TimeSlot.findById(id);
 
-    const timeSlot = await TimeSlotModel.findById(id);
-
-    if (!timeSlot) {
-      return res.status(404).json({ message: "Time slot not found" });
-    }
-
-    timeSlot.name = name || timeSlot.name;
-    timeSlot.checkInTime = checkInTime || timeSlot.checkInTime;
-    timeSlot.checkOutTime = checkOutTime || timeSlot.checkOutTime;
-    timeSlot.priceMultiplier = priceMultiplier || timeSlot.priceMultiplier;
-    timeSlot.sameDay = sameDay || timeSlot.sameDay;
-    timeSlot.isActive = isActive !== undefined ? isActive : timeSlot.isActive;
-
-    await timeSlot.save();
-
-    res
-      .status(200)
-      .json({ message: "Time slot updated successfully", timeSlot });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating time slot" });
+  if (!timeSlot) {
+    return res.status(404).json({ message: "Time slot not found" });
   }
+
+  await TimeSlot.findByIdAndDelete(id);
+  res.status(200).json({ message: "Time slot deleted successfully" });
 });
 
-export const deleteTimeSlot = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const timeSlot = await TimeSlotModel.findById(id);
-
-    if (!timeSlot) {
-      return res.status(404).json({ message: "Time slot not found" });
-    }
-
-    await TimeSlotModel.findByIdAndDelete(id);
-
-    res.status(200).json({ message: "Time slot deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting time slot" });
-  }
+export const getAllTimeSlots = asyncHandler(async (req, res) => {
+  const timeSlots = await TimeSlot.find();
+  res.status(200).json({
+    count: timeSlots.length,
+    timeSlots,
+  });
 });
+
+export const toggleTimeSlot = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const timeSlot = await TimeSlot.findById(id);
+
+  if (!timeSlot) {
+    return res.status(404).json({ message: "Time slot not found" });
+  }
+
+  timeSlot.isActive = !timeSlot.isActive;
+  await timeSlot.save();
+
+  res.status(200).json({
+    message: `Time slot ${
+      timeSlot.isActive ? "activated" : "deactivated"
+    } successfully`,
+    timeSlot,
+  });
+});
+
+export default {
+  addTimeSlot,
+  getTimeSlotById,
+  updateTimeSlotById,
+  deleteTimeSlotById,
+  getAllTimeSlots,
+  toggleTimeSlot,
+};

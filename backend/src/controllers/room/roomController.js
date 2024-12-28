@@ -1,165 +1,195 @@
 import asyncHandler from "express-async-handler";
-import RoomModel from "../../models/rooms/RoomModel.js";
-import { uploadImage, deleteImage, } from "../../helpers/imageUpload.js";
+import Room from "../../models/rooms/RoomModel.js";
+import RoomType from "../../models/rooms/RoomTypeModel.js";
+import {
+  uploadMultipleImages,
+  deleteMultipleImages,
+} from "../../services/imageUpload.js";
 
-export const createRoom = asyncHandler(async (req, res) => {
-  try {
-    const {
-      roomNumber,
-      roomType,
-      floor,
-      description,
-      allowedPeople,
-      amenities,
-      smokingAllowed,
-      petsAllowed,
-    } = req.body;
+export const addRoom = asyncHandler(async (req, res) => {
+  const {
+    roomNumber,
+    roomType,
+    status,
+    floor,
+    description,
+    amenities,
+    smokingAllowed,
+    petsAllowed,
+  } = req.body;
 
-    if (!roomNumber || !roomType || !floor ) {
-      return res.status(400).json({
-        message:
-          "Room number, room type,and floor are required",
-      });
-    }
-
-    let images = [];
-
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const result = await uploadImage(file, "room_images");
-        images.push(result.url);
-      }
-    }
-
-    const room = new RoomModel({
-      roomNumber,
-      roomType,
-      floor,
-      description,
-      allowedPeople,
-      amenities,
-      smokingAllowed,
-      petsAllowed,
-      images,
-    });
-
-    await room.save();
-
-    res.status(201).json({ message: "Room created successfully", room });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating room" });
+  if (!roomNumber || !roomType || !floor) {
+    return res.status(400).json({ message: "Required fields missing" });
   }
-});
 
-export const getRooms = asyncHandler(async (req, res) => {
-  try {
-    const rooms = await RoomModel.find().populate("roomType");
-    res
-      .status(200)
-      .json({
-        message: "Rooms fetched successfully",
-        rooms,
-        count: rooms.length,
-      });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting rooms" });
+  const roomExists = await Room.findOne({ roomNumber });
+  if (roomExists) {
+    return res.status(400).json({ message: "Room number already exists" });
   }
-});
 
-export const getRoom = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const room = await RoomModel.findById(id).populate("roomType");
-
-    if (!room) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    res.status(200).json({ message: "Room fetched successfully", room });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting room" });
+  const roomTypeExists = await RoomType.findById(roomType);
+  if (!roomTypeExists) {
+    return res.status(400).json({ message: "Room type not found" });
   }
+
+  let imagesData = [];
+  if (req.files?.length > 0) {
+    const uploadResults = await uploadMultipleImages(req.files, "room_photos");
+    imagesData = uploadResults.map((result, index) => ({
+      url: result.url,
+      publicId: result.publicId,
+      order: index,
+    }));
+  }
+
+  const room = await Room.create({
+    roomNumber,
+    roomType,
+    status,
+    floor,
+    description,
+    amenities: amenities || [],
+    smokingAllowed: smokingAllowed || false,
+    petsAllowed: petsAllowed || false,
+    images: imagesData,
+  });
+
+  const populatedRoom = await Room.findById(room._id).populate("roomType");
+
+  res.status(201).json({
+    message: "Room created successfully",
+    room: populatedRoom,
+  });
 });
 
 export const updateRoom = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      roomNumber,
-      roomType,
-      floor,
-      description,
-      allowedPeople,
-      amenities,
-      smokingAllowed,
-      petsAllowed,
-      status,
-    } = req.body;
+  const { id } = req.params;
+  const updateData = { ...req.body };
 
-    const room = await RoomModel.findById(id);
-
-    if (!room) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    room.roomNumber = roomNumber || room.roomNumber;
-    room.roomType = roomType || room.roomType;
-    room.floor = floor || room.floor;
-    room.description = description || room.description;
-    room.allowedPeople = allowedPeople || room.allowedPeople;
-    room.amenities = amenities || room.amenities;
-    room.smokingAllowed =
-      smokingAllowed !== undefined ? smokingAllowed : room.smokingAllowed;
-    room.petsAllowed =
-      petsAllowed !== undefined ? petsAllowed : room.petsAllowed;
-    room.status = status || room.status;
-
-    if (req.files && req.files.length > 0) {
-      // Delete existing images
-      for (const imageUrl of room.images) {
-        await deleteImage(imageUrl);
-      }
-
-      // Upload new images
-      const newImages = [];
-      for (const file of req.files) {
-        const result = await uploadImage(file, "room_images");
-        newImages.push(result.url);
-      }
-      room.images = newImages;
-    }
-
-    await room.save();
-
-    res.status(200).json({ message: "Room updated successfully", room });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating room" });
+  const room = await Room.findById(id);
+  if (!room) {
+    return res.status(404).json({ message: "Room not found" });
   }
+
+  if (updateData.roomType) {
+    const roomTypeExists = await RoomType.findById(updateData.roomType);
+    if (!roomTypeExists) {
+      return res.status(400).json({ message: "Room type not found" });
+    }
+  }
+
+  if (req.files?.length > 0) {
+    const existingPublicIds = room.images
+      .map((img) => img.publicId)
+      .filter((id) => id);
+    if (existingPublicIds.length > 0) {
+      await deleteMultipleImages(existingPublicIds);
+    }
+
+    const uploadResults = await uploadMultipleImages(req.files, "room_photos");
+    updateData.images = uploadResults.map((result, index) => ({
+      url: result.url,
+      publicId: result.publicId,
+      order: index,
+    }));
+  }
+
+  const updatedRoom = await Room.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true }
+  ).populate("roomType");
+
+  res.status(200).json({
+    message: "Room updated successfully",
+    room: updatedRoom,
+  });
+});
+
+export const getRoom = asyncHandler(async (req, res) => {
+  const room = await Room.findById(req.params.id).populate("roomType");
+
+  if (!room) {
+    return res.status(404).json({ message: "Room not found" });
+  }
+
+  res.status(200).json(room);
+});
+
+export const getAllRooms = asyncHandler(async (req, res) => {
+  const rooms = await Room.find().populate("roomType");
+
+  res.status(200).json({
+    count: rooms.length,
+    rooms,
+  });
 });
 
 export const deleteRoom = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
-    const room = await RoomModel.findById(id);
+  const { id } = req.params;
+  const room = await Room.findById(id);
 
-    if (!room) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    // Delete room images
-    for (const imageUrl of room.images) {
-      await deleteImage(imageUrl);
-    }
-
-    await RoomModel.findByIdAndDelete(id);
-
-    res.status(200).json({ message: "Room deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting room" });
+  if (!room) {
+    return res.status(404).json({ message: "Room not found" });
   }
+
+  const publicIds = room.images.map((img) => img.publicId).filter((id) => id);
+  if (publicIds.length > 0) {
+    await deleteMultipleImages(publicIds);
+  }
+
+  await Room.findByIdAndDelete(id);
+  res.status(200).json({ message: "Room deleted successfully" });
 });
+
+export const toggleRoom = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const room = await Room.findById(id);
+
+  if (!room) {
+    return res.status(404).json({ message: "Room not found" });
+  }
+
+  room.isActive = !room.isActive;
+  await room.save();
+
+  res.status(200).json({
+    message: `Room ${room.isActive ? "activated" : "deactivated"} successfully`,
+    room,
+  });
+});
+
+export const updateRoomStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!["available", "occupied", "maintenance", "reserved"].includes(status)) {
+    return res.status(400).json({ message: "Invalid room status" });
+  }
+
+  const room = await Room.findById(id);
+  if (!room) {
+    return res.status(404).json({ message: "Room not found" });
+  }
+
+  room.status = status;
+  await room.save();
+
+  const updatedRoom = await Room.findById(id).populate("roomType");
+
+  res.status(200).json({
+    message: `Room status updated to ${status} successfully`,
+    room: updatedRoom,
+  });
+});
+
+
+export default {
+  addRoom,
+  updateRoom,
+  getRoom,
+  getAllRooms,
+  deleteRoom,
+  toggleRoom,
+  updateRoomStatus,
+};

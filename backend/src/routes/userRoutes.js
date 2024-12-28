@@ -8,7 +8,7 @@ import {
 
 import {uploadUserPhoto} from "../middleware/uploadMiddleware.js";
 import { changePassword, forgotPassword, loginUser, logoutUser, registerUser, resetPassword, userLoginStatus, verifyEmail, verifyUser } from "../controllers/auth/authController.js";
-import { addUser, getOtherUser, getUser, updateUser } from "../controllers/auth/userController.js";
+import { addUser, getOtherUser, getUser, updateUser } from "../controllers/user/userController.js";
 import { deleteUser, getAllUsers, updateOtherUser } from "../controllers/auth/adminController.js";
 
 const router = express.Router();
