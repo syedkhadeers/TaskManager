@@ -1,18 +1,29 @@
-// src/components/common/PrivateRoute.jsx
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+import PropTypes from "prop-types";
 import { useAuth } from "../../hooks/useAuth";
+import LoadingSpinner from "./LoadingSpinner";
+import { getCurrentUser } from "../../services/auth/authServices";
 
-const PrivateRoute = ({ element }) => {
+const PrivateRoute = ({ element, redirectPath = "/login" }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
-  // If loading, you may want to render a loading spinner or nothing
   if (isLoading) {
-    return <div>Loading...</div>; // Or any loading spinner
+    return <LoadingSpinner />;
   }
 
-  // If the user is authenticated, return the element; otherwise, redirect to login
-  return isAuthenticated ? element : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  }
+
+  return element;
+};
+
+PrivateRoute.propTypes = {
+  element: PropTypes.element.isRequired,
+  redirectPath: PropTypes.string,
 };
 
 export default PrivateRoute;
+

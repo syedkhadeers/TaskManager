@@ -41,10 +41,7 @@ const roomTypeSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        order: {
-          type: Number,
-          default: 0,
-        },
+        order: Number,
       },
     ],
     extraServices: [
@@ -69,7 +66,7 @@ const roomTypeSchema = new mongoose.Schema(
         url: {
           type: String,
           default:
-            "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
+            "https://drive.google.com/file/d/1s9LUGejbrY3HwuDqxQbdhv0ri1kdZu5l/view?usp=sharing",
         },
         publicId: {
           type: String,
@@ -91,8 +88,9 @@ const roomTypeSchema = new mongoose.Schema(
   }
 );
 
+
 // Compound indexes
-roomTypeSchema.index({ name: "text", description: "text" }); // Text index for search functionality
+roomTypeSchema.index({ name: 'text', description: 'text' }); // Text index for search functionality
 roomTypeSchema.index({ name: 1, isActive: 1 }); // Compound index for queries combining name and status
 roomTypeSchema.index({ basePrice: 1, specialPrice: 1, offerPrice: 1 }); // Index for price-based queries
 

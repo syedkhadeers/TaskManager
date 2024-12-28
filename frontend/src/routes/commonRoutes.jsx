@@ -1,8 +1,9 @@
 // src/routes/user.jsx
 
-import DashboardPage from "../pages/DashboardPage";
+import DashboardPage from "../pages/common/DashboardPage";
 import PrivateRoute from "../components/common/PrivateRoute";
-import LandingPage from "../pages/LandingPage";
+import LandingPage from "../pages/common/LandingPage";
+import Forbidden from "../pages/common/forbiddenPage";
 
 export const commonRoutes = [
   {
@@ -13,4 +14,8 @@ export const commonRoutes = [
     path: "/",
     element: <LandingPage />,
   },
+  {
+    path: "/forbidden",
+    element: <Forbidden />,
+  }
 ];

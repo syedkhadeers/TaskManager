@@ -1,75 +1,137 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   getCurrentUser,
   loginUser,
   logoutUser,
-} from "../services/authServices";
+} from "../services/auth/authServices";
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+const TOKEN_KEY = "token";
+const ROUTE_KEY = "lastRoute";
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+function AuthProvider({ children }) {
+  const [authState, setAuthState] = useState({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+    errors: {},
+    lastVisitedRoute: localStorage.getItem(ROUTE_KEY) || "/dashboard",
+  });
 
-  const checkAuthStatus = async () => {
-    const token = localStorage.getItem("token");
+  const checkAuthStatus = useCallback(async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+
     if (!token) {
-      setIsLoading(false);
+      setAuthState((prev) => ({
+        ...prev,
+        isLoading: false,
+        isAuthenticated: false,
+      }));
       return;
     }
 
     try {
       const userData = await getCurrentUser();
-      setUser(userData);
-      setIsAuthenticated(true);
+      setAuthState((prev) => ({
+        ...prev,
+        user: userData,
+        isAuthenticated: true,
+        isLoading: false,
+        errors: {},
+      }));
     } catch (error) {
-      console.error("Error fetching user profile:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Auth status check failed:", error);
+      localStorage.removeItem(TOKEN_KEY);
+      setAuthState((prev) => ({
+        ...prev,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        errors: { auth: error.message },
+      }));
     }
-  };
+  }, []);
 
   const handleLogin = async (credentials) => {
+    setAuthState((prev) => ({ ...prev, isLoading: true }));
     try {
       const { token, user } = await loginUser(credentials);
-      localStorage.setItem("token", token);
-      setUser(user);
-      setIsAuthenticated(true);
+      localStorage.setItem(TOKEN_KEY, token);
+      setAuthState((prev) => ({
+        ...prev,
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        errors: {},
+      }));
       return user;
     } catch (error) {
+      setAuthState((prev) => ({
+        ...prev,
+        isAuthenticated: false,
+        isLoading: false,
+        errors: { login: error.message },
+      }));
       throw error;
     }
   };
 
   const handleLogout = async () => {
+    setAuthState((prev) => ({ ...prev, isLoading: true }));
     try {
       await logoutUser();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem("token");
-      setUser(null);
-      setIsAuthenticated(false);
+      localStorage.removeItem(TOKEN_KEY);
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        errors: {},
+        lastVisitedRoute: "/dashboard",
+      });
     }
   };
 
   useEffect(() => {
+    const handleAuthError = () => {
+      setAuthState((prev) => ({
+        ...prev,
+        user: null,
+        isAuthenticated: false,
+        errors: { auth: "Authentication failed" },
+      }));
+    };
+
+    window.addEventListener("auth-error", handleAuthError);
     checkAuthStatus();
-  }, []);
+
+    return () => {
+      window.removeEventListener("auth-error", handleAuthError);
+    };
+  }, [checkAuthStatus]);
+
+  const contextValue = useMemo(
+    () => ({
+      ...authState,
+      handleLogin,
+      handleLogout,
+      checkAuthStatus,
+      setAuthState,
+    }),
+    [authState, checkAuthStatus]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        isLoading,
-        handleLogin,
-        handleLogout,
-        checkAuthStatus,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
-};
+}
+
+export { AuthContext, AuthProvider };

@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import Layout from "../../components/layout/Layout";
 import { ThemeContext } from "../../context/ThemeContext";
-import ExtraServicesContent from "../../components/room/extraServices/ExtraServicesContent";
+import ExtraServicesContent from "../../components/pageComponents/room/extraServices/ExtraServicesContent";
 
 const ExtraServicesPage = () => {
   const { isDarkMode } = useContext(ThemeContext);

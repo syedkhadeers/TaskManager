@@ -16,13 +16,8 @@ const extraServiceSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Base Price is required"],
     },
-    specialPrice: {
-      type: Number,
-      default: 0,
-    },
-    offerPrice: {
-      type: Number,
-      default: 0,
+    icon: {
+      type: String,
     },
     icon: {
       type: String, // just a string.

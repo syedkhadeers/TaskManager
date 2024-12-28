@@ -3,7 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import LayoutAuth from "../../components/layout/LayoutAuth";
-import ForgotPassword from "../../components/auth/ForgotPassword";
+import ForgotPassword from "../../components/pageComponents/auth/ForgotPassword";
 
 const ForgotPasswordPage = () => {
   const { isAuthenticated } = useAuth();

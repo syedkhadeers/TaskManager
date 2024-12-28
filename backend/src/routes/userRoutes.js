@@ -1,9 +1,8 @@
 import express from "express";
-
-import {
-  adminMiddleware,
-  creatorMiddleware,
-  protect,
+import { 
+  loggedInUsersOnly, 
+  managersOnly, 
+  adminsOnly 
 } from "../middleware/authMiddleware.js";
 
 import {uploadUserPhoto} from "../middleware/uploadMiddleware.js";
@@ -13,27 +12,20 @@ import { deleteUser, getAllUsers, updateOtherUser } from "../controllers/auth/ad
 
 const router = express.Router();
 
-router.post("/register", uploadUserPhoto.single("photo"), registerUser);
-router.post("/add-user", uploadUserPhoto.single("photo"), addUser);
-router.post("/login", loginUser);
-router.post("/logout", protect, logoutUser);
-router.get("/user", protect, getUser);
-router.patch("/user", protect, uploadUserPhoto.single("photo"), updateUser);
-router.patch("/update-user/:id", protect, uploadUserPhoto.single("photo"), updateOtherUser);
+// User management routes
+router.post("/add-user", managersOnly, uploadUserPhoto.single("photo"), addUser);
+router.get("/users", managersOnly, getUsers);
 
-// Admin routes
-router.delete("/admin/users/:id", protect, adminMiddleware, deleteUser);
-router.get("/users", protect, creatorMiddleware, getAllUsers);
-router.get("/login-status", userLoginStatus);
+// Individual user routes
+router.get("/user", loggedInUsersOnly, getUser);
+router.get("/user/:id", managersOnly, getUserById);
+router.patch("/user", loggedInUsersOnly, uploadUserPhoto.single("photo"), updateUser);
+router.patch("/update-user/:id", managersOnly, uploadUserPhoto.single("photo"), updateUserById);
+router.delete("/admin/users/:id", adminsOnly, deleteUserById);
 
-//get other user details
-router.get("/user/:id", protect, getOtherUser);
-
-// Corrected line
-router.post("/verify-email", protect, verifyEmail);
-router.post("/verify-user/:verificationToken", verifyUser);
-router.post("/forgot-password",  forgotPassword);
-router.post("/reset-password/:resetPasswordToken",  resetPassword);
-router.patch("/change-password", protect, changePassword);
+// Password management routes
+router.patch("/change-me-password", loggedInUsersOnly, changeMePassword);
+router.patch("/change-user-password/:id", managersOnly, changeUserPassword);
 
 export default router;
+

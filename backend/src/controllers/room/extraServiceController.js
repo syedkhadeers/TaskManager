@@ -4,6 +4,7 @@ import ExtraService from "../../models/rooms/ExtraServiceModel.js";
 export const addExtraService = asyncHandler(async (req, res) => {
   const {
     name,
+    name,
     description,
     basePrice,
     specialPrice,
@@ -43,7 +44,10 @@ export const getExtraServiceById = asyncHandler(async (req, res) => {
   const extraService = await ExtraService.findById(req.params.id);
 
   if (!extraService) {
-    return res.status(404).json({ message: "Extra service not found" });
+    return res.status(404).json({
+      success: false,
+      message: "Extra service not found",
+    });
   }
 
   res.status(200).json(extraService);
@@ -75,7 +79,10 @@ export const deleteExtraServiceById = asyncHandler(async (req, res) => {
   const extraService = await ExtraService.findById(id);
 
   if (!extraService) {
-    return res.status(404).json({ message: "Extra service not found" });
+    return res.status(404).json({
+      success: false,
+      message: "Extra service not found",
+    });
   }
 
   await ExtraService.findByIdAndDelete(id);

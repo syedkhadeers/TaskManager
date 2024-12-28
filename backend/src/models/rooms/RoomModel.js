@@ -26,7 +26,7 @@ const roomSchema = new mongoose.Schema(
         url: {
           type: String,
           default:
-            "https://res.cloudinary.com/khadeer/image/upload/v1735132491/customer_ggliyp.jpg",
+            "https://drive.google.com/file/d/1s9LUGejbrY3HwuDqxQbdhv0ri1kdZu5l/view?usp=sharing",
         },
         publicId: {
           type: String,
@@ -44,7 +44,7 @@ const roomSchema = new mongoose.Schema(
     amenities: [
       // multiple with comma separated
       {
-        type: String,
+        type: String, // multiple with comma separated
       },
     ],
     smokingAllowed: {

@@ -15,6 +15,8 @@ import {
   Package,
   Building,
 } from "lucide-react";
+// include sidebar.css
+import "../../styles/Sidebar.css";
 
 const Sidebar = ({ isOpen }) => {
   const [openMenus, setOpenMenus] = useState({});
@@ -40,11 +42,11 @@ const Sidebar = ({ isOpen }) => {
         to={to || "#"}
         onClick={onClick}
         className={`
-          flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200
+          flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300
           ${
             isActive
-              ? "bg-white/20 text-white"
-              : "text-white/70 hover:bg-white/10 hover:text-white"
+              ? "bg-white/20 text-white shadow-lg"
+              : "text-white/80 hover:bg-white/10 hover:text-white"
           }
         `}
       >
@@ -52,7 +54,7 @@ const Sidebar = ({ isOpen }) => {
         <span className="font-medium flex-1">{label}</span>
         {hasSubmenu && (
           <ChevronDown
-            className={`h-4 w-4 transition-transform duration-200 ${
+            className={`h-4 w-4 transition-transform duration-300 ${
               openMenus[label.toLowerCase()] ? "rotate-180" : ""
             }`}
           />
@@ -87,17 +89,18 @@ const Sidebar = ({ isOpen }) => {
 
   return (
     <div className="h-full flex flex-col text-white">
-      <div className="p-6">
+      <div className="p-8">
         <motion.img
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           src="/logo_white.png"
           alt="Logo"
-          className="h-12 mx-auto filter drop-shadow-lg"
+          className="h-12 mx-auto filter drop-shadow-xl"
         />
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         <div className="space-y-1">
           <MenuItem
             icon={LayoutDashboard}
@@ -174,10 +177,10 @@ const Sidebar = ({ isOpen }) => {
       </nav>
 
       <div className="p-4 mt-auto">
-        <div className="bg-white/10 rounded-lg p-4">
+        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
           <p className="text-sm font-medium">Need Help?</p>
           <p className="text-xs text-white/70 mt-1">Check our documentation</p>
-          <button className="mt-3 w-full px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-medium hover:bg-white/90 transition-colors">
+          <button className="mt-3 w-full px-4 py-2.5 bg-white text-blue-600 rounded-xl text-sm font-medium hover:bg-white/90 transition-all duration-300 shadow-lg">
             View Docs
           </button>
         </div>
