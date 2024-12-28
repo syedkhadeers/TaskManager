@@ -1,11 +1,13 @@
-import { api, handleApiError } from "../../utils/api";
+import { api, handleApiError, retryRequest } from "../../utils/api";
 
 const prepareFormData = (userData) => {
   const formData = new FormData();
   Object.entries(userData).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       if (key === "photo" && value instanceof File) {
-        formData.append("photo", value); // Ensure photo is appended as a file
+        formData.append("photo", value);
+      } else if (value instanceof Date) {
+        formData.append(key, value.toISOString());
       } else if (typeof value === "object") {
         formData.append(key, JSON.stringify(value));
       } else {
@@ -16,130 +18,134 @@ const prepareFormData = (userData) => {
   return formData;
 };
 
-
 export const updateUserProfile = async (userData) => {
   try {
     const formData = prepareFormData(userData);
-    const response = await api.patch("/user", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    const response = await retryRequest(() =>
+      api.patch("/user/me", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          console.log(`Upload Progress: ${percentCompleted}%`);
+        },
+      })
+    );
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to update user profile");
+    throw handleApiError(error);
   }
 };
-
 
 export const getAllUsers = async (params = {}) => {
   try {
     const queryString = new URLSearchParams(params).toString();
-    const response = await api.get(
-      `/users${queryString ? `?${queryString}` : ""}`
+    const response = await retryRequest(() =>
+      api.get(`/users${queryString ? `?${queryString}` : ""}`)
     );
-    return response.data;
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to fetch users");
+    throw handleApiError(error);
   }
 };
 
+export const getUsersByRole = async (role) => {
+  try {
+    const response = await retryRequest(() => api.get(`/users/role/${role}`));
+    return response;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
 
 export const addUser = async (userData) => {
   try {
     const formData = prepareFormData(userData);
-    const response = await api.post("/add-user", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    const response = await retryRequest(() =>
+      api.post("/users", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          console.log(`Upload Progress: ${percentCompleted}%`);
+        },
+      })
+    );
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to add user");
+    throw handleApiError(error);
   }
 };
-
-
 
 export const deleteUser = async (userId) => {
   try {
-    if (!userId) throw new Error("User ID is required");
-    const response = await api.delete(`/admin/users/${userId}`);
-    return response.data;
+    const response = await retryRequest(() => api.delete(`/users/${userId}`));
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to delete user");
+    throw handleApiError(error);
   }
 };
-
 
 export const updateUserById = async (userId, userData) => {
   try {
-    if (!userId) throw new Error("User ID is required");
-    const formData = prepareFormData({ ...userData, userId });
-
-    const response = await api.patch(`/update-user/${userId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    const formData = prepareFormData(userData);
+    const response = await retryRequest(() =>
+      api.patch(`/users/${userId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          console.log(`Upload Progress: ${percentCompleted}%`);
+        },
+      })
+    );
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to update user");
+    throw handleApiError(error);
   }
 };
-
 
 export const getUserById = async (userId) => {
   try {
-    if (!userId) throw new Error("User ID is required");
-    const response = await api.get(`/user/${userId}`);
-    return response.data;
+    const response = await retryRequest(() => api.get(`/users/${userId}`));
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to fetch user details");
+    throw handleApiError(error);
   }
 };
 
-
-export const batchUpdateUsers = async (users) => {
+export const changePassword = async (passwordData) => {
   try {
-    const response = await api.patch("/users/batch", { users });
-    return response.data;
+    const response = await api.patch("/users/change-password", passwordData);
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to batch update users");
+    throw handleApiError(error);
   }
 };
 
-
-export const exportUsers = async (filters = {}) => {
-  try {
-    const response = await api.get("/users/export", {
-      params: filters,
-      responseType: "blob",
-    });
-    return response.data;
-  } catch (error) {
-    throw handleApiError(error, "Failed to export users");
-  }
-};
-
-
-// change-me-password 
-export const changeMePassword = async (passwordData) => {
-  try {
-    const response = await api.patch("/change-me-password", {
-      oldPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword,
-    });
-    return response.data;
-  } catch (error) {
-    throw handleApiError(error, "Failed to change password");
-  }
-};
-
-
-// change-user-password
 export const changeUserPassword = async (userId, passwordData) => {
   try {
-    if (!userId) throw new Error("User ID is required");
-    const response = await api.patch(`/change-user-password/${userId}`, {
-      newPassword: passwordData.newPassword,
-    });
-    return response.data;
+    const response = await api.patch(
+      `/users/${userId}/change-password`,
+      passwordData
+    );
+    return response;
   } catch (error) {
-    throw handleApiError(error, "Failed to change user's password");
+    throw handleApiError(error);
   }
+};
+
+export default {
+  updateUserProfile,
+  getAllUsers,
+  getUsersByRole,
+  addUser,
+  deleteUser,
+  updateUserById,
+  getUserById,
+  changePassword,
+  changeUserPassword,
 };

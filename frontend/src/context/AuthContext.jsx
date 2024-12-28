@@ -6,19 +6,24 @@ import React, {
   useMemo,
 } from "react";
 import {
-  getCurrentUser,
+  registerUser,
   loginUser,
   logoutUser,
+  checkLoginStatus,
+  getCurrentUser,
 } from "../services/auth/authServices";
+import { API_EVENTS } from "../utils/api";
 
 const AuthContext = createContext();
 const TOKEN_KEY = "token";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USER_KEY = "user";
 const ROUTE_KEY = "lastRoute";
 
 function AuthProvider({ children }) {
   const [authState, setAuthState] = useState({
-    user: null,
-    isAuthenticated: false,
+    user: JSON.parse(localStorage.getItem(USER_KEY)) || null,
+    isAuthenticated: !!localStorage.getItem(TOKEN_KEY),
     isLoading: true,
     errors: {},
     lastVisitedRoute: localStorage.getItem(ROUTE_KEY) || "/dashboard",
@@ -37,17 +42,18 @@ function AuthProvider({ children }) {
     }
 
     try {
-      const userData = await getCurrentUser();
+      const { user, isAuthenticated } = await checkLoginStatus();
       setAuthState((prev) => ({
         ...prev,
-        user: userData,
-        isAuthenticated: true,
+        user,
+        isAuthenticated,
         isLoading: false,
         errors: {},
       }));
     } catch (error) {
-      console.error("Auth status check failed:", error);
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
       setAuthState((prev) => ({
         ...prev,
         user: null,
@@ -58,11 +64,16 @@ function AuthProvider({ children }) {
     }
   }, []);
 
-  const handleLogin = async (credentials) => {
+  const handleRegister = async (userData) => {
     setAuthState((prev) => ({ ...prev, isLoading: true }));
     try {
-      const { token, user } = await loginUser(credentials);
+      const response = await registerUser(userData);
+      const { token, refreshToken, user } = response;
+
       localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+
       setAuthState((prev) => ({
         ...prev,
         user,
@@ -74,7 +85,34 @@ function AuthProvider({ children }) {
     } catch (error) {
       setAuthState((prev) => ({
         ...prev,
-        isAuthenticated: false,
+        isLoading: false,
+        errors: { register: error.message },
+      }));
+      throw error;
+    }
+  };
+
+  const handleLogin = async (credentials) => {
+    setAuthState((prev) => ({ ...prev, isLoading: true }));
+    try {
+      const response = await loginUser(credentials);
+      const { token, refreshToken, user } = response;
+
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+      setAuthState((prev) => ({
+        ...prev,
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        errors: {},
+      }));
+      return user;
+    } catch (error) {
+      setAuthState((prev) => ({
+        ...prev,
         isLoading: false,
         errors: { login: error.message },
       }));
@@ -86,10 +124,10 @@ function AuthProvider({ children }) {
     setAuthState((prev) => ({ ...prev, isLoading: true }));
     try {
       await logoutUser();
-    } catch (error) {
-      console.error("Logout error:", error);
     } finally {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -100,21 +138,40 @@ function AuthProvider({ children }) {
     }
   };
 
-  useEffect(() => {
-    const handleAuthError = () => {
+  const updateUserProfile = async (userData) => {
+    try {
+      const updatedUser = await getCurrentUser();
+      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
       setAuthState((prev) => ({
         ...prev,
-        user: null,
-        isAuthenticated: false,
-        errors: { auth: "Authentication failed" },
+        user: updatedUser,
       }));
+    } catch (error) {
+      setAuthState((prev) => ({
+        ...prev,
+        errors: { profile: error.message },
+      }));
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const handleAuthError = () => {
+      handleLogout();
     };
 
-    window.addEventListener("auth-error", handleAuthError);
+    const handleTokenRefresh = (event) => {
+      const { token } = event.detail;
+      localStorage.setItem(TOKEN_KEY, token);
+    };
+
+    window.addEventListener(API_EVENTS.AUTH_ERROR, handleAuthError);
+    window.addEventListener(API_EVENTS.TOKEN_REFRESH, handleTokenRefresh);
     checkAuthStatus();
 
     return () => {
-      window.removeEventListener("auth-error", handleAuthError);
+      window.removeEventListener(API_EVENTS.AUTH_ERROR, handleAuthError);
+      window.removeEventListener(API_EVENTS.TOKEN_REFRESH, handleTokenRefresh);
     };
   }, [checkAuthStatus]);
 
@@ -123,6 +180,8 @@ function AuthProvider({ children }) {
       ...authState,
       handleLogin,
       handleLogout,
+      handleRegister,
+      updateUserProfile,
       checkAuthStatus,
       setAuthState,
     }),
@@ -135,3 +194,4 @@ function AuthProvider({ children }) {
 }
 
 export { AuthContext, AuthProvider };
+ 

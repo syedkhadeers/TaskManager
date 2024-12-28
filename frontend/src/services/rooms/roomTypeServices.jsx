@@ -1,11 +1,22 @@
-import { api, handleApiError } from "../../utils/api";
+import { api, handleApiError, retryRequest } from "../../utils/api";
 
 export const createRoomType = async (roomTypeData) => {
   try {
-    const response = await api.post("/roomtype/create", roomTypeData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    const formData = new FormData();
+    Object.entries(roomTypeData).forEach(([key, value]) => {
+      if (key === "images" && value) {
+        Array.from(value).forEach((image) => {
+          formData.append("images", image);
+        });
+      } else if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
     });
-    return response.data;
+
+    const response = await retryRequest(() =>
+      api.post("/rooms/room-types", formData)
+    );
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -13,8 +24,8 @@ export const createRoomType = async (roomTypeData) => {
 
 export const getAllRoomTypes = async () => {
   try {
-    const response = await api.get("/roomtypes");
-    return response.data.roomTypes;
+    const response = await retryRequest(() => api.get("/rooms/room-types"));
+    return response.roomTypes;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -22,8 +33,10 @@ export const getAllRoomTypes = async () => {
 
 export const getRoomTypeById = async (id) => {
   try {
-    const response = await api.get(`/roomtype/${id}`);
-    return response.data.roomType;
+    const response = await retryRequest(() =>
+      api.get(`/rooms/room-types/${id}`)
+    );
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -31,104 +44,103 @@ export const getRoomTypeById = async (id) => {
 
 export const updateRoomType = async (roomTypeId, roomTypeData) => {
   try {
-
-    const response = await api.patch(`/roomtype/${roomTypeId}`, roomTypeData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      // Add timeout and response type options
-      timeout: 30000,
-      responseType: "json",
+    const formData = new FormData();
+    Object.entries(roomTypeData).forEach(([key, value]) => {
+      if (key === "images" && value) {
+        Array.from(value).forEach((image) => {
+          formData.append("images", image);
+        });
+      } else if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
     });
 
-    if (!response.data) {
-      throw new Error("No data received from server");
-    }
-
-    return response.data;
+    const response = await retryRequest(() =>
+      api.patch(`/rooms/room-types/${roomTypeId}`, formData)
+    );
+    return response;
   } catch (error) {
-    // Enhanced error logging
-    console.error("Update Room Type Error:", {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-    });
     throw handleApiError(error);
   }
 };
 
 export const deleteRoomType = async (roomTypeId) => {
   try {
-    const response = await api.delete(`/roomtype/${roomTypeId}`);
-    return response.data;
-  } catch (error) {
-    throw handleApiError(error);
-  }
-};
-
-export const addExtraService = async (roomTypeId, extraServiceId) => {
-  try {
-    const response = await api.post(`/roomtype/${roomTypeId}/extraservice`, {
-      extraServiceId,
-    });
-    return response.data.roomType;
-  } catch (error) {
-    throw handleApiError(error);
-  }
-};
-
-export const removeExtraService = async (roomTypeId, extraServiceId) => {
-  try {
-    const response = await api.delete(
-      `/roomtype/${roomTypeId}/extraservice/${extraServiceId}`
+    const response = await retryRequest(() =>
+      api.delete(`/rooms/room-types/${roomTypeId}`)
     );
-    return response.data.roomType;
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
 };
 
-export const addTimeSlot = async (roomTypeId, timeSlotData) => {
+export const toggleRoomType = async (roomTypeId) => {
   try {
-    const response = await api.post(
-      `/roomtype/${roomTypeId}/timeslot`,
-      timeSlotData
+    const response = await retryRequest(() =>
+      api.patch(`/rooms/room-types/${roomTypeId}/toggle`)
     );
-    return response.data.roomType;
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
 };
 
-export const removeTimeSlot = async (roomTypeId, timeSlotId) => {
+// Time Slot Management
+export const addTimeSlotToRoomType = async (roomTypeId, timeSlotData) => {
   try {
-    const response = await api.delete(
-      `/roomtype/${roomTypeId}/timeslot/${timeSlotId}`
+    const response = await retryRequest(() =>
+      api.post(`/rooms/room-types/${roomTypeId}/time-slots`, timeSlotData)
     );
-    return response.data.roomType;
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
 };
 
-
-export const getAllTimeSlotsExport = async () => {
+export const removeTimeSlotFromRoomType = async (roomTypeId, timeSlotId) => {
   try {
-    const response = await api.get("/timeslots");
-    return response.data.timeSlots || response.data;
+    const response = await retryRequest(() =>
+      api.delete(`/rooms/room-types/${roomTypeId}/time-slots/${timeSlotId}`)
+    );
+    return response;
   } catch (error) {
-    console.error("Error fetching time slots:", error);
-    throw error;
+    throw handleApiError(error);
   }
 };
 
-// New helper function to validate form data
+// Extra Service Management
+export const addExtraServiceToRoomType = async (roomTypeId, serviceData) => {
+  try {
+    const response = await retryRequest(() =>
+      api.post(`/rooms/room-types/${roomTypeId}/extra-services`, serviceData)
+    );
+    return response;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const removeExtraServiceFromRoomType = async (roomTypeId, serviceId) => {
+  try {
+    const response = await retryRequest(() =>
+      api.delete(`/rooms/room-types/${roomTypeId}/extra-services/${serviceId}`)
+    );
+    return response;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+// Validation helper
 export const validateRoomTypeData = (data) => {
   const errors = {};
 
-  if (!data.name) errors.name = "Name is required";
-  if (!data.basePrice) errors.basePrice = "Base price is required";
-  if (!data.maxOccupancy) errors.maxOccupancy = "Maximum occupancy is required";
+  if (!data.name?.trim()) errors.name = "Name is required";
+  if (!data.basePrice || data.basePrice <= 0)
+    errors.basePrice = "Valid base price is required";
+  if (!data.maxOccupancy || data.maxOccupancy < 1)
+    errors.maxOccupancy = "Valid maximum occupancy is required";
 
   return {
     isValid: Object.keys(errors).length === 0,

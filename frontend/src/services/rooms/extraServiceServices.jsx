@@ -1,28 +1,27 @@
-import { api, handleApiError } from "../../utils/api";
+import { api, handleApiError, retryRequest } from "../../utils/api";
 
 export const createExtraService = async (serviceData) => {
   try {
     const formData = new FormData();
     Object.entries(serviceData).forEach(([key, value]) => {
-      if (value !== undefined) {
+      if (value !== undefined && value !== null) {
         formData.append(key, value);
       }
     });
 
-    const response = await api.post("/extraservice/create", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    const response = await retryRequest(() =>
+      api.post("/rooms/extra-services", formData)
+    );
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
 };
 
-
 export const getAllExtraServices = async () => {
   try {
-    const response = await api.get("/extraservices");
-    return response.data.extraServices; // Return just the array
+    const response = await retryRequest(() => api.get("/rooms/extra-services"));
+    return response.extraServices;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -30,8 +29,10 @@ export const getAllExtraServices = async () => {
 
 export const getExtraServiceById = async (id) => {
   try {
-    const response = await api.get(`/extraservice/${id}`);
-    return response.data;
+    const response = await retryRequest(() =>
+      api.get(`/rooms/extra-services/${id}`)
+    );
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -39,17 +40,10 @@ export const getExtraServiceById = async (id) => {
 
 export const updateExtraService = async (serviceId, serviceData) => {
   try {
-    const formData = new FormData();
-    Object.entries(serviceData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formData.append(key, value);
-      }
-    });
-
-    const response = await api.patch(`/extraservice/${serviceId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    const response = await retryRequest(() =>
+      api.patch(`/rooms/extra-services/${serviceId}`, serviceData)
+    );
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -57,8 +51,21 @@ export const updateExtraService = async (serviceId, serviceData) => {
 
 export const deleteExtraService = async (serviceId) => {
   try {
-    const response = await api.delete(`/extraservice/${serviceId}`);
-    return response.data;
+    const response = await retryRequest(() =>
+      api.delete(`/rooms/extra-services/${serviceId}`)
+    );
+    return response;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const toggleExtraService = async (serviceId) => {
+  try {
+    const response = await retryRequest(() =>
+      api.patch(`/rooms/extra-services/${serviceId}/toggle`)
+    );
+    return response;
   } catch (error) {
     throw handleApiError(error);
   }
