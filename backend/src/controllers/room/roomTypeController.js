@@ -84,16 +84,29 @@ export const updateRoomType = asyncHandler(async (req, res) => {
     isActive,
   } = req.body;
 
-  roomType.name = name || roomType.name;
-  roomType.description = description || roomType.description;
-  roomType.basePrice = basePrice || roomType.basePrice;
-  roomType.specialPrice = specialPrice || roomType.specialPrice;
-  roomType.offerPrice = offerPrice || roomType.offerPrice;
-  roomType.maxOccupancy = maxOccupancy || roomType.maxOccupancy;
-  roomType.timeSlotPricing = timeSlotPricing || roomType.timeSlotPricing;
-  roomType.extraServices = extraServices || roomType.extraServices;
-  roomType.isActive = isActive !== undefined ? isActive : roomType.isActive;
+  // Parse JSON strings
+  const parsedTimeSlotPricing =
+    typeof timeSlotPricing === "string"
+      ? JSON.parse(timeSlotPricing)
+      : timeSlotPricing;
 
+  const parsedExtraServices =
+    typeof extraServices === "string"
+      ? JSON.parse(extraServices)
+      : extraServices;
+
+  // Update fields using nullish coalescing
+  roomType.name = name ?? roomType.name;
+  roomType.description = description ?? roomType.description;
+  roomType.basePrice = basePrice ?? roomType.basePrice;
+  roomType.specialPrice = specialPrice ?? roomType.specialPrice;
+  roomType.offerPrice = offerPrice ?? roomType.offerPrice;
+  roomType.maxOccupancy = maxOccupancy ?? roomType.maxOccupancy;
+  roomType.timeSlotPricing = parsedTimeSlotPricing ?? roomType.timeSlotPricing;
+  roomType.extraServices = parsedExtraServices ?? roomType.extraServices;
+  roomType.isActive = isActive ?? roomType.isActive;
+
+  // Handle image updates
   if (req.files && req.files.length > 0) {
     // Delete existing images
     if (roomType.images.length > 0) {
@@ -112,12 +125,18 @@ export const updateRoomType = asyncHandler(async (req, res) => {
     roomType.images = uploadResults.map((result) => result.url);
   }
 
+  // Save and populate the response
   const updated = await roomType.save();
+  const populatedRoomType = await RoomTypeModel.findById(updated._id)
+    .populate("timeSlotPricing.timeSlot")
+    .populate("extraServices");
+
   res.status(200).json({
     message: "Room type updated successfully",
-    roomType: updated,
+    roomType: populatedRoomType,
   });
 });
+
 
 export const getRoomTypes = asyncHandler(async (req, res) => {
   const roomTypes = await RoomTypeModel.find()

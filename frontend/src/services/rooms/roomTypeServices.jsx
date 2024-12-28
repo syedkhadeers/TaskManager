@@ -31,24 +31,28 @@ export const getRoomTypeById = async (id) => {
 
 export const updateRoomType = async (roomTypeId, roomTypeData) => {
   try {
-    const formData = new FormData();
-    Object.entries(roomTypeData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        if (key === "images" && Array.isArray(value)) {
-          value.forEach((file) => formData.append("images", file));
-        } else if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value));
-        } else {
-          formData.append(key, value);
-        }
-      }
+
+    const response = await api.patch(`/roomtype/${roomTypeId}`, roomTypeData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      // Add timeout and response type options
+      timeout: 30000,
+      responseType: "json",
     });
 
-    const response = await api.patch(`/roomtype/${roomTypeId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data.roomType;
+    if (!response.data) {
+      throw new Error("No data received from server");
+    }
+
+    return response.data;
   } catch (error) {
+    // Enhanced error logging
+    console.error("Update Room Type Error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
     throw handleApiError(error);
   }
 };
@@ -105,4 +109,29 @@ export const removeTimeSlot = async (roomTypeId, timeSlotId) => {
   } catch (error) {
     throw handleApiError(error);
   }
+};
+
+
+export const getAllTimeSlotsExport = async () => {
+  try {
+    const response = await api.get("/timeslots");
+    return response.data.timeSlots || response.data;
+  } catch (error) {
+    console.error("Error fetching time slots:", error);
+    throw error;
+  }
+};
+
+// New helper function to validate form data
+export const validateRoomTypeData = (data) => {
+  const errors = {};
+
+  if (!data.name) errors.name = "Name is required";
+  if (!data.basePrice) errors.basePrice = "Base price is required";
+  if (!data.maxOccupancy) errors.maxOccupancy = "Maximum occupancy is required";
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
 };
