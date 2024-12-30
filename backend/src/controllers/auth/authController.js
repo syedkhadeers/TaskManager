@@ -135,10 +135,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Email and password required" });
   }
 
-  const user = await User.findOne({ email })
-    .select("+password")
-    .lean()
-    .exec();
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
     return res.status(404).json({ message: "Account not found" });
@@ -153,29 +150,17 @@ export const loginUser = asyncHandler(async (req, res) => {
   const token = generateToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
 
-  res.cookie("token", token, {
-    path: "/",
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: "none",
-    secure: true,
-  });
+  // Remove password from response
+  const userResponse = user.toObject();
+  delete userResponse.password;
 
-  res.cookie("refreshToken", refreshToken, {
-    path: "/",
-    httpOnly: true,
-    maxAge: 90 * 24 * 60 * 60 * 1000,
-    sameSite: "none",
-    secure: true,
-  });
-
-  const { password: _, ...userWithoutPassword } = user;
-  
   res.status(200).json({
-    ...userWithoutPassword,
-    token
+    user: userResponse,
+    token,
+    refreshToken,
   });
 });
+
 
 export const logoutUser = asyncHandler(async (req, res) => {
   res.cookie("token", "", {
@@ -199,18 +184,75 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
 export const userLoginStatus = asyncHandler(async (req, res) => {
   const token = req.cookies.token;
-  
-  if (!token) {
-    return res.status(401).json({ isLoggedIn: false });
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!token && !refreshToken) {
+    return res.status(200).json({
+      isLoggedIn: false,
+      message: "No active session found",
+    });
   }
 
   try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
-    return res.status(200).json({ isLoggedIn: true, user: verified });
+    // Verify access token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Get user with essential fields
+    const user = await User.findById(decoded.id)
+      .select("fullName email role isVerified photo lastLoginAt")
+      .lean();
+
+    if (!user) {
+      return res.status(200).json({
+        isLoggedIn: false,
+        message: "User not found",
+      });
+    }
+
+    // Check token expiry and JTI (JWT ID)
+    const isTokenValid =
+      decoded.exp > Date.now() / 1000 && decoded.jti && decoded.iat;
+
+    // Verify user status
+    const sessionInfo = {
+      isLoggedIn: true,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+        photo: user.photo?.url,
+      },
+      session: {
+        issued: new Date(decoded.iat * 1000).toISOString(),
+        expires: new Date(decoded.exp * 1000).toISOString(),
+        lastLogin: user.lastLoginAt,
+      },
+      tokenStatus: {
+        accessToken: isTokenValid,
+        refreshToken: !!refreshToken,
+      },
+    };
+
+    return res.status(200).json(sessionInfo);
   } catch (error) {
-    return res.status(401).json({ isLoggedIn: false });
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        isLoggedIn: false,
+        message: "Session expired",
+        code: "TOKEN_EXPIRED",
+      });
+    }
+
+    return res.status(401).json({
+      isLoggedIn: false,
+      message: "Invalid authentication",
+      code: "INVALID_TOKEN",
+    });
   }
 });
+
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);

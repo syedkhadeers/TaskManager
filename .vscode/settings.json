@@ -6,6 +6,7 @@
     "roomtypes",
     "superadmin",
     "timeslot",
-    "timeslots"
+    "timeslots",
+    "VITE"
   ]
 }

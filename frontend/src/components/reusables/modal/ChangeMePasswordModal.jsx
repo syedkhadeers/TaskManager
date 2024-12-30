@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import { X, Key } from "lucide-react";
 import { ThemeContext } from "../../../context/ThemeContext";
-import { changeMePassword } from "../../../services/user/userServices";
+import { changePassword } from "../../../services/user/userServices";
 import { toast } from "react-toastify";
 import LoadingSpinner from "../../common/LoadingSpinner";
 import InputField from "../inputs/InputField";

@@ -35,8 +35,14 @@ import {
   Radar,
   Legend,
 } from "recharts";
+import { useAuth } from "../../../hooks/useAuth";
 
 const DashboardContent = () => {
+
+  const { user } = useAuth();
+
+  console.log(user);
+
   const stats = [
     {
       label: "Total Users",
@@ -232,6 +238,12 @@ const DashboardContent = () => {
       animate={{ opacity: 1 }}
       className="space-y-8"
     >
+      {/* // display user name saying welcome back */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Welcome Back {user.fullName}!
+        </h2>
+      </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (

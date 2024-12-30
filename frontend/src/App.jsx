@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from "./context/ThemeContext";
 import { Toaster } from "react-hot-toast";
 import { authRoutes } from "./routes/authRoutes";
@@ -105,25 +105,3 @@ const App = () => {
 
 export default App;
 
-// import { Routes, Route } from "react-router-dom";
-// import Forbidden from "./pages/Forbidden";
-
-// // // Inside your Routes component
-// // <Routes>
-// //   {/* Your other routes */}
-// //   <Route path="/forbidden" element={<Forbidden />} />
-// // </Routes>;
-
-// const renderRoutes = (routes) => {
-//   return routes.map((route) => (
-//     <Route
-//       key={route.path}
-//       path={route.path}
-//       element={
-//         <ErrorBoundary>
-//           <Suspense fallback={<LoadingSpinner />}>{route.element}</Suspense>
-//         </ErrorBoundary>
-//       }
-//     />
-//   ));
-// };

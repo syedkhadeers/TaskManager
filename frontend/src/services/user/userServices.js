@@ -1,4 +1,4 @@
-import { api, handleApiError, retryRequest } from "../../utils/api";
+import api from "../../utils/api";
 
 const prepareFormData = (userData) => {
   const formData = new FormData();
@@ -34,7 +34,7 @@ export const updateUserProfile = async (userData) => {
     );
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error updating user profile:", error);
   }
 };
 
@@ -46,7 +46,7 @@ export const getAllUsers = async (params = {}) => {
     );
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error fetching users:", error);
   }
 };
 
@@ -55,7 +55,7 @@ export const getUsersByRole = async (role) => {
     const response = await retryRequest(() => api.get(`/users/role/${role}`));
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error fetching users by role:", error);
   }
 };
 
@@ -75,7 +75,7 @@ export const addUser = async (userData) => {
     );
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error adding user:", error);
   }
 };
 
@@ -84,7 +84,7 @@ export const deleteUser = async (userId) => {
     const response = await retryRequest(() => api.delete(`/users/${userId}`));
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error deleting user:", error);
   }
 };
 
@@ -104,7 +104,7 @@ export const updateUserById = async (userId, userData) => {
     );
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error updating user:", error);
   }
 };
 
@@ -113,7 +113,7 @@ export const getUserById = async (userId) => {
     const response = await retryRequest(() => api.get(`/users/${userId}`));
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error fetching user:", error);
   }
 };
 
@@ -122,7 +122,7 @@ export const changePassword = async (passwordData) => {
     const response = await api.patch("/users/change-password", passwordData);
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error changing password:", error);
   }
 };
 
@@ -134,7 +134,7 @@ export const changeUserPassword = async (userId, passwordData) => {
     );
     return response;
   } catch (error) {
-    throw handleApiError(error);
+    console.error("Error changing user password:", error);
   }
 };
 

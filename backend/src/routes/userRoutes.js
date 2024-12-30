@@ -8,15 +8,29 @@ import {
 const router = express.Router();
 
 // Protected Routes - Basic User Access
-router.get("/me", protect, getMe);
-router.patch("/me", protect, uploadUserPhoto.single("photo"), updateMe);
+router.get("/user/me", getMe);
+router.patch("/user/me", uploadUserPhoto.single("photo"), updateMe);
 
 // Protected Routes - Admin Access
-router.post("/users", protect, authorize("admin,manager,creator"), uploadUserPhoto.single("photo"), addUser);
-router.get("/users", protect, authorize("admin,manager,creator"), getAllUsers);
-router.get("/users/role/:role", protect, authorize("admin,manager,creator"), getUserByRole);
-router.get("/users/:id", protect, authorize("admin,manager,creator"), getUserById);
-router.patch("/users/:id", protect, authorize("admin,manager,creator"), uploadUserPhoto.single("photo"), updateUserById);
-router.delete("/users/:id", protect, authorize("admin,manager,creator"), deleteUserById);
+router.post(
+  "/users",
+  authorize("admin,manager,creator"),
+  uploadUserPhoto.single("photo"),
+  addUser
+);
+router.get("/users", authorize("admin,manager,creator"), getAllUsers);
+router.get(
+  "/users/role/:role",
+  authorize("admin,manager,creator"),
+  getUserByRole
+);
+router.get("/users/:id", authorize("admin,manager,creator"), getUserById);
+router.patch(
+  "/users/:id",
+  authorize("admin,manager,creator"),
+  uploadUserPhoto.single("photo"),
+  updateUserById
+);
+router.delete("/users/:id", authorize("admin,manager,creator"), deleteUserById);
 
 export default router;

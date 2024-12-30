@@ -16,9 +16,9 @@ router.post("/verify/:token", verifyUser);
 
 // Protected Routes
 
-router.post("/verify-email", protect,  verifyEmail);
-router.get("/status", protect, userLoginStatus);
-router.post("/logout", protect, logoutUser);
-router.patch("/change-password", protect,  changePassword);
+router.post("/verify-email", verifyEmail);
+router.get("/status", userLoginStatus);
+router.post("/logout", logoutUser);
+router.patch("/change-password", changePassword);
 
 export default router;
