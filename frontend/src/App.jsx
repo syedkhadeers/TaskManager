@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { Toaster } from "react-hot-toast";
 import { authRoutes } from "./routes/authRoutes";
@@ -63,12 +63,18 @@ const App = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-primary text-text transition-colors duration-200">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
       <ErrorBoundary>
         <AuthProvider>
           <ThemeProvider>
             <Router>
-              <Suspense fallback={<LoadingSpinner />}>
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+                    <LoadingSpinner />
+                  </div>
+                }
+              >
                 <Routes>
                   {renderRoutes(commonRoutes)}
                   {renderRoutes(authRoutes)}
@@ -78,7 +84,10 @@ const App = () => {
               </Suspense>
               <Toaster
                 position="top-right"
-                toastOptions={toastOptions}
+                toastOptions={{
+                  ...toastOptions,
+                  className: "dark:bg-gray-800",
+                }}
                 containerStyle={{
                   top: 40,
                 }}
@@ -94,6 +103,7 @@ const App = () => {
                 draggable
                 pauseOnHover
                 theme="colored"
+                className="dark:opacity-90"
               />
             </Router>
           </ThemeProvider>
@@ -104,4 +114,3 @@ const App = () => {
 };
 
 export default App;
-

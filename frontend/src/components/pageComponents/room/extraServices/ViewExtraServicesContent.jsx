@@ -1,113 +1,139 @@
-// import React, { useContext } from "react";
-// import { ThemeContext } from "../../../../context/ThemeContext";
-// import {
-//   DollarSign,
-//   Tag,
-//   CheckCircle,
-//   XCircle,
-//   XIcon,
-// } from "lucide-react";
-// import Avatar from "react-avatar";
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  DollarSign,
+  Package,
+  Clock,
+  Info,
+  Tag,
+  CheckCircle,
+  XCircle,
+  Edit3,
+  Trash2,
+} from "lucide-react";
+import { PriceCard } from "../../../reusables/cards/Cards";
 
-// const ViewExtraServicesContent = ({ service, onClose }) => {
-//   const { isDarkMode } = useContext(ThemeContext);
-
-//   return (
-//     <div className="h-full w-full">
-//       {/* Header */}
-//       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex justify-between items-center">
-//         <h2 className="text-xl font-semibold text-white">View Extra Service</h2>
-//         <button
-//           onClick={onClose}
-//           className="text-white hover:text-gray-200 transition-colors"
-//         >
-//           <XIcon size={24} />
-//         </button>
-//       </div>
-
-//       {/* Content */}
-//       <div className="p-6 space-y-6">
-//         <div className="flex flex-col items-center gap-6 mb-8">
-//           <Avatar
-//             name={service?.serviceName}
-//             src={
-//               typeof service?.image === "string"
-//                 ? service.image
-//                 : service.image?.url
-//             }
-//             size="120"
-//             round
-//             className="border-4 border-gray-200 dark:border-gray-700"
-//           />
-//           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-//             {service?.serviceName}
-//           </h1>
-//         </div>
-
-//         <div className="grid grid-cols-1 gap-6">
-//           <InfoCard
-//             icon={<DollarSign className="h-6 w-6" />}
-//             title="Price"
-//             value={`$${service?.price?.toFixed(2)}`}
-//           />
-//           <InfoCard
-//             icon={<Tag className="h-6 w-6" />}
-//             title="Category"
-//             value={service?.category}
-//           />
-//           <InfoCard
-//             icon={
-//               service?.availability ? (
-//                 <CheckCircle className="h-6 w-6" />
-//               ) : (
-//                 <XCircle className="h-6 w-6" />
-//               )
-//             }
-//             title="Availability"
-//             value={
-//               <span
-//                 className={`px-3 py-1 text-xs font-medium rounded-full ${
-//                   service?.availability
-//                     ? "bg-green-100 text-green-800"
-//                     : "bg-red-100 text-red-800"
-//                 }`}
-//               >
-//                 {service?.availability ? "Available" : "Unavailable"}
-//               </span>
-//             }
-//           />
-//           <InfoCard
-//             icon={<Tag className="h-6 w-6" />}
-//             title="Description"
-//             value={service?.description}
-//           />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const InfoCard = ({ icon, title, value }) => (
-//   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 flex items-start space-x-4">
-//     <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2">{icon}</div>
-//     <div>
-//       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-//         {title}
-//       </h3>
-//       <div className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
-//         {value}
-//       </div>
-//     </div>
-//   </div>
-// );
-
-// export default ViewExtraServicesContent;
-import React from 'react'
-
-const ViewExtraServicesContent = () => {
+const ViewExtraServicesContent = ({
+  service,
+  onClose,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+}) => {
   return (
-    <div>ViewExtraServicesContent</div>
-  )
-}
+    <div className="relative">
+      {/* Top Action Buttons */}
+      <div className="absolute top-0 right-0 flex gap-2 p-4">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onEdit(service)}
+          className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-all duration-300"
+        >
+          <Edit3 className="h-5 w-5" />
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onDelete(service)}
+          className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all duration-300"
+        >
+          <Trash2 className="h-5 w-5" />
+        </motion.button>
+      </div>
 
-export default ViewExtraServicesContent
+      {/* Main Content */}
+      <div className="p-6 space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col items-center text-center space-y-4">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full"
+          >
+            <Package className="h-12 w-12 text-white" />
+          </motion.div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {service.name}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              {service.serviceType}
+            </p>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <div className="flex justify-center">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onToggleStatus(service)}
+            className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+              service.isActive
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {service.isActive ? (
+              <CheckCircle className="h-5 w-5" />
+            ) : (
+              <XCircle className="h-5 w-5" />
+            )}
+            {service.isActive ? "Active" : "Inactive"}
+          </motion.button>
+        </div>
+
+        {/* Price Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <PriceCard
+            title="Base Price"
+            amount={service.basePrice}
+            icon={<DollarSign className="h-6 w-6" />}
+            color="blue"
+          />
+          <PriceCard
+            title="Special Price"
+            amount={service.specialPrice}
+            icon={<Tag className="h-6 w-6" />}
+            color="purple"
+          />
+          <PriceCard
+            title="Offer Price"
+            amount={service.offerPrice}
+            icon={<Tag className="h-6 w-6" />}
+            color="green"
+          />
+        </div>
+
+        {/* Description Section */}
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-500" />
+            Description
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+            {service.description || "No description available"}
+          </p>
+        </div>
+
+        {/* Additional Info */}
+        {service.additionalInfo && (
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Info className="h-5 w-5 text-purple-500" />
+              Additional Information
+            </h2>
+            <div className="prose dark:prose-invert">
+              {service.additionalInfo}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+
+export default ViewExtraServicesContent;

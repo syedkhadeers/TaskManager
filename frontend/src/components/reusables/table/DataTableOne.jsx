@@ -55,7 +55,9 @@ const DataTableOne = ({
 
   const exportToCSV = () => {
     const visibleColumns = columns.filter(
-      (col) => table.getState().columnVisibility[col.accessorKey] !== false
+      (col) =>
+        col.export !== "no" &&
+        table.getState().columnVisibility[col.accessorKey] !== false
     );
 
     const csvData = table.getFilteredRowModel().rows.map((row) => {
@@ -102,7 +104,7 @@ const DataTableOne = ({
     const doc = new jsPDF();
     const visibleColumns = columns.filter(
       (col) =>
-        col.type !== "image" &&
+        col.export !== "no" &&
         table.getState().columnVisibility[col.accessorKey] !== false
     );
 
@@ -145,13 +147,15 @@ const DataTableOne = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full flex flex-col h-full">
-      <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-2xl flex-none">
+      <div className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800 rounded-t-2xl flex-none border-b border-white/10 dark:border-gray-700/50">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h2 className="text-2xl font-semibold text-white">{onTitle}</h2>
+          <h2 className="text-2xl font-semibold text-white dark:text-white/90">
+            {onTitle}
+          </h2>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={onAddNew}
-              className="bg-white/20 hover:bg-white/30 px-4 py-2 text-white rounded-lg focus:outline-none transition-colors flex items-center gap-2"
+              className="bg-white/20 hover:bg-white/30 dark:bg-gray-700/30 dark:hover:bg-gray-700/50 px-4 py-2 text-white rounded-lg focus:outline-none transition-colors flex items-center gap-2 border border-white/10 dark:border-gray-600/50 hover:border-white/20 dark:hover:border-gray-500/50"
             >
               <PlusIcon size={20} />
               {addNewText}
@@ -163,24 +167,27 @@ const DataTableOne = ({
                 placeholder="Search..."
                 value={globalFilter || ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 rounded-lg border border-white/20 dark:border-gray-600 bg-white/10 dark:bg-gray-800 text-white dark:text-gray-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-white/70 dark:placeholder-gray-400"
               />
               <SearchIcon
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70 dark:text-gray-500"
                 size={20}
               />
             </div>
 
             <button
               onClick={onRefresh}
-              className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none"
+              className="bg-white/20 hover:bg-white/30 dark:bg-gray-700/30 dark:hover:bg-gray-700/50 p-2 rounded-lg focus:outline-none transition-colors border border-white/10 dark:border-gray-600/50 hover:border-white/20 dark:hover:border-gray-500/50"
             >
-              <RefreshCcw className="text-white" size={20} />
+              <RefreshCcw className="text-white dark:text-white/90" size={20} />
             </button>
 
             <Menu as="div" className="relative">
-              <Menu.Button className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none">
-                <DownloadIcon className="text-white" size={20} />
+              <Menu.Button className="bg-white/20 hover:bg-white/30 dark:bg-gray-700/30 dark:hover:bg-gray-700/50 p-2 rounded-lg focus:outline-none transition-colors border border-white/10 dark:border-gray-600/50 hover:border-white/20 dark:hover:border-gray-500/50">
+                <DownloadIcon
+                  className="text-white dark:text-white/90"
+                  size={20}
+                />
               </Menu.Button>
 
               <Transition
@@ -191,7 +198,7 @@ const DataTableOne = ({
                 leaveFrom="transform scale-100 opacity-100"
                 leaveTo="transform scale-95 opacity-0"
               >
-                <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none divide-y divide-gray-100 dark:divide-gray-700">
+                <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none divide-y divide-gray-100 dark:divide-gray-700 border border-gray-100 dark:border-gray-700 z-50">
                   <div className="py-1">
                     <Menu.Item>
                       {({ active }) => (
@@ -230,8 +237,11 @@ const DataTableOne = ({
             </Menu>
 
             <Menu as="div" className="relative">
-              <Menu.Button className="bg-white/20 hover:bg-white/30 p-2 rounded-lg focus:outline-none">
-                <LayoutGridIcon className="text-white" size={20} />
+              <Menu.Button className="bg-white/20 hover:bg-white/30 dark:bg-gray-700/30 dark:hover:bg-gray-700/50 p-2 rounded-lg focus:outline-none transition-colors border border-white/10 dark:border-gray-600/50 hover:border-white/20 dark:hover:border-gray-500/50">
+                <LayoutGridIcon
+                  className="text-white dark:text-white/90"
+                  size={20}
+                />
               </Menu.Button>
 
               <Transition
@@ -242,7 +252,7 @@ const DataTableOne = ({
                 leaveFrom="transform scale-100 opacity-100"
                 leaveTo="transform scale-95 opacity-0"
               >
-                <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none border border-gray-100 dark:border-gray-700 z-50">
                   {table.getAllLeafColumns().map((column) => (
                     <Menu.Item key={column.id} as="div">
                       {({ active }) => (
@@ -258,7 +268,7 @@ const DataTableOne = ({
                             type="checkbox"
                             checked={column.getIsVisible()}
                             onChange={column.getToggleVisibilityHandler()}
-                            className="mr-3 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400"
+                            className="mr-3 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400 border-gray-300 dark:border-gray-600"
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-300">
                             {column.columnDef.header}
@@ -278,7 +288,7 @@ const DataTableOne = ({
         <div className="flex-1 overflow-x-auto custom-scrollbar2">
           <div className="inline-block min-w-full align-middle">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 ">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (

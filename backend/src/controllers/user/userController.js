@@ -8,6 +8,8 @@ import {
 import bcrypt from "bcryptjs";
 
 export const addUser = asyncHandler(async (req, res) => {
+  console.log("Received file in backend:", req.file);
+
   const {
     title,
     firstName,
@@ -53,7 +55,9 @@ export const addUser = asyncHandler(async (req, res) => {
   };
 
   if (req.file) {
+    console.log("Processing image upload");
     const uploadResult = await uploadImage(req.file, "user_photos");
+    console.log("Image upload result:", uploadResult);
     photoData = {
       url: uploadResult.url,
       publicId: uploadResult.publicId,

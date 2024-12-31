@@ -81,22 +81,24 @@ export const getAllTimeSlots = asyncHandler(async (req, res) => {
 
 export const toggleTimeSlot = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const timeSlot = await TimeSlot.findById(id);
 
+  const timeSlot = await TimeSlot.findById(id);
   if (!timeSlot) {
-    return res.status(404).json({ message: "Time slot not found" });
+    res.status(404);
+    throw new Error("Time slot not found");
   }
 
   timeSlot.isActive = !timeSlot.isActive;
-  await timeSlot.save();
+  const updatedTimeSlot = await timeSlot.save();
 
   res.status(200).json({
     message: `Time slot ${
-      timeSlot.isActive ? "activated" : "deactivated"
+      updatedTimeSlot.isActive ? "activated" : "deactivated"
     } successfully`,
-    timeSlot,
+    timeSlot: updatedTimeSlot,
   });
 });
+
 
 export default {
   addTimeSlot,

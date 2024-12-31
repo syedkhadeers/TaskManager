@@ -42,11 +42,15 @@ app.use(cookieParser());
 app.use(errorHandler);
 
 // Load routes dynamically
-fs.readdirSync("./src/routes").forEach((file) => {
-  import(`./src/routes/${file}`)
-    .then((route) => app.use("/api/v1", route.default))
-    .catch((err) => console.log(`Error loading route: ${err.message}`));
-});
+fs.readdirSync("./src/routes")
+  .filter((file) => file.endsWith(".js"))
+  .forEach((file) => {
+    import(`./src/routes/${file}`)
+      .then((route) => app.use("/api/v1", route.default))
+      .catch((err) =>
+        console.log(`Error loading route file ${file}: ${err.message}`)
+      );
+  });
 
 const startServer = async () => {
   try {

@@ -70,34 +70,40 @@ const SingleImageEditor = ({ onImagesChange, initialImage = null }) => {
     }
   };
 
-  const handleCropImage = () => {
-    if (cropperRef.current?.cropper) {
-      const canvas = cropperRef.current.cropper.getCroppedCanvas({
-        maxWidth: 1024,
-        maxHeight: 1024,
-        fillColor: "#fff",
-      });``
+const handleCropImage = () => {
+  if (cropperRef.current?.cropper) {
+    const canvas = cropperRef.current.cropper.getCroppedCanvas({
+      maxWidth: 1024,
+      maxHeight: 1024,
+      fillColor: "#fff",
+    });
 
-      canvas.toBlob(
-        (blob) => {
-          const newProcessedImage = {
-            file: selectedFile.file,
-            cropped: URL.createObjectURL(blob),
-            preview: selectedFile.preview,
-          };
+    canvas.toBlob(
+      (blob) => {
+        // Create a File from the cropped blob
+        const croppedFile = new File([blob], selectedFile.file.name, {
+          type: "image/jpeg",
+          lastModified: new Date().getTime(),
+        });
 
-          setProcessedImage(newProcessedImage);
-          if (onImagesChange) {
-            // Add a check for the prop
-            onImagesChange([newProcessedImage]);
-          }
-          setShowModal(false);
-        },
-        "image/jpeg",
-        0.8
-      );
-    }
-  };
+        const newProcessedImage = {
+          file: croppedFile, // Use the cropped file
+          cropped: URL.createObjectURL(blob),
+          preview: selectedFile.preview,
+        };
+
+        setProcessedImage(newProcessedImage);
+        if (onImagesChange) {
+          onImagesChange([newProcessedImage]);
+        }
+        setShowModal(false);
+      },
+      "image/jpeg",
+      0.8
+    );
+  }
+};
+
 
   // In SingleImageEditor.jsx
 const handleRemoveImage = () => {

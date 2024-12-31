@@ -24,6 +24,7 @@ import { motion } from "framer-motion";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { useAuth } from "../../../hooks/useAuth";
 import { toast } from "react-toastify";
+import EditMeContent from "./EditMeContent";
 
 const ViewMeContent = () => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -31,6 +32,7 @@ const ViewMeContent = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
   const navigate = useNavigate();
 
   const userMe = user;
@@ -70,6 +72,12 @@ const ViewMeContent = () => {
       color: "from-orange-500 to-orange-600",
     },
   ];
+
+  const handleUserUpdated = (updatedUser) => {
+    // Refresh user data here
+    toast.success("Profile updated successfully!");
+  };
+
 
   const userDetails = {
     personal: [
@@ -232,7 +240,10 @@ const ViewMeContent = () => {
 
             {/* Action Buttons */}
             <div className="absolute top-4 right-4 flex items-center gap-3">
-              <button className="group relative p-2.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/20">
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="group relative p-2.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/20"
+              >
                 <PencilIcon className="h-5 w-5 text-white/90 group-hover:text-white transition-colors" />
                 <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   Edit Profile
@@ -450,6 +461,20 @@ const ViewMeContent = () => {
           )}
         </div>
       </div>
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="fixed inset-0 bg-black opacity-50"></div>
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl">
+              <EditMeContent
+                user={userMe}
+                onClose={() => setShowEditModal(false)}
+                onUserUpdated={handleUserUpdated}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

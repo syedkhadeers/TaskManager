@@ -1,28 +1,30 @@
 import api from "../../utils/api";
 
 const prepareFormData = (userData) => {
+  console.log("Preparing FormData for userData 2:", userData);
   const formData = new FormData();
   Object.entries(userData).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      if (key === "photo" && value instanceof File) {
-        formData.append("photo", value);
+      if (key === "photo" && value.file instanceof File) {
+        console.log("Photo file being added to FormData:", value.file);
+        formData.append("photo", value.file);
       } else if (value instanceof Date) {
         formData.append(key, value.toISOString());
-      } else if (typeof value === "object") {
+      } else if (typeof value === "object" && key !== "photo") {
         formData.append(key, JSON.stringify(value));
-      } else {
+      } else if (typeof value !== "object") {
         formData.append(key, value);
       }
     }
   });
+  console.log("Final FormData created:", [...formData.entries()]);
   return formData;
 };
 
 export const updateUserProfile = async (userData) => {
   try {
     const formData = prepareFormData(userData);
-    const response = await retryRequest(() =>
-      api.patch("/user/me", formData, {
+    const response = await api.patch("/user/me", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -31,19 +33,15 @@ export const updateUserProfile = async (userData) => {
           console.log(`Upload Progress: ${percentCompleted}%`);
         },
       })
-    );
     return response;
   } catch (error) {
     console.error("Error updating user profile:", error);
   }
 };
 
-export const getAllUsers = async (params = {}) => {
+export const getAllUsers = async (params) => {
   try {
-    const queryString = new URLSearchParams(params).toString();
-    const response = await retryRequest(() =>
-      api.get(`/users${queryString ? `?${queryString}` : ""}`)
-    );
+    const response = await api.get(`/users`);
     return response;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -52,7 +50,7 @@ export const getAllUsers = async (params = {}) => {
 
 export const getUsersByRole = async (role) => {
   try {
-    const response = await retryRequest(() => api.get(`/users/role/${role}`));
+    const response = await api.get(`/users/role/${role}`);
     return response;
   } catch (error) {
     console.error("Error fetching users by role:", error);
@@ -61,27 +59,27 @@ export const getUsersByRole = async (role) => {
 
 export const addUser = async (userData) => {
   try {
-    const formData = prepareFormData(userData);
-    const response = await retryRequest(() =>
-      api.post("/users", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          console.log(`Upload Progress: ${percentCompleted}%`);
-        },
-      })
-    );
-    return response;
+      console.log("Raw userData before FormData:", userData);
+      const formData = prepareFormData(userData);
+      console.log("Sending request with FormData", formData);
+      const response = await api.post("/users", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total
+              );
+              console.log(`Upload Progress: ${percentCompleted}%`);
+          },
+      });
+      console.log("Upload response received:", response);
+      return response;
   } catch (error) {
-    console.error("Error adding user:", error);
+      console.error("Error adding user:", error);
   }
 };
-
 export const deleteUser = async (userId) => {
   try {
-    const response = await retryRequest(() => api.delete(`/users/${userId}`));
+    const response = await api.delete(`/users/${userId}`);
     return response;
   } catch (error) {
     console.error("Error deleting user:", error);
@@ -91,8 +89,7 @@ export const deleteUser = async (userId) => {
 export const updateUserById = async (userId, userData) => {
   try {
     const formData = prepareFormData(userData);
-    const response = await retryRequest(() =>
-      api.patch(`/users/${userId}`, formData, {
+    const response = await api.patch(`/users/${userId}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -100,8 +97,7 @@ export const updateUserById = async (userId, userData) => {
           );
           console.log(`Upload Progress: ${percentCompleted}%`);
         },
-      })
-    );
+      });
     return response;
   } catch (error) {
     console.error("Error updating user:", error);
@@ -110,7 +106,7 @@ export const updateUserById = async (userId, userData) => {
 
 export const getUserById = async (userId) => {
   try {
-    const response = await retryRequest(() => api.get(`/users/${userId}`));
+    const response = api.get(`/users/${userId}`);
     return response;
   } catch (error) {
     console.error("Error fetching user:", error);

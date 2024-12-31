@@ -13,7 +13,10 @@ const sizes = {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden m-0">
+        <div
+          className="fixed inset-0 z-50 overflow-hidden m-0"
+          style={{ margin: 0 }}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -42,9 +45,7 @@ const sizes = {
             ) : (
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600">
-                  <h3 className="text-2xl font-bold text-gray-100 ">
-                    {title}
-                  </h3>
+                  <h3 className="text-2xl font-bold text-gray-100 ">{title}</h3>
                   <button
                     onClick={onClose}
                     className="text-gray-300 hover:text-gray-100"

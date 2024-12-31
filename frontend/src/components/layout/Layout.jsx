@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? "dark" : ""}`}>
+    <div className="flex h-screen">
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -17,7 +17,7 @@ const Layout = ({ children }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 z-20 bg-black/60 backdrop-blur-md lg:hidden"
+            className="fixed inset-0 z-20 bg-black/60 dark:bg-black/80 backdrop-blur-md lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -29,12 +29,12 @@ const Layout = ({ children }) => {
           opacity: sidebarOpen ? 1 : 0,
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed inset-y-0 left-0 z-30 bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 shadow-2xl lg:relative rounded-r-2xl"
+        className="fixed inset-y-0 left-0 z-30 bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 shadow-2xl dark:shadow-gray-900/50 lg:relative rounded-r-2xl"
       >
         <Sidebar isOpen={sidebarOpen} />
       </motion.div>
 
-      <div className="flex-1 flex flex-col min-h-screen dark:bg-gray-900 bg-gray-50">
+      <div className="flex-1 flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="flex-1 overflow-y-auto w-full">
           <motion.div

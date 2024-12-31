@@ -15,12 +15,26 @@ import {
   Package,
   Building,
 } from "lucide-react";
-// include sidebar.css
 import "../../styles/Sidebar.css";
 
 const Sidebar = ({ isOpen }) => {
-  const [openMenus, setOpenMenus] = useState({});
   const location = useLocation();
+
+  // Define submenu items first
+  const roomsSubmenuItems = [
+    { icon: Package, label: "Extra Services", path: "/extra-services" },
+    { icon: Clock, label: "Time Slots", path: "/time-slots" },
+    { icon: Building, label: "Room Types", path: "/room-types" },
+    { icon: Building2, label: "All Rooms", path: "/rooms" },
+  ];
+
+  const isSubmenuActive = (submenuItems) => {
+    return submenuItems.some((item) => location.pathname === item.path);
+  };
+
+  const [openMenus, setOpenMenus] = useState({
+    rooms: isSubmenuActive(roomsSubmenuItems),
+  });
 
   const toggleMenu = (menuKey) => {
     setOpenMenus((prev) => ({
@@ -45,8 +59,8 @@ const Sidebar = ({ isOpen }) => {
           flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300
           ${
             isActive
-              ? "bg-white/20 text-white shadow-lg"
-              : "text-white/80 hover:bg-white/10 hover:text-white"
+              ? "bg-white/20 text-white dark:bg-gray-700/50 dark:text-white"
+              : "text-white/80 hover:bg-white/10 dark:hover:bg-gray-700/30"
           }
         `}
       >
@@ -70,8 +84,8 @@ const Sidebar = ({ isOpen }) => {
         flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 ml-4
         ${
           isActive
-            ? "bg-white/20 text-white"
-            : "text-white/70 hover:bg-white/10 hover:text-white"
+            ? "bg-white/20 text-white dark:bg-gray-700/50"
+            : "text-white/70 hover:bg-white/10 dark:hover:bg-gray-700/30"
         }
       `}
     >
@@ -79,13 +93,6 @@ const Sidebar = ({ isOpen }) => {
       <span className="font-medium text-sm">{label}</span>
     </Link>
   );
-
-  const roomsSubmenuItems = [
-    { icon: Package, label: "Extra Services", path: "/extra-services" },
-    { icon: Clock, label: "Time Slots", path: "/time-slots" },
-    { icon: Building, label: "Room Types", path: "/room-types" },
-    { icon: Building2, label: "All Rooms", path: "/rooms" },
-  ];
 
   return (
     <div className="h-full flex flex-col text-white">
@@ -114,14 +121,15 @@ const Sidebar = ({ isOpen }) => {
             to="/users"
             isActive={location.pathname === "/users"}
           />
-          {/* Rooms Menu with Submenu */}
           <div className="space-y-1">
             <MenuItem
               icon={Building2}
               label="Rooms"
               hasSubmenu
+              isActive={isSubmenuActive(roomsSubmenuItems)}
               onClick={() => toggleMenu("rooms")}
             />
+
             <AnimatePresence>
               {openMenus.rooms && (
                 <motion.div
@@ -165,7 +173,7 @@ const Sidebar = ({ isOpen }) => {
           />
         </div>
 
-        <div className="pt-4 mt-4 border-t border-white/10">
+        <div className="pt-4 mt-4 border-t border-white/10 dark:border-gray-700/50">
           <MenuItem
             icon={Settings}
             label="Settings"
@@ -177,10 +185,12 @@ const Sidebar = ({ isOpen }) => {
       </nav>
 
       <div className="p-4 mt-auto">
-        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+        <div className="bg-white/10 dark:bg-gray-800/30 rounded-xl p-4 backdrop-blur-sm">
           <p className="text-sm font-medium">Need Help?</p>
-          <p className="text-xs text-white/70 mt-1">Check our documentation</p>
-          <button className="mt-3 w-full px-4 py-2.5 bg-white text-blue-600 rounded-xl text-sm font-medium hover:bg-white/90 transition-all duration-300 shadow-lg">
+          <p className="text-xs text-white/70 dark:text-gray-300/70 mt-1">
+            Check our documentation
+          </p>
+          <button className="mt-3 w-full px-4 py-2.5 bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-medium hover:bg-white/90 dark:hover:bg-gray-600 transition-all duration-300 shadow-lg">
             View Docs
           </button>
         </div>

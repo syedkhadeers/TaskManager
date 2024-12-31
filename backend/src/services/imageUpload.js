@@ -4,7 +4,10 @@ import fs from "fs/promises";
 
 const generateUniqueFileName = (folder) => {
   const timestamp = format(new Date(), "yyyyMMddHHmmss");
-  return `${folder}${timestamp}`;
+  const randomAlphabet = String.fromCharCode(
+    65 + Math.floor(Math.random() * 26)
+  );
+  return `AD_${randomAlphabet}${timestamp}`;
 };
 
 const deleteTemporaryFile = async (filePath) => {

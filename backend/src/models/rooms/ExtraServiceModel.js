@@ -17,9 +17,6 @@ const extraServiceSchema = new mongoose.Schema(
       required: [true, "Base Price is required"],
     },
     icon: {
-      type: String,
-    },
-    icon: {
       type: String, // just a string.
     },
     serviceType: {

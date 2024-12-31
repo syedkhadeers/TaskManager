@@ -3,7 +3,7 @@ import ExtraService from "../../models/rooms/ExtraServiceModel.js";
 
 export const addExtraService = asyncHandler(async (req, res) => {
   const {
-    name,
+    name, // Change this to serviceName if your model uses serviceName
     description,
     basePrice,
     specialPrice,
@@ -13,17 +13,18 @@ export const addExtraService = asyncHandler(async (req, res) => {
     additionalInfo,
   } = req.body;
 
-  if (!name || !basePrice) {
-    return res.status(400).json({ message: "Required fields missing" });
+  if (!name) {
+    return res.status(400).json({ message: "Service name is required" });
   }
 
-  const serviceExists = await ExtraService.findOne({ name });
+  // Update this check to use the correct field name
+  const serviceExists = await ExtraService.findOne({ name: name });
   if (serviceExists) {
     return res.status(400).json({ message: "Service name already exists" });
   }
 
   const extraService = await ExtraService.create({
-    name,
+    name, // Make sure this matches your model's field name
     description,
     basePrice,
     specialPrice,
@@ -92,6 +93,7 @@ export const getAllExtraServices = asyncHandler(async (req, res) => {
 
 export const toggleExtraService = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  console.log("Received request to toggle extra service with ID:", id);
   const extraService = await ExtraService.findById(id);
 
   if (!extraService) {

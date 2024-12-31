@@ -7,7 +7,7 @@ import LoadingSpinner from "../../common/LoadingSpinner";
 import InputField from "../../reusables/inputs/InputField";
 import SingleImageEditor from "../../reusables/editors/SingleImageEditor";
 
-const EditUsersContent = ({ user, onClose, onUserUpdated }) => {
+const EditMeContent = ({ user, onClose, onUserUpdated }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,10 +16,7 @@ const EditUsersContent = ({ user, onClose, onUserUpdated }) => {
     lastName: user?.lastName || "",
     email: user?.email || "",
     gender: user?.gender || "male",
-    // dateOfBirth: user?.dateOfBirth || "",
-    dateOfBirth: user?.dateOfBirth
-      ? new Date(user.dateOfBirth).toISOString().split("T")[0]
-      : "",
+    dateOfBirth: user?.dateOfBirth || "",
     department: user?.department || "",
     branch: user?.branch || "",
     address: user?.address || "",
@@ -288,4 +285,4 @@ const EditUsersContent = ({ user, onClose, onUserUpdated }) => {
   );
 };
 
-export default EditUsersContent;
+export default EditMeContent;

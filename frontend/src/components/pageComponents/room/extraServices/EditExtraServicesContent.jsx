@@ -1,267 +1,176 @@
-// import React, { useState, useContext, useEffect } from "react";
-// import { ThemeContext } from "../../../../context/ThemeContext";
-// import { X } from "lucide-react";
-// import { motion } from "framer-motion";
-// import { updateExtraService } from "../../../../services/rooms/extraServiceServices";
-// import { toast } from "react-toastify";
-// import ImageEditor from "../../../reusables/editors/ImageEditor";
+import React, { useState, useContext, useEffect } from "react";
+import { ThemeContext } from "../../../../context/ThemeContext";
+import { motion } from "framer-motion";
+import { updateExtraService } from "../../../../services/rooms/extraServiceServices";
+import { toast } from "react-toastify";
+import LoadingSpinner from "../../../common/LoadingSpinner";
+import InputField from "../../../reusables/inputs/InputField";
 
-// const EditExtraServicesContent = ({ service, onClose, onServiceUpdated }) => {
-//   const { isDarkMode } = useContext(ThemeContext);
+const EditExtraServicesContent = ({ service, onClose, onServiceUpdated }) => {
+  const { isDarkMode } = useContext(ThemeContext);
+  const [isLoading, setIsLoading] = useState(false);
 
-//   const initialFormState = {
-//     serviceName: "",
-//     description: "",
-//     price: "",
-//     serviceType: "",
-//     isAvailable: true,
-//     image: null,
-//   };
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    basePrice: "",
+    icon: "",
+    serviceType: "",
+    additionalInfo: "",
+    isActive: true,
+  });
 
-//   const [formData, setFormData] = useState(initialFormState);
-//   const [imagePreview, setImagePreview] = useState(null);
+  useEffect(() => {
+    if (service) {
+      setFormData({
+        name: service.name || "",
+        description: service.description || "",
+        basePrice: service.basePrice || "",
+        icon: service.icon || "",
+        serviceType: service.serviceType || "",
+        additionalInfo: service.additionalInfo || "",
+        isActive: service.isActive ?? true,
+      });
+    }
+  }, [service]);
 
-//   useEffect(() => {
-//     if (service) {
-//       setFormData({
-//         serviceName: service.serviceName || "",
-//         description: service.description || "",
-//         price: service.price || "",
-//         serviceType: service.serviceType || "",
-//         isAvailable: Boolean(service.isAvailable),
-//         image: service.image || null,
-//       });
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
-//       if (service.image) {
-//         setImagePreview(service.image);
-//       }
-//     }
-//   }, [service]);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-//   const handleChange = (e) => {
-//     const { name, value, type, checked } = e.target;
+    try {
+      const response = await updateExtraService(service._id, formData);
+      if (response) {
+        toast.success("Extra service updated successfully!");
+        onServiceUpdated && onServiceUpdated(response);
+        onClose();
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to update extra service");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-//     setFormData((prevData) => ({
-//       ...prevData,
-//       [name]:
-//         type === "checkbox"
-//           ? checked
-//           : type === "number"
-//           ? value === ""
-//             ? ""
-//             : Number(value)
-//           : value,
-//     }));
-//   };
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
-//   const handleCropComplete = (croppedImageUrl) => {
-//     if (!croppedImageUrl) return;
-
-//     setImagePreview(croppedImageUrl);
-//     setFormData((prev) => ({
-//       ...prev,
-//       image: croppedImageUrl,
-//     }));
-//   };
-
-//   const handleCropCancel = () => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       image: service?.image || null,
-//     }));
-//     setImagePreview(service?.image || null);
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     try {
-//       const dataToSend = { ...formData };
-
-//       // Only process image if it's new or changed
-//       if (formData.image && formData.image !== service?.image) {
-//         try {
-//           const response = await fetch(formData.image);
-//           const blob = await response.blob();
-//           dataToSend.image = new File([blob], "service_image.jpg", {
-//             type: "image/jpeg",
-//           });
-//         } catch (error) {
-//           console.error("Error processing image:", error);
-//           toast.error("Failed to process image. Please try again.");
-//           return;
-//         }
-//       }
-
-//       // Validate required fields
-//       if (!dataToSend.serviceName || !dataToSend.price) {
-//         toast.error("Please fill in all required fields");
-//         return;
-//       }
-
-//       await updateExtraService(service._id, dataToSend);
-//       toast.success("Extra service updated successfully!");
-//       onServiceUpdated();
-//       onClose();
-//     } catch (error) {
-//       console.error("Error updating extra service:", error);
-//       toast.error(error.message || "Failed to update extra service.");
-//     }
-//   };
-
-//   return (
-//     <motion.div
-//       initial={{ x: 300 }}
-//       animate={{ x: 0 }}
-//       exit={{ x: 300 }}
-//       className={`h-full ${isDarkMode ? "dark" : ""}`}
-//     >
-//       <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
-//         <div className="flex justify-between items-center">
-//           <h2 className="text-2xl font-bold text-white">Edit Extra Service</h2>
-//           <button
-//             onClick={onClose}
-//             className="text-white/80 hover:text-white transition-colors"
-//             type="button"
-//             aria-label="Close"
-//           >
-//             <X size={24} />
-//           </button>
-//         </div>
-//       </div>
-
-//       <div className="p-6 overflow-y-auto max-h-[calc(100vh-80px)]">
-//         <form onSubmit={handleSubmit} className="space-y-6">
-//           <InputField
-//             label="Service Name"
-//             type="text"
-//             name="serviceName"
-//             placeholder="Enter service name"
-//             value={formData.serviceName}
-//             onChange={handleChange}
-//             required
-//           />
-
-//           <div>
-//             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-//               Description
-//             </label>
-//             <textarea
-//               name="description"
-//               placeholder="Enter service description"
-//               value={formData.description}
-//               onChange={handleChange}
-//               rows="4"
-//               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//             />
-//           </div>
-
-//           <InputField
-//             label="Price"
-//             type="number"
-//             name="price"
-//             placeholder="Enter price"
-//             value={formData.price}
-//             onChange={handleChange}
-//             required
-//             min="0"
-//             step="0.01"
-//           />
-
-//           <InputField
-//             label="Service Type"
-//             type="text"
-//             name="serviceType"
-//             placeholder="Enter Service Type"
-//             value={formData.serviceType}
-//             onChange={handleChange}
-//           />
-
-//           <div className="flex items-center">
-//             <input
-//               type="checkbox"
-//               id="isAvailable"
-//               name="isAvailable"
-//               checked={formData.isAvailable}
-//               onChange={handleChange}
-//               className="mr-2 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400"
-//             />
-//             <label
-//               htmlFor="isAvailable"
-//               className="text-sm text-gray-700 dark:text-gray-200"
-//             >
-//               Is Available
-//             </label>
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-//               Service Image
-//             </label>
-//             <ImageEditor
-//               onCropComplete={handleCropComplete}
-//               onCancel={handleCropCancel}
-//               modalTitle="Edit Service Image"
-//             />
-//             {imagePreview && (
-//               <div className="mt-4">
-//                 <img
-//                   src={imagePreview}
-//                   alt="Service Preview"
-//                   className="h-24 w-24 rounded-lg object-cover"
-//                 />
-//               </div>
-//             )}
-//           </div>
-
-//           <button
-//             type="submit"
-//             className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
-//           >
-//             Update Extra Service
-//           </button>
-//         </form>
-//       </div>
-//     </motion.div>
-//   );
-// };
-
-// const InputField = ({
-//   label,
-//   type,
-//   name,
-//   placeholder,
-//   value,
-//   onChange,
-//   required,
-//   min,
-//   step,
-// }) => (
-//   <div>
-//     <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
-//       {label}
-//     </label>
-//     <input
-//       type={type}
-//       name={name}
-//       placeholder={placeholder}
-//       value={value}
-//       onChange={onChange}
-//       required={required}
-//       min={min}
-//       step={step}
-//       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//     />
-//   </div>
-// );
-
-// export default EditExtraServicesContent;
-import React from 'react'
-
-const EditExtraServicesContent = () => {
   return (
-    <div>EditExtraServicesContent</div>
-  )
-}
+    <motion.div
+      initial={{ x: 300 }}
+      animate={{ x: 0 }}
+      exit={{ x: 300 }}
+      className={`h-full ${isDarkMode ? "dark" : ""}`}
+    >
+      <div className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField
+              label="Service Name"
+              type="text"
+              name="name"
+              placeholder="Enter service name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+            />
 
-export default EditExtraServicesContent
+            <InputField
+              label="Base Price"
+              type="number"
+              name="basePrice"
+              placeholder="Enter base price"
+              value={formData.basePrice}
+              onChange={handleInputChange}
+              required
+            />
+
+            <InputField
+              label="Service Type"
+              type="text"
+              name="serviceType"
+              placeholder="Enter service type"
+              value={formData.serviceType}
+              onChange={handleInputChange}
+            />
+
+            <InputField
+              label="Icon"
+              type="text"
+              name="icon"
+              placeholder="Enter icon name or class"
+              value={formData.icon}
+              onChange={handleInputChange}
+            />
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
+                Description
+              </label>
+              <textarea
+                name="description"
+                placeholder="Enter description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows="4"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
+                Additional Information
+              </label>
+              <textarea
+                name="additionalInfo"
+                placeholder="Enter additional information"
+                value={formData.additionalInfo}
+                onChange={handleInputChange}
+                rows="4"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleInputChange}
+                  className="mr-2 rounded text-blue-500 dark:bg-gray-600 focus:ring-blue-400"
+                />
+                <label
+                  htmlFor="isActive"
+                  className="text-sm text-gray-700 dark:text-gray-200"
+                >
+                  Is Active
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors disabled:opacity-50"
+          >
+            {isLoading ? "Updating..." : "Update Extra Service"}
+          </button>
+        </form>
+      </div>
+    </motion.div>
+  );
+};
+
+export default EditExtraServicesContent;
