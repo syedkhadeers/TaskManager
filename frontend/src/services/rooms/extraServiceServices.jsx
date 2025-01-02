@@ -29,10 +29,20 @@ export const createExtraService = async (serviceData) => {
 export const getAllExtraServices = async () => {
   try {
     const response = await api.get("/rooms/extra-services");
-    return response;
+    return response || [];
   } catch (error) {
     console.error("Error fetching extra services:", error);
-    throw error;
+    return [];
+  }
+};
+
+export const getAllExtraServicesExport = async () => {
+  try {
+    const response = await api.get("/rooms/extra-services");
+    return response.extraServices || [];
+  } catch (error) {
+    console.error("Error fetching extra services:", error);
+    return [];
   }
 };
 
@@ -111,6 +121,7 @@ export const searchExtraServices = async (searchParams) => {
 export default {
   createExtraService,
   getAllExtraServices,
+  getAllExtraServicesExport,
   getExtraServiceById,
   updateExtraService,
   deleteExtraService,

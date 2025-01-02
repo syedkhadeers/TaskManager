@@ -47,34 +47,83 @@ const TimeSlotsContent = () => {
     },
   });
 
+  const calculateDuration = (checkIn, checkOut, sameDay) => {
+    const [checkInHours, checkInMinutes] = checkIn.split(":").map(Number);
+    const [checkOutHours, checkOutMinutes] = checkOut.split(":").map(Number);
+
+    let durationInMinutes;
+
+    if (sameDay === "SameDay") {
+      durationInMinutes =
+        checkOutHours * 60 +
+        checkOutMinutes -
+        (checkInHours * 60 + checkInMinutes);
+    } else {
+      durationInMinutes =
+        (checkOutHours + 24) * 60 +
+        checkOutMinutes -
+        (checkInHours * 60 + checkInMinutes);
+    }
+
+    const hours = Math.floor(durationInMinutes / 60);
+    const minutes = durationInMinutes % 60;
+
+    return `${hours}h ${minutes}m`;
+  };
+
   const columns = useMemo(
     () => [
       {
         accessorKey: "name",
         header: "Time Slot Name",
-      },
-      {
-        accessorKey: "checkInTime",
-        header: "Check-in Time",
-      },
-      {
-        accessorKey: "checkOutTime",
-        header: "Check-out Time",
-      },
-      {
-        accessorKey: "sameDay",
-        header: "Checkout Day",
         cell: ({ row }) => (
-          <span className="capitalize">
-            {row.original.sameDay === "SameDay" ? "Same Day" : "Next Day"}
-          </span>
+          <div className="flex flex-col space-y-1 py-2">
+            <span className="text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {row.original.name}
+            </span>
+            <span className="text-sm text-gray-500 line-clamp-2 hover:line-clamp-none transition-all duration-200">
+              {row.original.checkInTime} - {row.original.checkOutTime}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "timing",
+        header: "Timing Details",
+        cell: ({ row }) => (
+          <div className="flex flex-col space-y-1">
+            <span className="text-lg font-bold text-gray-800">
+              {row.original.sameDay === "SameDay" ? "Same Day" : "Next Day"}
+            </span>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">
+                Duration:{" "}
+                {calculateDuration(
+                  row.original.checkInTime,
+                  row.original.checkOutTime,
+                  row.original.sameDay
+                )}
+              </span>
+            </div>
+          </div>
         ),
       },
       {
         accessorKey: "priceMultiplier",
         header: "Price Multiplier",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.priceMultiplier}x</span>
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center px-3 py-1.5 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg shadow-sm">
+                <Percent className="h-4 w-4 text-purple-600 mr-1.5" />
+                <span className="text-md font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  {row.original.priceMultiplier === 1
+                    ? "Same Price"
+                    : `${row.original.priceMultiplier}x Price`}
+                </span>
+              </div>
+            </div>
+          </div>
         ),
       },
       {
@@ -85,10 +134,6 @@ const TimeSlotsContent = () => {
           return (
             <button
               onClick={() => {
-                console.log(
-                  "1. Status button clicked for timeSlot:",
-                  row.original
-                );
                 setState((prev) => ({
                   ...prev,
                   selectedTimeSlot: row.original,
@@ -96,13 +141,15 @@ const TimeSlotsContent = () => {
                 }));
               }}
               className={`
-                group relative px-3 py-1.5 rounded-md border transition-all duration-300
-                ${
-                  isActive
-                    ? "border-emerald-500 bg-emerald-50 hover:bg-emerald-100"
-                    : "border-rose-300 bg-rose-50 hover:bg-rose-100"
-                }
-              `}
+              group relative
+              px-3 py-1.5 rounded-md
+              border transition-all duration-300
+              ${
+                isActive
+                  ? "border-emerald-500 bg-emerald-50 hover:bg-emerald-100"
+                  : "border-rose-300 bg-rose-50 hover:bg-rose-100"
+              }
+            `}
             >
               <div className="flex items-center gap-2">
                 <div
@@ -128,6 +175,8 @@ const TimeSlotsContent = () => {
     ],
     []
   );
+
+
 
   const fetchTimeSlots = async () => {
     setState((prev) => ({ ...prev, loading: true }));

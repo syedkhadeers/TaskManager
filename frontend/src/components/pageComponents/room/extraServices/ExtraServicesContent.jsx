@@ -54,30 +54,45 @@ const ExtraServicesContent = () => {
       {
         accessorKey: "name",
         header: "Service Name",
-      },
-      {
-        accessorKey: "description",
-        header: "Description",
         cell: ({ row }) => (
-          <span className="truncate max-w-xs block">
-            {row.original.description || "N/A"}
-          </span>
+          <div className="flex flex-col space-y-1 py-2">
+            <span className="text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {row.original.name}
+            </span>
+            <span className="text-sm text-gray-500 line-clamp-2 hover:line-clamp-none transition-all duration-200">
+              {row.original.description}
+            </span>
+          </div>
         ),
       },
       {
         accessorKey: "basePrice",
-        header: "Base Price",
+        header: "Pricing",
         cell: ({ row }) => (
-          <span className="font-medium">${row.original.basePrice}</span>
+          <div className="flex flex-col space-y-1">
+            <span className="text-lg font-bold text-gray-800">
+              ${row.original.basePrice.toFixed(2)}
+            </span>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">
+                Service Type: {row.original.serviceType || "Standard"}
+              </span>
+            </div>
+          </div>
         ),
       },
       {
         accessorKey: "serviceType",
-        header: "Service Type",
+        header: "Additional Info",
         cell: ({ row }) => (
-          <span className="capitalize">
-            {row.original.serviceType || "N/A"}
-          </span>
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center px-3 py-1.5 bg-blue-50 rounded-lg">
+              <Package className="h-4 w-4 text-blue-600 mr-1.5" />
+              <span className="text-xs font-medium text-blue-700">
+                {row.original.additionalInfo || "No additional info"}
+              </span>
+            </div>
+          </div>
         ),
       },
       {

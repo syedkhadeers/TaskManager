@@ -23,6 +23,7 @@ const MultiImageEditor = ({
   onImagesChange,
   maxImages = 10,
   initialImages = [],
+  arrange = true,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -40,6 +41,31 @@ const MultiImageEditor = ({
       file: null,
     }))
   );
+  const [draggedImageIndex, setDraggedImageIndex] = useState(null);
+
+  const handleImageDragStart = (e, index) => {
+    setDraggedImageIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleImageDragOver = (e, index) => {
+    e.preventDefault();
+    if (draggedImageIndex === null || draggedImageIndex === index) return;
+
+    const newImages = [...processedImages];
+    const draggedImage = newImages[draggedImageIndex];
+    newImages.splice(draggedImageIndex, 1);
+    newImages.splice(index, 0, draggedImage);
+
+    setProcessedImages(newImages);
+    setDraggedImageIndex(index);
+    onImagesChange(newImages);
+  };
+
+  const handleImageDragEnd = () => {
+    setDraggedImageIndex(null);
+  };
+
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -269,8 +295,19 @@ const MultiImageEditor = ({
           {processedImages.map((image, index) => (
             <div
               key={index}
-              className="relative group rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+              draggable={arrange}
+              onDragStart={(e) => handleImageDragStart(e, index)}
+              onDragOver={(e) => handleImageDragOver(e, index)}
+              onDragEnd={handleImageDragEnd}
+              className={`relative group rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 ${
+                arrange ? "cursor-move" : ""
+              } ${draggedImageIndex === index ? "opacity-50" : "opacity-100"}`}
             >
+              {arrange && (
+                <div className="absolute top-2 left-2 z-10 w-6 h-6 flex items-center justify-center bg-black/70 rounded-full text-white text-sm font-medium">
+                  {index + 1}
+                </div>
+              )}
               <img
                 src={image.cropped}
                 alt={`Preview ${index + 1}`}

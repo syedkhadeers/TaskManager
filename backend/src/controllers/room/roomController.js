@@ -7,6 +7,7 @@ import {
 } from "../../services/imageUpload.js";
 
 export const addRoom = asyncHandler(async (req, res) => {
+  console.log("Received request body in controller:", req.body);
   const {
     roomNumber,
     roomType,
@@ -16,11 +17,11 @@ export const addRoom = asyncHandler(async (req, res) => {
     amenities,
     smokingAllowed,
     petsAllowed,
+    isActive,
   } = req.body;
 
-  if (!roomNumber || !roomType || !floor) {
-    return res.status(400).json({ message: "Required fields missing" });
-  }
+  const parsedAmenities =
+    typeof amenities === "string" ? JSON.parse(amenities) : amenities || [];
 
   const roomExists = await Room.findOne({ roomNumber });
   if (roomExists) {
@@ -45,13 +46,14 @@ export const addRoom = asyncHandler(async (req, res) => {
   const room = await Room.create({
     roomNumber,
     roomType,
-    status,
+    status: status || "available",
     floor,
     description,
-    amenities: amenities || [],
-    smokingAllowed: smokingAllowed || false,
-    petsAllowed: petsAllowed || false,
+    amenities: parsedAmenities,
+    smokingAllowed: Boolean(smokingAllowed),
+    petsAllowed: Boolean(petsAllowed),
     images: imagesData,
+    isActive: isActive ?? true,
   });
 
   const populatedRoom = await Room.findById(room._id).populate("roomType");
@@ -64,7 +66,11 @@ export const addRoom = asyncHandler(async (req, res) => {
 
 export const updateRoom = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updateData = { ...req.body };
+  let updateData = { ...req.body };
+
+  if (typeof updateData.amenities === "string") {
+    updateData.amenities = JSON.parse(updateData.amenities);
+  }
 
   const room = await Room.findById(id);
   if (!room) {
@@ -79,13 +85,6 @@ export const updateRoom = asyncHandler(async (req, res) => {
   }
 
   if (req.files?.length > 0) {
-    const existingPublicIds = room.images
-      .map((img) => img.publicId)
-      .filter((id) => id);
-    if (existingPublicIds.length > 0) {
-      await deleteMultipleImages(existingPublicIds);
-    }
-
     const uploadResults = await uploadMultipleImages(req.files, "room_photos");
     updateData.images = uploadResults.map((result, index) => ({
       url: result.url,
@@ -97,7 +96,10 @@ export const updateRoom = asyncHandler(async (req, res) => {
   const updatedRoom = await Room.findByIdAndUpdate(
     id,
     { $set: updateData },
-    { new: true }
+    {
+      new: true,
+      runValidators: true,
+    }
   ).populate("roomType");
 
   res.status(200).json({
@@ -108,17 +110,14 @@ export const updateRoom = asyncHandler(async (req, res) => {
 
 export const getRoom = asyncHandler(async (req, res) => {
   const room = await Room.findById(req.params.id).populate("roomType");
-
   if (!room) {
     return res.status(404).json({ message: "Room not found" });
   }
-
   res.status(200).json(room);
 });
 
 export const getAllRooms = asyncHandler(async (req, res) => {
   const rooms = await Room.find().populate("roomType");
-
   res.status(200).json({
     count: rooms.length,
     rooms,
@@ -133,7 +132,7 @@ export const deleteRoom = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Room not found" });
   }
 
-  const publicIds = room.images.map((img) => img.publicId).filter((id) => id);
+  const publicIds = room.images.map((img) => img.publicId).filter(Boolean);
   if (publicIds.length > 0) {
     await deleteMultipleImages(publicIds);
   }
@@ -164,18 +163,18 @@ export const updateRoomStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
   if (!["available", "occupied", "maintenance", "reserved"].includes(status)) {
-    return res.status(400).json({ message: "Invalid room status" });
+    return res.status(404).json({ message: "Invalid room status" });
   }
 
-  const room = await Room.findById(id);
-  if (!room) {
+  const updatedRoom = await Room.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true }
+  ).populate("roomType");
+
+  if (!updatedRoom) {
     return res.status(404).json({ message: "Room not found" });
   }
-
-  room.status = status;
-  await room.save();
-
-  const updatedRoom = await Room.findById(id).populate("roomType");
 
   res.status(200).json({
     message: `Room status updated to ${status} successfully`,

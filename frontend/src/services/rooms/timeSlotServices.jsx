@@ -51,6 +51,33 @@ export const getAllTimeSlots = async (filters = {}) => {
   }
 };
 
+// Add this new export function to your existing timeSlotServices.jsx
+
+export const getAllTimeSlotsExport = async () => {
+  try {
+    const response = await api.get('/rooms/time-slots');
+    
+    // Transform the data to match the expected format in AddRoomTypesContent
+    const formattedTimeSlots = response.timeSlots.map(slot => ({
+      _id: slot._id,
+      name: slot.name,
+      checkInTime: slot.checkInTime,
+      checkOutTime: slot.checkOutTime,
+      priceMultiplier: slot.priceMultiplier,
+      sameDay: slot.sameDay,
+      isActive: slot.isActive
+    }));
+
+    return formattedTimeSlots;
+  } catch (error) {
+    throw {
+      message: error.message || "Failed to fetch time slots",
+      status: error.status,
+      data: error.data
+    };
+  }
+};
+
 // Get time slot by ID
 export const getTimeSlotById = async (id) => {
   try {
@@ -175,6 +202,7 @@ export const formatTimeSlotResponse = (timeSlot) => ({
 export default {
   createTimeSlot,
   getAllTimeSlots,
+  getAllTimeSlotsExport,
   getTimeSlotById,
   updateTimeSlot,
   deleteTimeSlot,

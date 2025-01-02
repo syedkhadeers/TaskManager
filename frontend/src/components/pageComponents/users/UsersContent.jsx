@@ -9,6 +9,7 @@ import {
   UserX,
   UserPlus,
   MoreVerticalIcon,
+  Clock,
 } from "lucide-react";
 import { Menu } from "@headlessui/react";
 import Avatar from "react-avatar";
@@ -48,46 +49,86 @@ const UsersContent = () => {
     },
   });
 
+  // Update the columns definition with more attractive styling
   const columns = useMemo(
     () => [
       {
         accessorKey: "photo",
         header: "Photo",
         cell: ({ row }) => (
-          <Avatar
-            name={row.original.fullName}
-            src={row.original.photo?.url}
-            size={40}
-            round
-          />
+          <div className="flex -space-x-2 hover:space-x-1 transition-all duration-200">
+            <Avatar
+              name={row.original.fullName}
+              src={row.original.photo?.url}
+              size="45"
+              round
+              className="border-2 border-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-transform duration-200"
+            />
+          </div>
         ),
-        export: "no",
       },
       {
         accessorKey: "fullName",
-        header: "Full Name",
-      },
-      {
-        accessorKey: "email",
-        header: "Email",
+        header: "User Details",
+        cell: ({ row }) => (
+          <div className="flex flex-col space-y-1 py-2">
+            <span className="text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {row.original.fullName}
+            </span>
+            <span className="text-sm text-gray-500">{row.original.email}</span>
+          </div>
+        ),
       },
       {
         accessorKey: "role",
-        header: "Role",
+        header: "Role & Permissions",
+        cell: ({ row }) => (
+          <div className="flex flex-col space-y-1">
+            <span className="px-3 py-1 text-sm font-bold bg-blue-100 text-blue-700 rounded-full w-fit">
+              {row.original.role}
+            </span>
+          </div>
+        ),
       },
       {
-        accessorKey: "isVerified",
-        header: "Status",
+        accessorKey: "status",
+        header: "Account Status",
         cell: ({ row }) => (
-          <span
-            className={`px-2 py-1 rounded-full text-xs ${
+          <div className="flex flex-col space-y-2">
+            <div
+              className={`
+            group relative px-3 py-1.5 rounded-md border transition-all duration-300
+            ${
               row.original.isVerified
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {row.original.isVerified ? "Verified" : "Unverified"}
-          </span>
+                ? "border-emerald-500 bg-emerald-50 hover:bg-emerald-100"
+                : "border-rose-300 bg-rose-50 hover:bg-rose-100"
+            }
+          `}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-1.5 h-3 rounded-full ${
+                    row.original.isVerified ? "bg-emerald-500" : "bg-rose-500"
+                  }`}
+                />
+                <span
+                  className={`font-medium text-xs tracking-wide ${
+                    row.original.isVerified
+                      ? "text-emerald-700"
+                      : "text-rose-700"
+                  }`}
+                >
+                  {row.original.isVerified ? "Verified" : "Unverified"}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center px-3 py-1.5 bg-gray-50 rounded-lg">
+              <Clock className="h-4 w-4 text-gray-600 mr-1.5" />
+              <span className="text-xs text-gray-600">
+                Joined: {new Date(row.original.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
         ),
       },
     ],
@@ -224,26 +265,30 @@ const UsersContent = () => {
       animate={{ opacity: 1 }}
       className="space-y-8"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
           title="Total Users"
           value={state.stats.total}
-          icon={<Users className="h-10 w-10" />}
+          icon={<Users className="h-10 w-10 text-blue-500" />}
+          className="bg-gradient-to-br from-blue-50 to-blue-100"
         />
         <StatsCard
           title="Verified Users"
           value={state.stats.verified}
-          icon={<UserCheck className="h-10 w-10 text-green-500" />}
+          icon={<UserCheck className="h-10 w-10 text-emerald-500" />}
+          className="bg-gradient-to-br from-emerald-50 to-emerald-100"
         />
         <StatsCard
           title="Unverified Users"
           value={state.stats.unverified}
-          icon={<UserX className="h-10 w-10 text-red-500" />}
+          icon={<UserX className="h-10 w-10 text-rose-500" />}
+          className="bg-gradient-to-br from-rose-50 to-rose-100"
         />
         <StatsCard
           title="New Users (30 days)"
           value={state.stats.newUsers}
           icon={<UserPlus className="h-10 w-10 text-purple-500" />}
+          className="bg-gradient-to-br from-purple-50 to-purple-100"
         />
       </div>
       <DataTableOne

@@ -84,7 +84,7 @@ export const validateUpload = (req, res, next) => {
 
 
 // Enhanced upload configurations with specific settings (size , count)
-export const uploadUserPhoto = multer(createMulterConfig(2));
+export const uploadUserPhoto = multer(createMulterConfig(5));
 
 export const uploadRoomTypeImages = multer(createMulterConfig(5, 10));
 
