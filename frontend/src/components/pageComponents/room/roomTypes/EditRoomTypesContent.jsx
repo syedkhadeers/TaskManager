@@ -2,15 +2,19 @@ import React, { useState, useContext, useEffect } from "react";
 import { ThemeContext } from "../../../../context/ThemeContext";
 import { X, Plus, Trash2, Edit2, Check, GripVertical } from "lucide-react";
 import { motion } from "framer-motion";
-import { updateRoomType, validateRoomTypeData, prepareFormData } from "../../../../services/rooms/roomTypeServices";
-import { getAllExtraServices } from "../../../../services/rooms/extraServiceServices";
+import "../../../../styles/roomStyles.css";
+import {
+  updateRoomType,
+  validateRoomTypeData,
+  prepareFormData,
+} from "../../../../services/rooms/roomTypeServices";
+import { getAllExtraServicesExport } from "../../../../services/rooms/extraServiceServices";
 import { getAllTimeSlotsExport } from "../../../../services/rooms/timeSlotServices";
 import { toast } from "react-toastify";
 import MultiImageEditor from "../../../reusables/editors/MultiImageEditor";
 import Select from "react-select";
 import LoadingSpinner from "../../../common/LoadingSpinner";
 import InputField from "../../../reusables/inputs/InputField";
-import "../../../../styles/roomStyles.css";
 import "../../../../styles/common.css";
 
 const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
@@ -21,35 +25,25 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
   const [draggedItem, setDraggedItem] = useState(null);
   const [errors, setErrors] = useState({});
 
+  // Form State
   const [formData, setFormData] = useState({
     name: roomType.name || "",
     description: roomType.description || "",
-    basePrice: roomType.basePrice || 0,
-    specialPrice: roomType.specialPrice || 0,
-    offerPrice: roomType.offerPrice || 0,
+    basePrice: roomType.basePrice || "",
+    specialPrice: roomType.specialPrice || "",
+    offerPrice: roomType.offerPrice || "",
     maxOccupancy: roomType.maxOccupancy || 1,
-    timeSlotPricing:
-      roomType.timeSlotPricing?.map((slot) => ({
-        timeSlot: slot.timeSlot._id || slot.timeSlot,
-        price: slot.price,
-        order: slot.order,
-      })) || [],
-    extraServices:
-      roomType.extraServices?.map((service) => ({
-        extraServices: service.extraServices._id || service.extraServices,
-        price: service.price,
-        order: service.order,
-      })) || [],
+    timeSlotPricing: roomType.timeSlotPricing || [],
+    extraServices: roomType.extraServices || [],
     images:
-      roomType.images?.map((image) => ({
-        preview: image.url || image.preview,
-        file: null,
-        cropped: null,
+      roomType.images?.map((img) => ({
+        url: img.url,
+        publicId: img.publicId,
+        order: img.order,
+        existing: true,
       })) || [],
     isActive: roomType.isActive ?? true,
   });
-
-  console.log("Form Data:", formData);
 
   // Time Slot Management State
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
@@ -68,7 +62,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
       setIsLoading(true);
       try {
         const [servicesData, slotsData] = await Promise.all([
-          getAllExtraServices(),
+          getAllExtraServicesExport(),
           getAllTimeSlotsExport(),
         ]);
         setExtraServices(servicesData);
@@ -105,9 +99,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
     setFormData((prev) => ({
       ...prev,
       images: processedImages.map((image, index) => ({
-        preview: image.preview || image.url,
-        file: image.file,
-        cropped: image.cropped,
+        ...image,
         order: index,
       })),
     }));
@@ -121,7 +113,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
     }
 
     const exists = formData.timeSlotPricing.some(
-      (slot) => slot.timeSlot === selectedTimeSlot.value
+      (slot) => slot.timeSlot._id === selectedTimeSlot.value
     );
 
     if (exists) {
@@ -134,7 +126,9 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
       timeSlotPricing: [
         ...prev.timeSlotPricing,
         {
-          timeSlot: selectedTimeSlot.value,
+          timeSlot: timeSlots.find(
+            (slot) => slot._id === selectedTimeSlot.value
+          ),
           price: parseFloat(timeSlotPrice),
           order: prev.timeSlotPricing.length,
         },
@@ -184,7 +178,7 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
     }
 
     const exists = formData.extraServices.some(
-      (service) => service.extraServices === selectedExtraService.value
+      (service) => service.extraServices._id === selectedExtraService.value
     );
 
     if (exists) {
@@ -197,7 +191,9 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
       extraServices: [
         ...prev.extraServices,
         {
-          extraServices: selectedExtraService.value,
+          extraServices: extraServices.find(
+            (service) => service._id === selectedExtraService.value
+          ),
           price: parseFloat(extraServicePrice),
           order: prev.extraServices.length,
         },
@@ -206,6 +202,39 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
 
     setSelectedExtraService(null);
     setExtraServicePrice("");
+  };
+
+  const handleEditService = (index, currentPrice) => {
+    setEditingServiceIndex(index);
+    setEditingServicePrice(currentPrice.toString());
+  };
+
+  const handleConfirmServiceEdit = (index) => {
+    if (!editingServicePrice || parseFloat(editingServicePrice) <= 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      extraServices: prev.extraServices.map((service, i) =>
+        i === index
+          ? { ...service, price: parseFloat(editingServicePrice) }
+          : service
+      ),
+    }));
+
+    setEditingServiceIndex(null);
+    setEditingServicePrice("");
+  };
+
+  const handleRemoveService = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      extraServices: prev.extraServices
+        .filter((_, i) => i !== index)
+        .map((service, newIndex) => ({ ...service, order: newIndex })),
+    }));
   };
 
   // Drag and Drop Handlers
@@ -238,53 +267,33 @@ const EditRoomTypesContent = ({ roomType, onClose, onRoomTypeUpdated }) => {
     setDraggedItem({ ...draggedItem, index });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-  try {
-    const validation = validateRoomTypeData(formData);
-    if (!validation.isValid) {
-      setErrors(validation.errors);
-      toast.error("Please fix the errors before submitting");
-      return;
+    try {
+      const validation = validateRoomTypeData(formData);
+      if (!validation.isValid) {
+        setErrors(validation.errors);
+        toast.error("Please fix the errors before submitting");
+        return;
+      }
+
+      const preparedData = await prepareFormData(formData);
+      await updateRoomType(roomType._id, preparedData);
+      toast.success("Room type updated successfully!");
+      onRoomTypeUpdated();
+    } catch (error) {
+      toast.error(error.message || "Failed to update room type");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Ensure proper structure of arrays
-    const dataToSend = {
-      ...formData,
-      extraServices: formData.extraServices.map((service) => ({
-        extraServices: service.extraServices._id || service.extraServices,
-        price: Number(service.price),
-        order: Number(service.order),
-      })),
-      timeSlotPricing: formData.timeSlotPricing.map((slot) => ({
-        timeSlot: slot.timeSlot._id || slot.timeSlot,
-        price: Number(slot.price),
-        order: Number(slot.order),
-      })),
-    };
+  if (isLoading) return <LoadingSpinner />;
 
-    const formDataToSend = await prepareFormData(dataToSend);
-    const response = await updateRoomType(roomType._id, formDataToSend);
-
-    toast.success("Room type updated successfully!");
-    if (typeof onRoomTypeUpdated === "function") {
-      onRoomTypeUpdated(response.data);
-    }
-    onClose();
-  } catch (error) {
-    toast.error(error.message || "Failed to update room type");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
+  // Return JSX with the same structure as AddRoomTypesContent
+  // but populated with roomType data
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -347,7 +356,6 @@ const handleSubmit = async (e) => {
                 value={formData.offerPrice}
                 onChange={handleInputChange}
                 error={errors.offerPrice}
-                required
                 min="0"
                 step="0.01"
                 prefix="$"
@@ -362,7 +370,6 @@ const handleSubmit = async (e) => {
                 value={formData.specialPrice}
                 onChange={handleInputChange}
                 error={errors.specialPrice}
-                required
                 min="0"
                 step="0.01"
                 prefix="$"
@@ -387,167 +394,123 @@ const handleSubmit = async (e) => {
 
           {/* Time Slots and Services Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Time Slots Section */}
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-2xl border border-gray-200 dark:border-gray-600 shadow-lg">
               <div className="space-y-4">
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Time Slot Pricing
-                  </h3>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Time Slot Pricing
+                </h3>
+                <div className="flex items-center gap-4">
+                  <Select
+                    value={selectedTimeSlot}
+                    onChange={setSelectedTimeSlot}
+                    options={timeSlots
+                      .filter(
+                        (slot) =>
+                          !formData.timeSlotPricing.some(
+                            (p) => p.timeSlot._id === slot._id
+                          )
+                      )
+                      .map((slot) => ({
+                        value: slot._id,
+                        label: slot.name,
+                      }))}
+                    className="flex-grow select-container"
+                    classNamePrefix="select"
+                    placeholder="Select time slot..."
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        minHeight: "3rem",
+                        backgroundColor: isDarkMode ? "#1f2937" : "white",
+                        borderColor: isDarkMode ? "#374151" : "#e5e7eb",
+                      }),
+                    }}
+                  />
+                  <input
+                    type="number"
+                    value={timeSlotPrice}
+                    onChange={(e) => setTimeSlotPrice(e.target.value)}
+                    placeholder="Price"
+                    className="w-24 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    min="0"
+                    step="0.01"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTimeSlot}
+                    className="p-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
 
-                  <div className="flex items-center gap-4">
-                    <Select
-                      value={selectedTimeSlot}
-                      onChange={setSelectedTimeSlot}
-                      options={timeSlots
-                        .filter(
-                          (slot) =>
-                            !formData.timeSlotPricing.some(
-                              (p) => p.timeSlot === slot._id
-                            )
-                        )
-                        .map((slot) => ({
-                          value: slot._id,
-                          label: slot.name,
-                        }))}
-                      className="flex-grow select-container"
-                      classNamePrefix="select"
-                      placeholder="Select time slot..."
-                      styles={{
-                        control: (base, state) => ({
-                          ...base,
-                          minHeight: "3rem",
-                          backgroundColor: isDarkMode ? "#1f2937" : "white",
-                          borderColor: isDarkMode ? "#374151" : "#e5e7eb",
-                          "&:hover": {
-                            borderColor: isDarkMode ? "#4b5563" : "#d1d5db",
-                          },
-                          boxShadow: state.isFocused
-                            ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
-                            : "none",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          backgroundColor: isDarkMode ? "#1f2937" : "white",
-                          border: `1px solid ${
-                            isDarkMode ? "#374151" : "#e5e7eb"
-                          }`,
-                        }),
-                        option: (base, { isFocused, isSelected }) => ({
-                          ...base,
-                          backgroundColor: isSelected
-                            ? isDarkMode
-                              ? "#3b82f6"
-                              : "#2563eb"
-                            : isFocused
-                            ? isDarkMode
-                              ? "#374151"
-                              : "#f3f4f6"
-                            : "transparent",
-                          color: isSelected
-                            ? "white"
-                            : isDarkMode
-                            ? "#e5e7eb"
-                            : "#1f2937",
-                        }),
-                      }}
-                    />
-
-                    <input
-                      type="number"
-                      value={timeSlotPrice}
-                      onChange={(e) => setTimeSlotPrice(e.target.value)}
-                      placeholder="Price"
-                      className="w-24 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      min="0"
-                      step="0.01"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={handleAddTimeSlot}
-                      className="p-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                {/* Time Slots List */}
+                <div className="mt-6 space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
+                  {formData.timeSlotPricing.map((slot, index) => (
+                    <div
+                      key={`timeSlot-${index}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index, "timeSlot")}
+                      onDragOver={(e) => handleDragOver(e, index, "timeSlot")}
+                      className="group flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 cursor-move"
                     >
-                      <Plus size={18} />
-                    </button>
-                  </div>
-
-                  <div className="mt-6 space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
-                    {formData.timeSlotPricing.map((slot, index) => (
-                      <div
-                        key={`timeSlot-${index}`}
-                        draggable
-                        onDragStart={(e) =>
-                          handleDragStart(e, index, "timeSlot")
-                        }
-                        onDragOver={(e) => handleDragOver(e, index, "timeSlot")}
-                        className="group flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <GripVertical
-                            className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"
-                            size={16}
-                          />
-                          <span className="text-gray-500 dark:text-gray-400 font-medium">
-                            {index + 1}.
+                      <div className="flex items-center gap-3">
+                        <GripVertical className="text-gray-400" size={16} />
+                        <span className="text-gray-500 dark:text-gray-400 font-medium">
+                          {index + 1}.
+                        </span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">
+                          {slot.timeSlot.name}
+                        </span>
+                        {editingSlotIndex === index ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={editingPrice}
+                              onChange={(e) => setEditingPrice(e.target.value)}
+                              className="w-24 px-3 py-1.5 rounded-lg border"
+                              min="0"
+                              step="0.01"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmTimeSlotEdit(index)}
+                              className="p-1.5 text-green-500 hover:text-green-600"
+                            >
+                              <Check size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-600 dark:text-gray-300 font-medium">
+                            ${slot.price}
                           </span>
-                          <span className="font-semibold text-gray-800 dark:text-gray-200">
-                            {
-                              timeSlots.find((ts) => ts._id === slot.timeSlot)
-                                ?.name
-                            }
-                          </span>
-                          {editingSlotIndex === index ? (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                value={editingPrice}
-                                onChange={(e) =>
-                                  setEditingPrice(e.target.value)
-                                }
-                                className="w-24 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
-                                min="0"
-                                step="0.01"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleConfirmTimeSlotEdit(index)}
-                                className="p-1.5 text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors"
-                              >
-                                <Check size={16} />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-gray-600 dark:text-gray-300 font-medium">
-                              ${slot.price}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {editingSlotIndex !== index && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleEditTimeSlot(index, slot.price)
-                                }
-                                className="p-1.5 text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveTimeSlot(index)}
-                                className="p-1.5 text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex gap-2">
+                        {editingSlotIndex !== index && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleEditTimeSlot(index, slot.price)
+                              }
+                              className="p-1.5 text-blue-500 hover:text-blue-600"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTimeSlot(index)}
+                              className="p-1.5 text-red-500 hover:text-red-600"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -558,7 +521,6 @@ const handleSubmit = async (e) => {
                 <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   Extra Services
                 </h3>
-
                 <div className="flex items-center gap-4">
                   <Select
                     value={selectedExtraService}
@@ -567,7 +529,7 @@ const handleSubmit = async (e) => {
                       .filter(
                         (service) =>
                           !formData.extraServices.some(
-                            (p) => p.extraServices === service._id
+                            (p) => p.extraServices._id === service._id
                           )
                       )
                       .map((service) => ({
@@ -583,59 +545,28 @@ const handleSubmit = async (e) => {
                         minHeight: "3rem",
                         backgroundColor: isDarkMode ? "#1f2937" : "white",
                         borderColor: isDarkMode ? "#374151" : "#e5e7eb",
-                        "&:hover": {
-                          borderColor: isDarkMode ? "#4b5563" : "#d1d5db",
-                        },
-                        boxShadow: state.isFocused
-                          ? "0 0 0 2px rgba(168, 85, 247, 0.5)"
-                          : "none",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        backgroundColor: isDarkMode ? "#1f2937" : "white",
-                        border: `1px solid ${
-                          isDarkMode ? "#374151" : "#e5e7eb"
-                        }`,
-                      }),
-                      option: (base, { isFocused, isSelected }) => ({
-                        ...base,
-                        backgroundColor: isSelected
-                          ? isDarkMode
-                            ? "#8b5cf6"
-                            : "#7c3aed"
-                          : isFocused
-                          ? isDarkMode
-                            ? "#374151"
-                            : "#f3f4f6"
-                          : "transparent",
-                        color: isSelected
-                          ? "white"
-                          : isDarkMode
-                          ? "#e5e7eb"
-                          : "#1f2937",
                       }),
                     }}
                   />
-
                   <input
                     type="number"
                     value={extraServicePrice}
                     onChange={(e) => setExtraServicePrice(e.target.value)}
                     placeholder="Price"
-                    className="w-24 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    className="w-24 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     min="0"
                     step="0.01"
                   />
-
                   <button
                     type="button"
                     onClick={handleAddExtraService}
-                    className="p-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                    className="p-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg"
                   >
                     <Plus size={18} />
                   </button>
                 </div>
 
+                {/* Extra Services List */}
                 <div className="mt-6 space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
                   {formData.extraServices.map((service, index) => (
                     <div
@@ -643,22 +574,15 @@ const handleSubmit = async (e) => {
                       draggable
                       onDragStart={(e) => handleDragStart(e, index, "service")}
                       onDragOver={(e) => handleDragOver(e, index, "service")}
-                      className="group flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
+                      className="group flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 cursor-move"
                     >
                       <div className="flex items-center gap-3">
-                        <GripVertical
-                          className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"
-                          size={16}
-                        />
+                        <GripVertical className="text-gray-400" size={16} />
                         <span className="text-gray-500 dark:text-gray-400 font-medium">
                           {index + 1}.
                         </span>
                         <span className="font-semibold text-gray-800 dark:text-gray-200">
-                          {
-                            extraServices.find(
-                              (es) => es._id === service.extraServices
-                            )?.name
-                          }
+                          {service.extraServices.name}
                         </span>
                         {editingServiceIndex === index ? (
                           <div className="flex items-center gap-2">
@@ -668,14 +592,14 @@ const handleSubmit = async (e) => {
                               onChange={(e) =>
                                 setEditingServicePrice(e.target.value)
                               }
-                              className="w-24 px-3 py-1.5 rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-purple-500"
+                              className="w-24 px-3 py-1.5 rounded-lg border"
                               min="0"
                               step="0.01"
                             />
                             <button
                               type="button"
                               onClick={() => handleConfirmServiceEdit(index)}
-                              className="p-1.5 text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors"
+                              className="p-1.5 text-green-500 hover:text-green-600"
                             >
                               <Check size={16} />
                             </button>
@@ -686,8 +610,7 @@ const handleSubmit = async (e) => {
                           </span>
                         )}
                       </div>
-
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2">
                         {editingServiceIndex !== index && (
                           <>
                             <button
@@ -695,14 +618,14 @@ const handleSubmit = async (e) => {
                               onClick={() =>
                                 handleEditService(index, service.price)
                               }
-                              className="p-1.5 text-purple-500 hover:text-purple-600 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg transition-colors"
+                              className="p-1.5 text-purple-500 hover:text-purple-600"
                             >
                               <Edit2 size={16} />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRemoveService(index)}
-                              className="p-1.5 text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-colors"
+                              className="p-1.5 text-red-500 hover:text-red-600"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -721,10 +644,12 @@ const handleSubmit = async (e) => {
             <MultiImageEditor
               onImagesChange={handleImageChange}
               maxImages={10}
-              initialImages={formData.images}
+              initialImages={formData.images.map((img) => ({
+                preview: img.url,
+                publicId: img.publicId,
+                order: img.order,
+              }))}
               className="image-gallery-modern"
-              allowCrop={true}
-              aspectRatio={16 / 9}
             />
           </div>
 

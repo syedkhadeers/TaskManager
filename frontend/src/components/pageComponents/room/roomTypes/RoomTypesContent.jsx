@@ -11,6 +11,10 @@ import {
   AlertCircle,
   Clock,
   Package,
+  CheckCircle,
+  XCircle,
+  BarChart2,
+  Calendar,
 } from "lucide-react";
 import { Menu } from "@headlessui/react";
 import Avatar from "react-avatar";
@@ -158,26 +162,24 @@ const RoomTypesContent = () => {
   };
 
   // Status toggle with optimistic update
-const handleToggleStatus = async () => {
-  try {
-    await toggleRoomType(state.selectedRoomType._id);
-    await fetchData();
-    setState((prev) => ({
-      ...prev,
-      modals: { ...prev.modals, toggle: false },
-      selectedRoomType: null,
-    }));
-    toast.success(
-      `Room type ${
-        state.selectedRoomType.isActive ? "deactivated" : "activated"
-      } successfully`
-    );
-  } catch (error) {
-    toast.error(error.message || "Failed to toggle room type status");
-  }
-};
-
-
+  const handleToggleStatus = async () => {
+    try {
+      await toggleRoomType(state.selectedRoomType._id);
+      await fetchData();
+      setState((prev) => ({
+        ...prev,
+        modals: { ...prev.modals, toggle: false },
+        selectedRoomType: null,
+      }));
+      toast.success(
+        `Room type ${
+          state.selectedRoomType.isActive ? "deactivated" : "activated"
+        } successfully`
+      );
+    } catch (error) {
+      toast.error(error.message || "Failed to toggle room type status");
+    }
+  };
 
   // Time slot management with validation
   const handleTimeSlotManagement = async (action, roomTypeId, data) => {
@@ -218,154 +220,155 @@ const handleToggleStatus = async () => {
   };
 
   // Table columns definition with comprehensive data display
-const columns = useMemo(
-  () => [
-    {
-      accessorKey: "images",
-      header: "Images",
-      cell: ({ row }) => (
-        <div className="flex -space-x-3 hover:space-x-1 transition-all duration-200">
-          {row.original.images?.slice(0, 3).map((image, index) => (
-            <div
-              key={index}
-              className="relative transform hover:scale-110 transition-transform duration-200"
-            >
-              <Avatar
-                name={row.original.name}
-                src={image.url}
-                size="45"
-                round
-                className="border-2 border-white shadow-lg hover:shadow-xl"
-              />
-            </div>
-          ))}
-          {(row.original.images?.length || 0) > 3 && (
-            <div className="flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-2 border-white shadow-lg transform hover:scale-110 transition-transform duration-200">
-              <span className="text-xs font-bold text-white">
-                +{row.original.images.length - 3}
-              </span>
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "name",
-      header: "Room Type",
-      cell: ({ row }) => (
-        <div className="flex flex-col space-y-1 py-2">
-          <span className="text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {row.original.name}
-          </span>
-          <span className="text-sm text-gray-500 line-clamp-2 hover:line-clamp-none transition-all duration-200">
-            {row.original.description}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "pricing",
-      header: "Pricing",
-      cell: ({ row }) => (
-        <div className="flex flex-col space-y-1">
-          <span className="text-lg font-bold text-gray-800">
-            ${row.original.basePrice.toFixed(2)}
-          </span>
-          <div className="flex items-center space-x-2">
-            <span className="px-2 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">
-              Offer Price : {row.original.offerPrice}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">
-              Special Price : {row.original.specialPrice}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "services",
-      header: "Services",
-      cell: ({ row }) => (
-        <div className="ex flex-col space-y-1">
-          <div className="flex items-center px-3 py-1.5 bg-blue-50 rounded-lg">
-            <Clock className="h-4 w-4 text-blue-600 mr-1.5" />
-            <span className="text-xs font-medium text-blue-700">
-              Total Time Slots : {row.original.timeSlotPricing?.length || 0}
-            </span>
-          </div>
-          <div className="flex items-center px-3 py-1.5 bg-blue-50 rounded-lg">
-            <Package className="h-4 w-4 text-purple-600 mr-1.5" />
-            <span className="text-xs font-medium text-purple-700">
-              Total Extra Services : {row.original.extraServices?.length || 0}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "maxOccupancy",
-      header: "Max Capacity",
-      cell: ({ row }) => (
-        <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg w-fit">
-          <Users className="h-5 w-5 text-gray-600 mr-2" />
-          <span className="text-sm font-semibold text-gray-700">
-            {row.original.maxOccupancy} guests
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "isActive",
-      header: "Status",
-      cell: ({ row }) => {
-        const isActive = row.original.isActive;
-        return (
-          <button
-            onClick={() => {
-              setState((prev) => ({
-                ...prev,
-                selectedRoomType: row.original,
-                modals: { ...prev.modals, toggle: true },
-              }));
-            }}
-            className={`
-          group relative
-          px-3 py-1.5 rounded-md
-          border transition-all duration-300
-          ${
-            isActive
-              ? "border-emerald-500 bg-emerald-50 hover:bg-emerald-100"
-              : "border-rose-300 bg-rose-50 hover:bg-rose-100"
-          }
-        `}
-          >
-            <div className="flex items-center gap-2">
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: "images",
+        header: "Images",
+        cell: ({ row }) => (
+          <div className="flex -space-x-4 hover:space-x-2 transition-all duration-300">
+            {row.original.images?.slice(0, 3).map((image, index) => (
               <div
-                className={`w-1.5 h-3 rounded-full ${
-                  isActive ? "bg-emerald-500" : "bg-rose-500"
-                }`}
-              />
-              <span
-                className={`font-medium text-xs tracking-wide ${
-                  isActive ? "text-emerald-700" : "text-rose-700"
-                }`}
+                key={index}
+                className="relative transform hover:scale-125 hover:z-10 transition-all duration-300"
               >
-                {isActive ? "Active" : "Inactive"}
+                <Avatar
+                  name={row.original.name}
+                  src={image.url}
+                  size="50"
+                  round
+                  className="border-3 border-white dark:border-gray-800 shadow-lg hover:shadow-2xl ring-2 ring-offset-2 ring-blue-500/30"
+                />
+              </div>
+            ))}
+            {(row.original.images?.length || 0) > 3 && (
+              <div className="flex items-center justify-center w-[50px] h-[50px] rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 border-3 border-white dark:border-gray-800 shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300">
+                <span className="text-sm font-bold text-white">
+                  +{row.original.images.length - 3}
+                </span>
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "name",
+        header: "Room Type",
+        cell: ({ row }) => (
+          <div className="flex items-center space-x-3 px-4 py-2 bg-white/50 dark:bg-gray-800/50 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+            <Bed className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+            <div className="flex flex-col">
+              <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {row.original.name}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                {row.original.description}
               </span>
             </div>
-            <span className="absolute -bottom-8 right-0 min-w-max px-2 py-1 text-xs font-medium text-white bg-gray-900/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              Click to {isActive ? "deactivate" : "activate"}
-            </span>
-          </button>
-        );
+          </div>
+        ),
       },
-    },
-  ],
-  []
-);
-
+      {
+        accessorKey: "pricing",
+        header: "Pricing",
+        cell: ({ row }) => (
+          <div className="flex flex-col space-y-1 text-center items-center">
+            <span className="text-lg font-bold text-gray-800">
+              ${row.original.basePrice.toFixed(2)}
+            </span>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">
+                Offer Price : {row.original.offerPrice}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">
+                Special Price : {row.original.specialPrice}
+              </span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "services",
+        header: "Services",
+        cell: ({ row }) => (
+          <div className="ex flex-col space-y-1">
+            <div className="flex items-center px-3 py-1.5 bg-blue-50 rounded-lg">
+              <Clock className="h-4 w-4 text-blue-600 mr-1.5" />
+              <span className="text-xs font-medium text-blue-700">
+                Total Time Slots : {row.original.timeSlotPricing?.length || 0}
+              </span>
+            </div>
+            <div className="flex items-center px-3 py-1.5 bg-blue-50 rounded-lg">
+              <Package className="h-4 w-4 text-purple-600 mr-1.5" />
+              <span className="text-xs font-medium text-purple-700">
+                Total Extra Services : {row.original.extraServices?.length || 0}
+              </span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "maxOccupancy",
+        header: "Max Capacity",
+        cell: ({ row }) => (
+          <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg w-fit">
+            <Users className="h-5 w-5 text-gray-600 mr-2" />
+            <span className="text-sm font-semibold text-gray-700">
+              {row.original.maxOccupancy} guests
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "isActive",
+        header: "Status",
+        cell: ({ row }) => {
+          const isActive = row.original.isActive;
+          return (
+            <button
+              onClick={() => {
+                setState((prev) => ({
+                  ...prev,
+                  selectedRoomType: row.original,
+                  modals: { ...prev.modals, toggle: true },
+                }));
+              }}
+              className={`group relative px-4 py-2 rounded-xl border-2 transition-all duration-300
+              ${
+                isActive
+                  ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200"
+                  : "border-rose-500 bg-gradient-to-br from-rose-50 to-rose-100 hover:from-rose-100 hover:to-rose-200"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    isActive ? "bg-emerald-500/20" : "bg-rose-500/20"
+                  }`}
+                >
+                  {isActive ? (
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-rose-600" />
+                  )}
+                </div>
+                <span
+                  className={`font-medium text-sm ${
+                    isActive ? "text-emerald-700" : "text-rose-700"
+                  }`}
+                >
+                  {isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </button>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   const renderRowActions = useCallback(
     (roomType) => (
